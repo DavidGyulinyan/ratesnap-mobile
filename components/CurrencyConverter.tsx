@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet, SafeAreaView, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedView } from './themed-view';
 import { ThemedText } from './themed-text';
@@ -209,9 +209,9 @@ export default function CurrencyConverter() {
       <View style={styles.converterBox}>
         <View style={styles.convertedAmountBox}>
           <ThemedText style={styles.convertedAmountText}>
-            {parseFloat(convertedAmount) < 0
-              ? 'Please enter a valid number'
-              : `Converted Amount: ${convertedAmount}`}
+            {amount && parseFloat(amount) > 0
+              ? `Converted Amount: ${convertedAmount}`
+              : 'Converted Amount: 0.00'}
           </ThemedText>
         </View>
 
@@ -308,6 +308,9 @@ const Footer = () => (
     <ThemedText style={styles.footerText}>
       © 2025 RateSnap - Real-time Currency Converter
     </ThemedText>
+    <TouchableOpacity onPress={() => Linking.openURL('https://docs.google.com/document/d/e/2PACX-1vSqgDzlbEnxw-KoCS6ecj_tGzjSlkxDc7bUBMwzor65LKNLTEqzxm4q2iVvStCkmzo4N6dnVlcRGRuo/pub')}>
+      <ThemedText style={styles.termsText}>Terms of Use</ThemedText>
+    </TouchableOpacity>
   </View>
 );
 
@@ -333,6 +336,8 @@ const styles = StyleSheet.create({
   },
   updateText: {
     color: '#1f2937',
+    fontSize: 12,
+    textAlign: 'center',
   },
   converterBox: {
     borderWidth: 2,
@@ -384,10 +389,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#f8fafc',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+    maxHeight: 50,
   },
   currencyButtonText: {
     color: '#1f2937',
     fontWeight: '500',
+    fontSize: 14,
+    textAlign: 'center',
+    flexWrap: 'nowrap',
   },
   swapButton: {
     padding: 15,
@@ -474,5 +485,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#1f2937',
     textAlign: 'center',
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#2563eb',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    marginTop: 5,
   },
 });
