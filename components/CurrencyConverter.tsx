@@ -251,17 +251,19 @@ export default function CurrencyConverter() {
           <ThemedText type="subtitle" style={styles.savedRatesTitle}>Saved Rates ({savedRates.length})</ThemedText>
           {savedRates.length > 0 && (
             <TouchableOpacity onPress={() => setShowSavedRates(!showSavedRates)}>
-              <ThemedText style={styles.showHideText}>{showSavedRates ? 'Hide' : 'Show'}</ThemedText>
+              <ThemedText style={[styles.showHideText, showSavedRates && styles.showHideTextActive]}>
+                {showSavedRates ? 'Hide ▲' : 'Show ▼'}
+              </ThemedText>
             </TouchableOpacity>
           )}
         </View>
 
         {showSavedRates && (
-          <View style={styles.savedRatesList}>
-            {savedRates.map((rate) => (
+          <View style={[styles.savedRatesList, styles.fadeIn]}>
+            {savedRates.map((rate, index) => (
               <TouchableOpacity
                 key={rate.id}
-                style={styles.savedRateItem}
+                style={[styles.savedRateItem, { animationDelay: `${index * 100}ms` }]}
                 onPress={() => handleSelectRate(rate.fromCurrency, rate.toCurrency)}
               >
                 <View style={styles.savedRateContent}>
@@ -466,6 +468,10 @@ const styles = StyleSheet.create({
   showHideText: {
     color: '#1f2937',
   },
+  showHideTextActive: {
+    color: '#2563eb',
+    fontWeight: '600',
+  },
   savedRateDate: {
     fontSize: 12,
     color: '#1f2937',
@@ -492,5 +498,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textDecorationLine: 'underline',
     marginTop: 5,
+  },
+  fadeIn: {
+    opacity: 1,
+    transform: [{ scale: 1 }],
   },
 });
