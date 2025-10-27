@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { ThemedView } from './themed-view';
-import { ThemedText } from './themed-text';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+} from "react-native";
+import { ThemedView } from "./themed-view";
+import { ThemedText } from "./themed-text";
+import CurrencyFlag from "./CurrencyFlag";
 
 interface CurrencyPickerProps {
   visible: boolean;
@@ -18,7 +27,7 @@ export default function CurrencyPicker({
   onSelect,
   onClose,
 }: CurrencyPickerProps) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const filteredCurrencies = currencies.filter((currency) =>
     currency.toLowerCase().includes(search.toLowerCase())
@@ -27,7 +36,7 @@ export default function CurrencyPicker({
   const handleSelect = (currency: string) => {
     onSelect(currency);
     onClose();
-    setSearch('');
+    setSearch("");
   };
 
   return (
@@ -58,9 +67,16 @@ export default function CurrencyPicker({
               ]}
               onPress={() => handleSelect(item)}
             >
-              <ThemedText style={item === selectedCurrency ? styles.selectedText : undefined}>
-                {item}
-              </ThemedText>
+              <View style={styles.currencyItemContent}>
+                <CurrencyFlag currency={item} size={20} />
+                <ThemedText
+                  style={
+                    item === selectedCurrency ? styles.selectedText : undefined
+                  }
+                >
+                  {item}
+                </ThemedText>
+              </View>
             </TouchableOpacity>
           )}
           style={styles.list}
@@ -76,26 +92,26 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     marginBottom: 20,
   },
   closeButton: {
     fontSize: 16,
-    color: '#2563eb',
+    color: "#2563eb",
   },
   title: {
     fontSize: 20,
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     marginHorizontal: 20,
     marginBottom: 20,
   },
@@ -106,13 +122,17 @@ const styles = StyleSheet.create({
   currencyItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: "#e2e8f0",
   },
   selectedItem: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: "#e0f2fe",
+  },
+  currencyItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   selectedText: {
-    fontWeight: 'bold',
-    color: '#2563eb',
+    fontWeight: "bold",
+    color: "#2563eb",
   },
 });
