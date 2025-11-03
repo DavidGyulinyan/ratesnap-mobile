@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
@@ -23,24 +22,6 @@ interface SavedRate {
   toCurrency: string;
   rate: number;
   timestamp: number;
-}
-
-interface PolygonData {
-  status: string;
-  request_id: string;
-  data: {
-    market: string;
-    conversion_rate: number;
-    last_trade: string;
-    last_trade_unix: number;
-    daily_open_rate: number;
-    daily_high_rate: number;
-    daily_low_rate: number;
-    daily_close_rate: number;
-    daily_volume: number;
-    from_symbol: string;
-    to_symbol: string;
-  };
 }
 
 interface Data {
@@ -71,386 +52,49 @@ export default function CurrencyConverter() {
   const [showToPicker, setShowToPicker] = useState<boolean>(false);
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
 
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  const apiKey = process.env.EXPO_PUBLIC_API_KEY;
+  // CurrencyFreaks API configuration
+  const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
+  const CURRENCYFREAKS_API_KEY = "870b638bf16a4be185dff4dac89e557a";
 
   useEffect(() => {
     const getExchangeData = async () => {
       try {
-        // For Polygon.io, we'll use a different approach - get rates for common currencies
-        // First, let's get a list of supported currencies and their rates
-        const commonCurrencies = [
-          "EUR",
-          "GBP",
-          "JPY",
-          "CAD",
-          "AUD",
-          "CHF",
-          "CNY",
-          "SEK",
-          "NZD",
-          "MXN",
-          "SGD",
-          "HKD",
-          "NOK",
-          "KRW",
-          "TRY",
-          "RUB",
-          "INR",
-          "BRL",
-          "ZAR",
-          "AED",
-          "AFN",
-          "ALL",
-          "AMD",
-          "ANG",
-          "AOA",
-          "ARS",
-          "AWG",
-          "AZN",
-          "BAM",
-          "BBD",
-          "BDT",
-          "BGN",
-          "BHD",
-          "BIF",
-          "BMD",
-          "BND",
-          "BOB",
-          "BSD",
-          "BTN",
-          "BWP",
-          "BYN",
-          "BZD",
-          "CDF",
-          "CLP",
-          "COP",
-          "CRC",
-          "CUP",
-          "CVE",
-          "CZK",
-          "DJF",
-          "DKK",
-          "DOP",
-          "DZD",
-          "EGP",
-          "ERN",
-          "ETB",
-          "FJD",
-          "FKP",
-          "FOK",
-          "GEL",
-          "GGP",
-          "GHS",
-          "GIP",
-          "GMD",
-          "GNF",
-          "GTQ",
-          "GYD",
-          "HNL",
-          "HRK",
-          "HTG",
-          "HUF",
-          "IDR",
-          "ILS",
-          "IMP",
-          "IQD",
-          "IRR",
-          "ISK",
-          "JEP",
-          "JMD",
-          "JOD",
-          "KES",
-          "KGS",
-          "KHR",
-          "KID",
-          "KMF",
-          "KYD",
-          "KZT",
-          "LAK",
-          "LBP",
-          "LKR",
-          "LRD",
-          "LSL",
-          "LYD",
-          "MAD",
-          "MDL",
-          "MGA",
-          "MKD",
-          "MMK",
-          "MNT",
-          "MOP",
-          "MRU",
-          "MUR",
-          "MVR",
-          "MWK",
-          "MYR",
-          "MZN",
-          "NAD",
-          "NGN",
-          "NIO",
-          "NPR",
-          "OMR",
-          "PAB",
-          "PEN",
-          "PGK",
-          "PHP",
-          "PKR",
-          "PLN",
-          "PYG",
-          "QAR",
-          "RON",
-          "RSD",
-          "RWF",
-          "SAR",
-          "SBD",
-          "SCR",
-          "SDG",
-          "SHP",
-          "SLE",
-          "SLL",
-          "SOS",
-          "SRD",
-          "SSP",
-          "STN",
-          "SYP",
-          "SZL",
-          "THB",
-          "TJS",
-          "TMT",
-          "TND",
-          "TOP",
-          "TTD",
-          "TVD",
-          "TWD",
-          "TZS",
-          "UAH",
-          "UGX",
-          "UYU",
-          "UZS",
-          "VES",
-          "VND",
-          "VUV",
-          "WST",
-          "XAF",
-          "XCD",
-          "XCG",
-          "XDR",
-          "XOF",
-          "XPF",
-          "YER",
-          "ZMW",
-          "ZWL",
-        ];
-
-        // Create a mock data structure similar to ExchangeRate-API for compatibility
-        const mockData: Data = {
+        // Fetch all currency rates from CurrencyFreaks API
+        const response = await fetch(
+          `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const apiData = await response.json();
+        
+        // Check if the API response is successful by checking for rates data
+        if (!apiData.rates || !apiData.base) {
+          throw new Error("Invalid API response structure");
+        }
+        
+        // Transform the API response to match our expected Data interface
+        const transformedData: Data = {
           result: "success",
-          documentation: "https://polygon.io/docs/forex",
-          terms_of_use: "https://polygon.io/legal/terms-of-service",
-          time_last_update_unix: Date.now() / 1000,
+          documentation: "https://www.currencyfreaks.com/documentation",
+          terms_of_use: "https://www.currencyfreaks.com/terms",
+          time_last_update_unix: Math.floor(Date.now() / 1000),
           time_last_update_utc: new Date().toUTCString(),
-          time_next_update_unix: Date.now() / 1000 + 3600, // Next update in 1 hour
+          time_next_update_unix: Math.floor(Date.now() / 1000) + 3600, // Next update in 1 hour
           time_next_update_utc: new Date(Date.now() + 3600000).toUTCString(),
-          base_code: "USD",
-          conversion_rates: {
-            USD: 1,
-            EUR: 0.85,
-            GBP: 0.73,
-            JPY: 110.0,
-            CAD: 1.25,
-            AUD: 1.35,
-            CHF: 0.92,
-            CNY: 6.45,
-            SEK: 8.6,
-            NZD: 1.4,
-            MXN: 20.0,
-            SGD: 1.35,
-            HKD: 7.8,
-            NOK: 8.5,
-            KRW: 1180.0,
-            TRY: 8.3,
-            RUB: 75.0,
-            INR: 74.5,
-            BRL: 5.2,
-            ZAR: 14.8,
-            AED: 3.67,
-            AFN: 66.0,
-            ALL: 83.0,
-            AMD: 382.0,
-            ANG: 1.79,
-            AOA: 921.0,
-            ARS: 1485.0,
-            AWG: 1.79,
-            AZN: 1.7,
-            BAM: 1.68,
-            BBD: 2.0,
-            BDT: 122.0,
-            BGN: 1.68,
-            BHD: 0.38,
-            BIF: 2940.0,
-            BMD: 1.0,
-            BND: 1.3,
-            BOB: 6.91,
-            BSD: 1.0,
-            BTN: 87.8,
-            BWP: 14.3,
-            BYN: 3.26,
-            BZD: 2.0,
-            CDF: 2242.0,
-            CLP: 946.0,
-            COP: 3890.0,
-            CRC: 501.0,
-            CUP: 24.0,
-            CVE: 94.9,
-            CZK: 20.9,
-            DJF: 178.0,
-            DKK: 6.42,
-            DOP: 63.5,
-            DZD: 130.0,
-            EGP: 47.6,
-            ERN: 15.0,
-            ETB: 149.0,
-            FJD: 2.3,
-            FKP: 0.75,
-            FOK: 6.42,
-            GEL: 2.71,
-            GGP: 0.75,
-            GHS: 10.9,
-            GIP: 0.75,
-            GMD: 73.3,
-            GNF: 8678.0,
-            GTQ: 7.64,
-            GYD: 209.0,
-            HNL: 26.2,
-            HRK: 6.48,
-            HTG: 131.0,
-            HUF: 336.0,
-            IDR: 16622.0,
-            ILS: 3.29,
-            IMP: 0.75,
-            IQD: 1307.0,
-            IRR: 42120.0,
-            ISK: 123.0,
-            JEP: 0.75,
-            JMD: 161.0,
-            JOD: 0.71,
-            KES: 129.0,
-            KGS: 87.3,
-            KHR: 4021.0,
-            KID: 1.35,
-            KMF: 423.0,
-            KYD: 0.83,
-            KZT: 538.0,
-            LAK: 21731.0,
-            LBP: 89500.0,
-            LKR: 303.0,
-            LRD: 183.0,
-            LSL: 17.3,
-            LYD: 5.42,
-            MAD: 9.24,
-            MDL: 17.0,
-            MGA: 4492.0,
-            MKD: 53.0,
-            MMK: 2097.0,
-            MNT: 3592.0,
-            MOP: 8.0,
-            MRU: 40.1,
-            MUR: 45.4,
-            MVR: 15.4,
-            MWK: 1737.0,
-            MYR: 4.22,
-            MZN: 63.6,
-            NAD: 17.3,
-            NGN: 1462.0,
-            NIO: 36.7,
-            NPR: 141.0,
-            OMR: 0.38,
-            PAB: 1.0,
-            PEN: 3.39,
-            PGK: 4.2,
-            PHP: 58.7,
-            PKR: 283.0,
-            PLN: 3.65,
-            PYG: 7075.0,
-            QAR: 3.64,
-            RON: 4.38,
-            RSD: 101.0,
-            RWF: 1453.0,
-            SAR: 3.75,
-            SBD: 8.15,
-            SCR: 14.0,
-            SDG: 572.0,
-            SHP: 0.75,
-            SLE: 23.1,
-            SLL: 23133.0,
-            SOS: 570.0,
-            SRD: 39.8,
-            SSP: 4624.0,
-            STN: 21.1,
-            SYP: 11009.0,
-            SZL: 17.3,
-            THB: 32.7,
-            TJS: 9.22,
-            TMT: 3.5,
-            TND: 2.93,
-            TOP: 2.35,
-            TTD: 6.77,
-            TVD: 1.35,
-            TWD: 30.8,
-            TZS: 2460.0,
-            UAH: 42.0,
-            UGX: 3463.0,
-            UYU: 39.7,
-            UZS: 12060.0,
-            VES: 216.0,
-            VND: 26183.0,
-            VUV: 122.0,
-            WST: 2.77,
-            XAF: 564.0,
-            XCD: 2.7,
-            XCG: 1.79,
-            XDR: 0.73,
-            XOF: 564.0,
-            XPF: 103.0,
-            YER: 238.0,
-            ZMW: 22.4,
-            ZWL: 26.5,
-          },
+          base_code: apiData.base || "USD",
+          conversion_rates: apiData.rates || { USD: 1 },
         };
 
-        // Try to fetch real rates from Polygon.io for USD pairs
-        try {
-          const fetchPromises = commonCurrencies.map(async (currency) => {
-            try {
-              const response = await fetch(
-                `${apiUrl}conversion/USD/${currency}?apiKey=${apiKey}`
-              );
-              if (response.ok) {
-                const polygonData: PolygonData = await response.json();
-                return { currency, rate: polygonData.data.conversion_rate };
-              }
-            } catch (error) {
-              console.log(`Failed to fetch ${currency} rate:`, error);
-            }
-            return null;
-          });
-
-          const results = await Promise.all(fetchPromises);
-          results.forEach((result) => {
-            if (result) {
-              mockData.conversion_rates[result.currency] = result.rate;
-            }
-          });
-        } catch (error) {
-          console.log(
-            "Polygon.io API fetch failed, using fallback rates:",
-            error
-          );
+        // Ensure USD is included in conversion rates
+        if (!transformedData.conversion_rates["USD"]) {
+          transformedData.conversion_rates["USD"] = 1;
         }
 
-        console.log("Using exchange rates:", mockData);
-        setCurrenciesData(mockData);
+        console.log("Successfully fetched exchange rates from CurrencyFreaks API");
+        setCurrenciesData(transformedData);
 
         const storedHistory = await AsyncStorage.getItem("currencyHistory");
         const history = storedHistory ? JSON.parse(storedHistory) : [];
@@ -459,10 +103,10 @@ export default function CurrencyConverter() {
 
         setFromCurrency(initialFromCurrency);
         setToCurrency(initialToCurrency);
-        setCurrencyList(Object.keys(mockData.conversion_rates));
+        setCurrencyList(Object.keys(transformedData.conversion_rates));
         setLoading(false);
       } catch (error) {
-        console.error("API Fetch Error:", error);
+        console.error("CurrencyFreaks API Fetch Error:", error);
         Alert.alert(
           "Error",
           `Failed to fetch exchange rates: ${
