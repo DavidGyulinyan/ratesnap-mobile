@@ -1,59 +1,80 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
-import CurrencyFlag from '@/components/CurrencyFlag';
-import CurrencyConverter from '@/components/CurrencyConverter';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ThemedView } from "@/components/themed-view";
+import { ThemedText } from "@/components/themed-text";
+import CurrencyFlag from "@/components/CurrencyFlag";
+import { detectUserLocation } from "@/components/LocationDetection";
+import CurrencyConverter from "@/components/CurrencyConverter";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
-  'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'SEK', 'NZD', 'MXN',
-  'SGD', 'HKD', 'NOK', 'KRW', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR', 'AED', 'AMD'
+  "AMD",
+  "RUB",
+  "GEL",
+  "EUR",
+  "CAD",
+  "GBP",
+  "JPY",
+  "AUD",
+  "CHF",
+  "CNY",
+  "SEK",
+  "NZD",
+  "MXN",
+  "SGD",
+  "HKD",
+  "NOK",
+  "KRW",
+  "TRY",
+  "INR",
+  "BRL",
+  "ZAR",
+  "AED",
 ];
 
 export default function HomeScreen() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'converter'>('dashboard');
+  const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
+    "dashboard"
+  );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
-  const [multiAmount, setMultiAmount] = useState('100');
-  const [fromCurrency, setFromCurrency] = useState('USD');
-  const [conversions, setConversions] = useState<{[key: string]: number}>({});
+  const [multiAmount, setMultiAmount] = useState("1");
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [conversions, setConversions] = useState<{ [key: string]: number }>({});
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [rateAlerts, setRateAlerts] = useState<any[]>([]);
 
   // Rate alert form state
   const [newAlert, setNewAlert] = useState({
-    fromCurrency: 'USD',
-    toCurrency: 'EUR',
-    targetRate: '',
-    condition: 'below' as 'above' | 'below'
+    fromCurrency: "USD",
+    toCurrency: "EUR",
+    targetRate: "",
+    condition: "below" as "above" | "below",
   });
 
-  // Auto-detect user's location and set default currency
-  const detectUserLocation = async () => {
-    try {
-      const response = await fetch('https://ipapi.co/json/');
-      const data = await response.json();
-      
-      const countryToCurrency: { [key: string]: string } = {
-        'US': 'USD', 'GB': 'GBP', 'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR',
-        'JP': 'JPY', 'CN': 'CNY', 'CA': 'CAD', 'AU': 'AUD', 'CH': 'CHF', 'SE': 'SEK',
-        'NZ': 'NZD', 'SG': 'SGD', 'HK': 'HKD', 'NO': 'NOK', 'KR': 'KRW', 'TR': 'TRY',
-        'RU': 'RUB', 'IN': 'INR', 'BR': 'BRL', 'ZA': 'ZAR', 'AE': 'AED', 'AM': 'AMD'
-      };
-      
-      const detectedCurrency = countryToCurrency[data.country_code] || 'USD';
-      setFromCurrency(detectedCurrency);
-    } catch (error) {
-      console.error('Location detection failed:', error);
-    }
-  };
-
   useEffect(() => {
-    detectUserLocation();
+    // Use imported location detection utility
+    const initApp = async () => {
+      try {
+        const detectedCurrency = await detectUserLocation();
+        if (detectedCurrency) {
+          setFromCurrency(detectedCurrency);
+        }
+      } catch (error) {
+        console.warn("Location detection failed, using default currency:", error);
+      }
+    };
+    
+    initApp();
     loadExchangeRates();
     loadSavedRates();
     loadRateAlerts();
@@ -61,41 +82,41 @@ export default function HomeScreen() {
 
   const loadExchangeRates = async () => {
     try {
-      const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
+      const cachedData = await AsyncStorage.getItem("cachedExchangeRates");
       if (cachedData) {
         const data = JSON.parse(cachedData);
         setCurrenciesData(data);
       }
     } catch (error) {
-      console.error('Error loading cached rates:', error);
+      console.error("Error loading cached rates:", error);
     }
   };
 
   const loadSavedRates = async () => {
     try {
-      const savedRatesData = await AsyncStorage.getItem('savedRates');
+      const savedRatesData = await AsyncStorage.getItem("savedRates");
       if (savedRatesData) {
         setSavedRates(JSON.parse(savedRatesData));
       }
     } catch (error) {
-      console.error('Error loading saved rates:', error);
+      console.error("Error loading saved rates:", error);
     }
   };
 
   const loadRateAlerts = async () => {
     try {
-      const alertsData = await AsyncStorage.getItem('rateAlerts');
+      const alertsData = await AsyncStorage.getItem("rateAlerts");
       if (alertsData) {
         setRateAlerts(JSON.parse(alertsData));
       }
     } catch (error) {
-      console.error('Error loading rate alerts:', error);
+      console.error("Error loading rate alerts:", error);
     }
   };
 
   const createRateAlert = async () => {
     if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
-      alert('Please enter a valid target rate');
+      alert("Please enter a valid target rate");
       return;
     }
 
@@ -106,21 +127,21 @@ export default function HomeScreen() {
       targetRate: parseFloat(newAlert.targetRate),
       condition: newAlert.condition,
       isActive: true,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     const updatedAlerts = [newRateAlert, ...rateAlerts];
     setRateAlerts(updatedAlerts);
-    await AsyncStorage.setItem('rateAlerts', JSON.stringify(updatedAlerts));
-    
+    await AsyncStorage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
+
     setNewAlert({
-      fromCurrency: 'USD',
-      toCurrency: 'EUR',
-      targetRate: '',
-      condition: 'below'
+      fromCurrency: "USD",
+      toCurrency: "EUR",
+      targetRate: "",
+      condition: "below",
     });
-    
-    alert('Rate alert created successfully!');
+
+    alert("Rate alert created successfully!");
   };
 
   const calculateMultiConversions = useCallback(() => {
@@ -136,9 +157,9 @@ export default function HomeScreen() {
     }
 
     const inputAmount = parseFloat(multiAmount);
-    const conversionResults: {[key: string]: number} = {};
+    const conversionResults: { [key: string]: number } = {};
 
-    POPULAR_CURRENCIES.forEach(currency => {
+    POPULAR_CURRENCIES.forEach((currency) => {
       if (currenciesData.conversion_rates?.[currency]) {
         const toRate = currenciesData.conversion_rates[currency];
         const convertedAmount = (inputAmount / fromRate) * toRate;
@@ -147,17 +168,17 @@ export default function HomeScreen() {
     });
 
     setConversions(conversionResults);
-  }, [currenciesData, multiAmount, fromCurrency]); // Removed POPULAR_CURRENCIES from deps
+  }, [currenciesData, multiAmount, fromCurrency]);
 
   useEffect(() => {
     calculateMultiConversions();
   }, [calculateMultiConversions]);
 
   const renderMainContent = () => {
-    if (currentView === 'converter') {
+    if (currentView === "converter") {
       return (
         <CurrencyConverter
-          onNavigateToDashboard={() => setCurrentView('dashboard')}
+          onNavigateToDashboard={() => setCurrentView("dashboard")}
         />
       );
     }
@@ -173,10 +194,10 @@ export default function HomeScreen() {
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.converterButton}
-              onPress={() => setCurrentView('converter')}
+              onPress={() => setCurrentView("converter")}
             >
               <ThemedText style={styles.converterButtonText}>
-                💱 Open Converter
+                💱 Converter
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -193,45 +214,68 @@ export default function HomeScreen() {
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickActionCard}
-              onPress={() => setCurrentView('converter')}
+              onPress={() => setCurrentView("converter")}
             >
               <ThemedText style={styles.quickActionIcon}>💱</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>Currency Converter</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Currency Converter
+              </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 Professional converter with all features
               </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, showMultiCurrency && styles.quickActionCardActive]}
+              style={[
+                styles.quickActionCard,
+                showMultiCurrency && styles.quickActionCardActive,
+              ]}
               onPress={() => setShowMultiCurrency(!showMultiCurrency)}
             >
               <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>Multi-Currency</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Multi-Currency
+              </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {showMultiCurrency ? 'Hide conversion tool' : 'Quick conversions to 20 currencies'}
+                {showMultiCurrency
+                  ? "Hide conversion tool"
+                  : "Quick conversions to 20 currencies"}
               </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, showRateAlerts && styles.quickActionCardActive]}
+              style={[
+                styles.quickActionCard,
+                showRateAlerts && styles.quickActionCardActive,
+              ]}
               onPress={() => setShowRateAlerts(!showRateAlerts)}
             >
               <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>Rate Alerts</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Rate Alerts
+              </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {rateAlerts.length} active alerts - {showRateAlerts ? 'Hide alerts' : 'Set target rates'}
+                {rateAlerts.length} active alerts -{" "}
+                {showRateAlerts ? "Hide alerts" : "Set target rates"}
               </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.quickActionCard, showSavedRates && styles.quickActionCardActive]}
+              style={[
+                styles.quickActionCard,
+                showSavedRates && styles.quickActionCardActive,
+              ]}
               onPress={() => setShowSavedRates(!showSavedRates)}
             >
               <ThemedText style={styles.quickActionIcon}>📋</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>Saved Rates</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Saved Rates
+              </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {savedRates.length} saved rates - {showSavedRates ? 'Hide saved rates' : 'Quick access to favorites'}
+                {savedRates.length} saved rates -{" "}
+                {showSavedRates
+                  ? "Hide saved rates"
+                  : "Quick access to favorites"}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -241,7 +285,9 @@ export default function HomeScreen() {
             <View style={styles.multiCurrencySection}>
               <View style={styles.multiCurrencyCard}>
                 <View style={styles.multiCurrencyHeader}>
-                  <ThemedText style={styles.multiCurrencyTitle}>📊 Multi-Currency Converter</ThemedText>
+                  <ThemedText style={styles.multiCurrencyTitle}>
+                    📊 Multi-Currency Converter
+                  </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setShowMultiCurrency(false)}
@@ -267,7 +313,9 @@ export default function HomeScreen() {
                     <ThemedText style={styles.inputLabel}>From:</ThemedText>
                     <TouchableOpacity style={styles.currencyInput}>
                       <CurrencyFlag currency={fromCurrency} size={16} />
-                      <ThemedText style={styles.currencyInputText}>{fromCurrency}</ThemedText>
+                      <ThemedText style={styles.currencyInputText}>
+                        {fromCurrency}
+                      </ThemedText>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -278,21 +326,27 @@ export default function HomeScreen() {
                     {multiAmount} {fromCurrency} converts to:
                   </ThemedText>
                   <View style={styles.conversionsGrid}>
-                    {Object.entries(conversions).slice(0, 8).map(([currency, amount]) => (
-                      <View key={currency} style={styles.conversionItem}>
-                        <CurrencyFlag currency={currency} size={16} />
-                        <View style={styles.conversionInfo}>
-                          <ThemedText style={styles.conversionCurrency}>{currency}</ThemedText>
-                          <ThemedText style={styles.conversionAmount}>{amount.toFixed(2)}</ThemedText>
+                    {Object.entries(conversions)
+                      .slice(0, 8)
+                      .map(([currency, amount]) => (
+                        <View key={currency} style={styles.conversionItem}>
+                          <CurrencyFlag currency={currency} size={16} />
+                          <View style={styles.conversionInfo}>
+                            <ThemedText style={styles.conversionCurrency}>
+                              {currency}
+                            </ThemedText>
+                            <ThemedText style={styles.conversionAmount}>
+                              {amount.toFixed(2)}
+                            </ThemedText>
+                          </View>
                         </View>
-                      </View>
-                    ))}
+                      ))}
                   </View>
-                  
+
                   {Object.keys(conversions).length > 8 && (
                     <TouchableOpacity
                       style={styles.showMoreButton}
-                      onPress={() => setCurrentView('converter')}
+                      onPress={() => setCurrentView("converter")}
                     >
                       <ThemedText style={styles.showMoreButtonText}>
                         View all {Object.keys(conversions).length} conversions →
@@ -309,7 +363,9 @@ export default function HomeScreen() {
             <View style={styles.rateAlertsSection}>
               <View style={styles.rateAlertsCard}>
                 <View style={styles.rateAlertsHeader}>
-                  <ThemedText style={styles.rateAlertsTitle}>🔔 Rate Alerts</ThemedText>
+                  <ThemedText style={styles.rateAlertsTitle}>
+                    🔔 Rate Alerts
+                  </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setShowRateAlerts(false)}
@@ -320,26 +376,38 @@ export default function HomeScreen() {
 
                 {/* Existing Alerts */}
                 <View style={styles.existingAlerts}>
-                  <ThemedText style={styles.sectionSubtitle}>Your Active Alerts:</ThemedText>
+                  <ThemedText style={styles.sectionSubtitle}>
+                    Your Active Alerts:
+                  </ThemedText>
                   {rateAlerts.length === 0 ? (
                     <View style={styles.emptyState}>
-                      <ThemedText style={styles.emptyStateText}>No rate alerts set yet</ThemedText>
-                      <ThemedText style={styles.emptyStateSubtext}>Create your first alert below</ThemedText>
+                      <ThemedText style={styles.emptyStateText}>
+                        No rate alerts set yet
+                      </ThemedText>
+                      <ThemedText style={styles.emptyStateSubtext}>
+                        Create your first alert below
+                      </ThemedText>
                     </View>
                   ) : (
                     <View style={styles.alertsList}>
                       {rateAlerts.slice(0, 3).map((alert, index) => (
                         <View key={index} style={styles.alertItem}>
-                          <CurrencyFlag currency={alert.fromCurrency} size={16} />
+                          <CurrencyFlag
+                            currency={alert.fromCurrency}
+                            size={16}
+                          />
                           <ThemedText style={styles.alertArrow}>→</ThemedText>
                           <CurrencyFlag currency={alert.toCurrency} size={16} />
                           <ThemedText style={styles.alertText}>
-                            {alert.condition === 'below' ? '↓' : '↑'} {alert.targetRate}
+                            {alert.condition === "below" ? "↓" : "↑"}{" "}
+                            {alert.targetRate}
                           </ThemedText>
                         </View>
                       ))}
                       {rateAlerts.length > 3 && (
-                        <TouchableOpacity onPress={() => setCurrentView('converter')}>
+                        <TouchableOpacity
+                          onPress={() => setCurrentView("converter")}
+                        >
                           <ThemedText style={styles.showMoreAlertsText}>
                             View {rateAlerts.length - 3} more alerts →
                           </ThemedText>
@@ -351,20 +419,32 @@ export default function HomeScreen() {
 
                 {/* Create New Alert */}
                 <View style={styles.createAlertSection}>
-                  <ThemedText style={styles.sectionSubtitle}>Create New Alert:</ThemedText>
+                  <ThemedText style={styles.sectionSubtitle}>
+                    Create New Alert:
+                  </ThemedText>
                   <View style={styles.alertForm}>
                     <View style={styles.alertFormRow}>
                       <TextInput
                         style={[styles.alertInput, { flex: 1 }]}
                         value={newAlert.fromCurrency}
-                        onChangeText={(text) => setNewAlert({...newAlert, fromCurrency: text.toUpperCase()})}
+                        onChangeText={(text) =>
+                          setNewAlert({
+                            ...newAlert,
+                            fromCurrency: text.toUpperCase(),
+                          })
+                        }
                         placeholder="USD"
                         maxLength={3}
                       />
                       <TextInput
                         style={[styles.alertInput, { flex: 1 }]}
                         value={newAlert.toCurrency}
-                        onChangeText={(text) => setNewAlert({...newAlert, toCurrency: text.toUpperCase()})}
+                        onChangeText={(text) =>
+                          setNewAlert({
+                            ...newAlert,
+                            toCurrency: text.toUpperCase(),
+                          })
+                        }
                         placeholder="EUR"
                         maxLength={3}
                       />
@@ -373,21 +453,38 @@ export default function HomeScreen() {
                       <TextInput
                         style={[styles.alertInput, { flex: 1 }]}
                         value={newAlert.targetRate}
-                        onChangeText={(text) => setNewAlert({...newAlert, targetRate: text})}
+                        onChangeText={(text) =>
+                          setNewAlert({ ...newAlert, targetRate: text })
+                        }
                         placeholder="Target rate"
                         keyboardType="numeric"
                       />
                       <TouchableOpacity
                         style={styles.conditionButton}
-                        onPress={() => setNewAlert({...newAlert, condition: newAlert.condition === 'below' ? 'above' : 'below'})}
+                        onPress={() =>
+                          setNewAlert({
+                            ...newAlert,
+                            condition:
+                              newAlert.condition === "below"
+                                ? "above"
+                                : "below",
+                          })
+                        }
                       >
                         <ThemedText style={styles.conditionButtonText}>
-                          {newAlert.condition === 'below' ? '↓ Below' : '↑ Above'}
+                          {newAlert.condition === "below"
+                            ? "↓ Below"
+                            : "↑ Above"}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.createAlertButton} onPress={createRateAlert}>
-                      <ThemedText style={styles.createAlertButtonText}>Create Alert</ThemedText>
+                    <TouchableOpacity
+                      style={styles.createAlertButton}
+                      onPress={createRateAlert}
+                    >
+                      <ThemedText style={styles.createAlertButtonText}>
+                        Create Alert
+                      </ThemedText>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -400,7 +497,9 @@ export default function HomeScreen() {
             <View style={styles.savedRatesSection}>
               <View style={styles.savedRatesCard}>
                 <View style={styles.savedRatesHeader}>
-                  <ThemedText style={styles.savedRatesTitle}>📋 Saved Rates</ThemedText>
+                  <ThemedText style={styles.savedRatesTitle}>
+                    📋 Saved Rates
+                  </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setShowSavedRates(false)}
@@ -411,19 +510,23 @@ export default function HomeScreen() {
 
                 {savedRates.length === 0 ? (
                   <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>No saved rates yet</ThemedText>
+                    <ThemedText style={styles.emptyStateText}>
+                      No saved rates yet
+                    </ThemedText>
                     <ThemedText style={styles.emptyStateSubtext}>
                       Convert currencies in the main converter to save rates
                     </ThemedText>
                   </View>
                 ) : (
                   <View style={styles.savedRatesList}>
-                    <ThemedText style={styles.sectionSubtitle}>Your Saved Rates:</ThemedText>
+                    <ThemedText style={styles.sectionSubtitle}>
+                      Your Saved Rates:
+                    </ThemedText>
                     {savedRates.slice(0, 4).map((rate, index) => (
                       <TouchableOpacity
                         key={index}
                         style={styles.savedRateItem}
-                        onPress={() => setCurrentView('converter')}
+                        onPress={() => setCurrentView("converter")}
                       >
                         <CurrencyFlag currency={rate.fromCurrency} size={16} />
                         <ThemedText style={styles.savedRateArrow}>→</ThemedText>
@@ -432,12 +535,16 @@ export default function HomeScreen() {
                           <ThemedText style={styles.savedRateTitle}>
                             {rate.fromCurrency} → {rate.toCurrency}
                           </ThemedText>
-                          <ThemedText style={styles.savedRateValue}>{rate.rate.toFixed(4)}</ThemedText>
+                          <ThemedText style={styles.savedRateValue}>
+                            {rate.rate.toFixed(4)}
+                          </ThemedText>
                         </View>
                       </TouchableOpacity>
                     ))}
                     {savedRates.length > 4 && (
-                      <TouchableOpacity onPress={() => setCurrentView('converter')}>
+                      <TouchableOpacity
+                        onPress={() => setCurrentView("converter")}
+                      >
                         <ThemedText style={styles.showMoreSavedRatesText}>
                           View all {savedRates.length} saved rates →
                         </ThemedText>
@@ -455,7 +562,9 @@ export default function HomeScreen() {
               <ThemedText style={styles.statusTitle}>📱 App Status</ThemedText>
               <View style={styles.statusRow}>
                 <View style={styles.statusIndicator} />
-                <ThemedText style={styles.statusText}>Online - Real-time rates</ThemedText>
+                <ThemedText style={styles.statusText}>
+                  Online - Real-time rates
+                </ThemedText>
               </View>
               <ThemedText style={styles.lastUpdate}>
                 Last updated: {new Date().toLocaleTimeString()}
@@ -465,52 +574,64 @@ export default function HomeScreen() {
 
           {/* Features Preview */}
           <View style={styles.featuresSection}>
-            <ThemedText style={styles.sectionTitle}>✨ Dashboard Features</ThemedText>
+            <ThemedText style={styles.sectionTitle}>
+              ✨ Dashboard Features
+            </ThemedText>
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🎛️</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Widget System</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Widget System
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Customize your dashboard with different widgets
                   </ThemedText>
                 </View>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Multi-Currency Converter</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Multi-Currency Converter
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Convert to multiple currencies instantly with live rates
                   </ThemedText>
                 </View>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Calculator Integration</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Calculator Integration
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Built-in calculator for amount calculations
                   </ThemedText>
                 </View>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Offline Mode</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Offline Mode
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Works without internet using cached rates
                   </ThemedText>
                 </View>
               </View>
-              
+
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Auto-Detect Location</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Auto-Detect Location
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Automatically detects your country and sets default currency
                   </ThemedText>
@@ -520,7 +641,9 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Smart Caching</ThemedText>
+                  <ThemedText style={styles.featureTitle}>
+                    Smart Caching
+                  </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Intelligent rate caching with offline fallbacks
                   </ThemedText>
@@ -552,36 +675,52 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   dashboardContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   dashboardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#ffffff',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: "#e2e8f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   dashboardTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1f2937",
+    flex: 1,
+    marginRight: 12,
   },
   headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexShrink: 0,
+    flexDirection: "row",
+    alignItems: "center",
   },
   converterButton: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: "#2563eb",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+    maxWidth: 140,
   },
   converterButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
+    color: "white",
+    fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
   },
   dashboardScrollView: {
     flex: 1,
@@ -591,99 +730,108 @@ const styles = StyleSheet.create({
     paddingBottom: 40, // Extra padding at bottom for better scrolling
   },
   quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
     marginBottom: 24,
   },
   quickActionCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    padding: 16,
+    width: "48%",
+    backgroundColor: "#ffffff",
+    padding: 24,
+    paddingTop: 32,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    alignItems: 'center',
-    shadowColor: '#000',
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 160,
   },
   quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: 36,
+    height: 56,
+    marginBottom: 20,
+    lineHeight: 56,
+    textAlign: "center",
   },
   quickActionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#1f2937",
+    marginBottom: 8,
+    textAlign: "center",
+    lineHeight: 20,
   },
   quickActionDescription: {
     fontSize: 12,
-    color: '#6b7280',
-    textAlign: 'center',
+    color: "#6b7280",
+    textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: 4,
   },
   statusSection: {
     marginBottom: 24,
   },
   statusCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
   },
   statusTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 12,
   },
   statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   statusIndicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10b981',
+    backgroundColor: "#10b981",
     marginRight: 8,
   },
   statusText: {
     fontSize: 14,
-    color: '#10b981',
-    fontWeight: '500',
+    color: "#10b981",
+    fontWeight: "500",
   },
   lastUpdate: {
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   featuresSection: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
     marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 16,
   },
   featuresList: {
     gap: 12,
   },
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   featureIcon: {
     fontSize: 20,
@@ -695,13 +843,13 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 4,
   },
   featureDescription: {
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
     lineHeight: 16,
   },
   bottomSpacer: {
@@ -712,36 +860,36 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   multiCurrencyCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: "#e2e8f0",
     padding: 16,
   },
   multiCurrencyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   multiCurrencyTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   closeButton: {
     padding: 4,
-    backgroundColor: '#fee2e2',
+    backgroundColor: "#fee2e2",
     borderRadius: 16,
     width: 28,
     height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButtonText: {
     fontSize: 16,
-    color: '#dc2626',
-    fontWeight: 'bold',
+    color: "#dc2626",
+    fontWeight: "bold",
   },
   inputSection: {
     marginBottom: 16,
@@ -754,53 +902,53 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
     marginBottom: 4,
   },
   amountInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
   },
   currencyInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
   },
   currencyInputText: {
     marginLeft: 8,
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   resultsSection: {
     marginTop: 16,
   },
   resultsTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 12,
   },
   conversionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   conversionItem: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: "48%",
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     borderRadius: 6,
     marginBottom: 8,
   },
@@ -810,51 +958,51 @@ const styles = StyleSheet.create({
   },
   conversionCurrency: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
   },
   conversionAmount: {
     fontSize: 11,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   showMoreButton: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: "#dbeafe",
     padding: 10,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 12,
   },
   showMoreButtonText: {
-    color: '#2563eb',
+    color: "#2563eb",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quickActionCardActive: {
-    borderColor: '#2563eb',
+    borderColor: "#2563eb",
     borderWidth: 2,
-    backgroundColor: '#eff6ff',
+    backgroundColor: "#eff6ff",
   },
   // Rate Alerts Styles
   rateAlertsSection: {
     marginBottom: 24,
   },
   rateAlertsCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#8b5cf6',
+    borderColor: "#8b5cf6",
     padding: 16,
   },
   rateAlertsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   rateAlertsTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   existingAlerts: {
     marginBottom: 20,
@@ -863,22 +1011,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   alertItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     borderRadius: 6,
   },
   alertArrow: {
     marginHorizontal: 8,
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   alertText: {
     marginLeft: 8,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#8b5cf6',
+    fontWeight: "600",
+    color: "#8b5cf6",
   },
   createAlertSection: {
     marginTop: 16,
@@ -887,77 +1035,77 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   alertFormRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   alertInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: "#d1d5db",
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
   },
   conditionButton: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: "#8b5cf6",
     padding: 10,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 80,
   },
   conditionButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   createAlertButton: {
-    backgroundColor: '#059669',
+    backgroundColor: "#059669",
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   createAlertButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   // Saved Rates Styles
   savedRatesSection: {
     marginBottom: 24,
   },
   savedRatesCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#f59e0b',
+    borderColor: "#f59e0b",
     padding: 16,
   },
   savedRatesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   savedRatesTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   savedRatesList: {
     gap: 8,
   },
   savedRateItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 8,
-    backgroundColor: '#fefbf3',
+    backgroundColor: "#fefbf3",
     borderRadius: 6,
   },
   savedRateArrow: {
     marginHorizontal: 8,
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   savedRateInfo: {
     marginLeft: 8,
@@ -965,49 +1113,49 @@ const styles = StyleSheet.create({
   },
   savedRateTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   savedRateValue: {
     fontSize: 12,
-    color: '#f59e0b',
-    fontWeight: '500',
+    color: "#f59e0b",
+    fontWeight: "500",
   },
   showMoreAlertsText: {
-    color: '#8b5cf6',
+    color: "#8b5cf6",
     fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     marginTop: 8,
   },
   showMoreSavedRatesText: {
-    color: '#f59e0b',
+    color: "#f59e0b",
     fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     marginTop: 8,
   },
   // Additional styles
   sectionSubtitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: "600",
+    color: "#374151",
     marginBottom: 12,
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 20,
   },
   emptyStateText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     marginBottom: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyStateSubtext: {
     fontSize: 12,
-    color: '#9ca3af',
-    textAlign: 'center',
+    color: "#9ca3af",
+    textAlign: "center",
   },
 });

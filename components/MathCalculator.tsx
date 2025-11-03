@@ -109,11 +109,25 @@ export default function MathCalculator({
     }
   };
 
-  const renderButton = (text: string, onPress: () => void, style: any = {}) => (
-    <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-      <Text style={styles.buttonText}>{text}</Text>
-    </TouchableOpacity>
-  );
+  const renderButton = (text: string, onPress: () => void, style: any = {}) => {
+    let buttonTextStyle = styles.buttonText;
+    
+    if (style === styles.operationButton) {
+      buttonTextStyle = styles.operationButtonText;
+    } else if (style === styles.clearButton) {
+      buttonTextStyle = styles.clearButtonText;
+    } else if (style === styles.deleteButton) {
+      buttonTextStyle = styles.deleteButtonText;
+    } else if (style === styles.equalsButton) {
+      buttonTextStyle = styles.equalsButtonText;
+    }
+    
+    return (
+      <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
+        <Text style={buttonTextStyle}>{text}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -173,6 +187,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
     paddingHorizontal: 20,
+    backgroundColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   },
   header: {
     flexDirection: "row",
@@ -182,60 +197,91 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     fontSize: 16,
-    color: "#2563eb",
+    color: "#ffffff",
+    fontWeight: "600",
   },
   title: {
     fontSize: 24,
+    color: "#ffffff",
+    fontWeight: "bold",
   },
   display: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    minHeight: 80,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 20,
+    padding: 25,
+    marginBottom: 25,
+    borderWidth: 0,
+    minHeight: 100,
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
   },
   displayText: {
-    fontSize: 32,
-    fontWeight: "bold",
+    fontSize: 36,
+    fontWeight: "300",
     textAlign: "right",
-    color: "#1f2937",
+    color: "#1a1a1a",
   },
   buttonRow: {
     flexDirection: "row",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   button: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    padding: 15,
-    margin: 2,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 16,
+    padding: 20,
+    margin: 3,
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#374151",
+    fontSize: 22,
+    fontWeight: "500",
+    color: "#2d3748",
   },
   zeroButton: {
     flex: 2,
   },
   operationButton: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "rgba(255, 193, 7, 0.9)",
+  },
+  operationButtonText: {
+    fontSize: 22,
+    color: "#1a1a1a",
+    fontWeight: "500",
   },
   clearButton: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "rgba(239, 68, 68, 0.9)",
+  },
+  clearButtonText: {
+    fontSize: 22,
+    color: "#ffffff",
+    fontWeight: "500",
   },
   deleteButton: {
-    backgroundColor: "#fef3c7",
+    backgroundColor: "rgba(251, 191, 36, 0.9)",
+  },
+  deleteButtonText: {
+    fontSize: 22,
+    color: "#1a1a1a",
+    fontWeight: "500",
   },
   equalsButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "rgba(16, 185, 129, 0.9)",
+  },
+  equalsButtonText: {
+    fontSize: 22,
+    color: "#ffffff",
+    fontWeight: "500",
   },
 });

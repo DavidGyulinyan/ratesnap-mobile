@@ -45,7 +45,7 @@ interface Data {
 }
 
 export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyConverterProps) {
-  const [amount, setAmount] = useState<string>("100");
+  const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
   const [fromCurrency, setFromCurrency] = useState<string>("");
@@ -366,14 +366,50 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   }, [fromCurrency, toCurrency]);
 
+  // Helper function to calculate exchange rate
+  const getExchangeRate = useCallback((): number => {
+    if (!currenciesData || !fromCurrency || !toCurrency) {
+      return 0;
+    }
+    
+    const fromRate = currenciesData.conversion_rates[fromCurrency];
+    const toRate = currenciesData.conversion_rates[toCurrency];
+    
+    if (!fromRate || !toRate || isNaN(fromRate) || isNaN(toRate)) {
+      return 0;
+    }
+    
+    return toRate / fromRate;
+  }, [currenciesData, fromCurrency, toCurrency]);
+
   const handleConvert = useCallback((): void => {
-    if (currenciesData && amount) {
+    if (currenciesData && amount && fromCurrency && toCurrency) {
       const fromRate = currenciesData.conversion_rates[fromCurrency];
       const toRate = currenciesData.conversion_rates[toCurrency];
-      const convertedValue = (parseFloat(amount) / fromRate) * toRate;
-      setConvertedAmount(convertedValue.toFixed(4));
+      
+      if (fromRate && toRate && !isNaN(fromRate) && !isNaN(toRate)) {
+        const inputAmount = parseFloat(amount);
+        if (!isNaN(inputAmount) && inputAmount > 0) {
+          const convertedValue = (inputAmount / fromRate) * toRate;
+          setConvertedAmount(convertedValue.toFixed(4));
+          console.log(`💱 Conversion: ${amount} ${fromCurrency} → ${convertedValue.toFixed(4)} ${toCurrency}`);
+          console.log(`📊 Rates: fromRate=${fromRate}, toRate=${toRate}, rate=${toRate/fromRate}`);
+        } else {
+          setConvertedAmount('');
+        }
+      } else {
+        setConvertedAmount('');
+        console.log('❌ Missing or invalid rates:', { fromRate, toRate, fromCurrency, toCurrency });
+      }
+    } else {
+      setConvertedAmount('');
     }
   }, [currenciesData, amount, fromCurrency, toCurrency]);
+
+  // Critical: Call handleConvert whenever dependencies change
+  useEffect(() => {
+    handleConvert();
+  }, [handleConvert]);
 
   // Enhanced Multi-Currency calculation
   const calculateMultiCurrencyConversions = useCallback(() => {
@@ -506,9 +542,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           
           <View style={styles.convertedAmountBox}>
             <ThemedText style={styles.convertedAmountText}>
-              {amount && parseFloat(amount) > 0
+              {amount && parseFloat(amount) > 0 && convertedAmount
                 ? `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`
-                : `Converted Amount: 0.00 ${toCurrency}`}
+                : fromCurrency && toCurrency && currenciesData
+                  ? `Exchange Rate: 1 ${fromCurrency} = ${getExchangeRate().toFixed(4)} ${toCurrency}`
+                  : `Select currencies to see conversion`}
             </ThemedText>
           </View>
 
@@ -542,7 +580,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
-              <ThemedText style={styles.swapButtonText}>⇄ Swap</ThemedText>
+              <ThemedText style={styles.swapButtonText}>⇄</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -905,10 +943,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   currencySelectors: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "stretch",
     justifyContent: "space-between",
     marginBottom: 20,
+    gap: 12,
   },
   currencyButton: {
     flex: 1,
@@ -926,6 +965,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    paddingHorizontal: 4,
   },
   currencyButtonText: {
     color: "#1f2937",
@@ -933,7 +974,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     flexWrap: "nowrap",
-    marginLeft: 8,
+    marginLeft: 6,
   },
   swapButton: {
     padding: 15,
@@ -946,9 +987,16 @@ const styles = StyleSheet.create({
     borderColor: "#1d4ed8",
   },
   swapButtonText: {
+ 
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
+  },
+   swapArrows: {
+    color: "#2563eb",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   saveButton: {
     backgroundColor: "#f59e0b",
