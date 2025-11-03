@@ -61,17 +61,32 @@ export default function CurrencyConverter() {
       try {
         // Fetch all currency rates from CurrencyFreaks API
         const response = await fetch(
-          `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
+          `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'RateSnap-Mobile/1.0.0',
+            },
+          }
         );
         
+        console.log('API Response Status:', response.status);
+        console.log('API Response Headers:', response.headers);
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
         }
         
         const apiData = await response.json();
+        console.log('API Data Keys:', Object.keys(apiData));
         
         // Check if the API response is successful by checking for rates data
         if (!apiData.rates || !apiData.base) {
+          console.error('Invalid API response structure:', apiData);
           throw new Error("Invalid API response structure");
         }
         
@@ -107,9 +122,12 @@ export default function CurrencyConverter() {
         setLoading(false);
       } catch (error) {
         console.error("CurrencyFreaks API Fetch Error:", error);
+        console.error("Error Type:", typeof error);
+        console.error("Error Stack:", error instanceof Error ? error.stack : 'No stack trace');
+        
         Alert.alert(
-          "Error",
-          `Failed to fetch exchange rates: ${
+          "Network Error",
+          `Failed to fetch exchange rates from CurrencyFreaks API. Please check your internet connection.\n\nError: ${
             error instanceof Error ? error.message : "Unknown error"
           }`
         );
