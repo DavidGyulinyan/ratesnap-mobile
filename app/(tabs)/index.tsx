@@ -15,6 +15,7 @@ import { detectUserLocation } from "@/components/LocationDetection";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import SavedRates from "@/components/SavedRates";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -556,93 +557,20 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Inline Saved Rates */}
-          {showSavedRates && (
-            <View style={styles.savedRatesSection}>
-              <View style={styles.savedRatesCard}>
-                <View style={styles.savedRatesHeader}>
-                  <ThemedText style={styles.savedRatesTitle}>
-                    📋 Saved Rates
-                  </ThemedText>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowSavedRates(false)}
-                  >
-                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
-                  </TouchableOpacity>
-                </View>
-
-                {savedRates.length === 0 ? (
-                  <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>
-                      No saved rates yet
-                    </ThemedText>
-                    <ThemedText style={styles.emptyStateSubtext}>
-                      Convert currencies in the main converter to save rates
-                    </ThemedText>
-                  </View>
-                ) : (
-                  <View style={styles.savedRatesList}>
-                    <ThemedText style={styles.sectionSubtitle}>
-                      Your Saved Rates:
-                    </ThemedText>
-                    {savedRates.slice(0, 4).map((rate, index) => (
-                      <View key={index} style={styles.savedRateItem}>
-                        <TouchableOpacity
-                          style={styles.savedRateContent}
-                          onPress={() => setCurrentView("converter")}
-                        >
-                          <CurrencyFlag
-                            currency={rate.fromCurrency}
-                            size={16}
-                          />
-                          <ThemedText style={styles.savedRateArrow}>
-                            →
-                          </ThemedText>
-                          <CurrencyFlag currency={rate.toCurrency} size={16} />
-                          <View style={styles.savedRateInfo}>
-                            <ThemedText style={styles.savedRateTitle}>
-                              {rate.fromCurrency} → {rate.toCurrency}
-                            </ThemedText>
-                            <ThemedText style={styles.savedRateValue}>
-                              {rate.rate.toFixed(4)}
-                            </ThemedText>
-                          </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.savedRateDeleteButton}
-                          onPress={() => deleteSavedRate(index)}
-                        >
-                          <ThemedText style={styles.savedRateDeleteText}>
-                            🗑️
-                          </ThemedText>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                    {savedRates.length > 4 && (
-                      <TouchableOpacity
-                        onPress={() => setCurrentView("converter")}
-                      >
-                        <ThemedText style={styles.showMoreSavedRatesText}>
-                          View all {savedRates.length} saved rates →
-                        </ThemedText>
-                      </TouchableOpacity>
-                    )}
-                    {savedRates.length > 1 && (
-                      <TouchableOpacity
-                        style={styles.deleteAllSavedRatesButton}
-                        onPress={deleteAllSavedRates}
-                      >
-                        <ThemedText style={styles.deleteAllSavedRatesText}>
-                          🗑️ Delete All ({savedRates.length})
-                        </ThemedText>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
+          {/* Inline Saved Rates - Using Shared Component */}
+          <SavedRates
+            savedRates={savedRates}
+            showSavedRates={showSavedRates}
+            onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
+            onSelectRate={() => setCurrentView("converter")}
+            onDeleteRate={(id) => deleteSavedRate(Number(id))}
+            onDeleteAll={deleteAllSavedRates}
+            showMoreEnabled={true}
+            onShowMore={() => setCurrentView("converter")}
+            maxVisibleItems={4}
+            title="📋 Saved Rates"
+            containerStyle={{ marginBottom: 24 }}
+          />
 
           {/* Features Preview */}
           <View style={styles.featuresSection}>
@@ -1108,66 +1036,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  // Saved Rates Styles
-  savedRatesSection: {
-    marginBottom: 24,
-  },
-  savedRatesCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#f59e0b",
-    padding: 16,
-  },
-  savedRatesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  savedRatesTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  savedRatesList: {
-    gap: 8,
-  },
-  savedRateItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    backgroundColor: "#fefbf3",
-    borderRadius: 6,
-  },
-  savedRateArrow: {
-    marginHorizontal: 8,
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  savedRateInfo: {
-    marginLeft: 8,
-    flex: 1,
-  },
-  savedRateTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  savedRateValue: {
-    fontSize: 12,
-    color: "#f59e0b",
-    fontWeight: "500",
-  },
   showMoreAlertsText: {
     color: "#8b5cf6",
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: 8,
-  },
-  showMoreSavedRatesText: {
-    color: "#f59e0b",
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
@@ -1219,33 +1089,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   deleteAllInlineText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  // Saved Rates specific styles
-  savedRateContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  savedRateDeleteButton: {
-    padding: 8,
-    backgroundColor: "#fee2e2",
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  savedRateDeleteText: {
-    fontSize: 16,
-  },
-  deleteAllSavedRatesButton: {
-    backgroundColor: "#dc2626",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  deleteAllSavedRatesText: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
