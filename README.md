@@ -14,6 +14,9 @@ A modern, user-friendly mobile currency converter app built with React Native an
 - **Cross-Platform** - Works on iOS, Android, and Web
 - **Offline Ready** - Local storage for saved rates and history
 - **Modern UI** - Clean, responsive design with smooth animations
+- **Location Detection** - Automatically detect user's home currency
+- **Math Calculator** - Built-in calculator for complex conversions
+- **Themed Interface** - Dark/light theme support
 
 ## 🚀 Getting Started
 
@@ -42,18 +45,9 @@ A modern, user-friendly mobile currency converter app built with React Native an
    ```env
    EXPO_PUBLIC_API_URL=https://v6.exchangerate-api.com/v6/
    EXPO_PUBLIC_API_KEY=your_api_key_here
-
-   # Feature Flags
-   EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=false
-
-   # Supabase Configuration (for dashboard persistence)
-   EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
    Get your free API key from [ExchangeRate-API](https://www.exchangerate-api.com/)
-   
-   **For dashboard persistence**, see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) for detailed instructions.
 
 4. **Start the development server**
    ```bash
@@ -84,13 +78,23 @@ A modern, user-friendly mobile currency converter app built with React Native an
 - Your conversion history is automatically saved locally
 - Recently used currencies appear first in the selection lists
 
+### Location Detection
+- The app automatically detects your location and sets your home currency
+- You can manually change the home currency in settings
+- Currency flags help you quickly identify currencies
+
+### Theme Support
+- Toggle between dark and light themes
+- Theme preference is saved locally
+- Smooth transitions between theme changes
+
 ## 🏗️ Project Structure
 
 ```
 ratesnap-mobile/
 ├── app/                    # App screens (file-based routing)
 │   ├── _layout.tsx        # Root layout
-│   ├── dashboard.tsx      # Custom dashboard (behind feature flag)
+│   ├── modal.tsx          # Modal screens
 │   └── (tabs)/            # Tab navigation
 │       ├── _layout.tsx    # Tab layout
 │       ├── index.tsx      # Main converter screen
@@ -98,123 +102,39 @@ ratesnap-mobile/
 ├── components/            # Reusable components
 │   ├── CurrencyConverter.tsx  # Main converter component
 │   ├── CurrencyPicker.tsx     # Currency selection modal
-│   ├── DashboardShell.tsx     # Dashboard shell component
-│   ├── WidgetContainer.tsx    # Individual widget wrapper
-│   ├── DashboardGrid.tsx      # Grid system for widgets
+│   ├── CurrencyFlag.tsx       # Currency flag display
+│   ├── LocationDetection.tsx  # Location-based currency detection
+│   ├── MathCalculator.tsx     # Built-in calculator
+│   ├── ThemeToggle.tsx        # Theme switcher
+│   ├── themed-text.tsx        # Themed text component
+│   ├── themed-view.tsx        # Themed view component
 │   └── ui/               # UI components
 ├── stores/               # State management
-│   ├── dashboardStore.ts     # Basic dashboard store
-│   └── dashboardStoreWithSupabase.ts # Supabase-enhanced store
+│   └── presetStore.ts     # App state and settings
 ├── lib/                  # External integrations
-│   └── supabase.ts          # Supabase client and API
-├── supabase/             # Database configuration
-│   └── migrations/          # Database migration files
-├── utils/                # Utility functions
-│   └── featureFlags.ts   # Feature flag management
-├── tests/                # Unit tests
-├── constants/            # App constants and themes
+│   ├── supabase.ts          # Supabase client (if needed)
+│   └── providers/           # API providers
+│       ├── ExchangeRatesAPIProvider.ts
+│       ├── ProviderInterface.ts
+│       └── RateSnapProvider.ts
 ├── hooks/               # Custom React hooks
+│   ├── use-color-scheme.ts  # Theme detection
+│   └── use-theme-color.ts   # Theme colors
+├── contexts/            # React contexts
+│   └── ThemeContext.tsx     # Theme management
+├── constants/           # App constants
+│   └── theme.ts            # Theme definitions
+├── styles/              # Styling utilities
+│   └── theme.ts            # Theme styles
+├── utils/                # Utility functions
+│   ├── featureFlags.ts   # Feature flag management
+│   └── supabaseFallback.ts # Supabase utilities
+├── supabase/             # Database configuration (optional)
+│   └── migrations/          # Database migration files
+├── tests/                # Unit tests
 ├── assets/              # Images and static assets
 └── scripts/             # Utility scripts
 ```
-
-## 🚧 Feature Flag System
-
-This project includes a **Custom Dashboard** feature that can be enabled/disabled via environment variables.
-
-### Custom Dashboard Feature
-
-The custom dashboard provides a customizable interface for users to personalize their currency conversion experience.
-
-#### Configuration
-
-To enable the custom dashboard, set the feature flag in your `.env` file:
-
-```env
-EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=true
-```
-
-#### Behavior
-
-- **When disabled** (`EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=false`):
-  - `/dashboard` route redirects to home page
-  - Dashboard feature is completely hidden from users
-  - No performance impact on the main app
-
-- **When enabled** (`EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=true`):
-  - `/dashboard` route loads the `DashboardShell` component
-  - Users can access the customizable dashboard interface
-  - Full dashboard functionality is available
-
-#### Implementation Details
-
-- **Feature Flag Utility**: `utils/featureFlags.ts`
-- **Dashboard Route**: `app/dashboard.tsx`
-- **Dashboard Component**: `components/DashboardShell.tsx`
-- **Tests**: `tests/featureFlags.test.ts`
-
-#### Development Workflow
-
-1. **Development**: Set `EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=true` to develop dashboard features
-2. **Testing**: Use `npm test` to run feature flag tests
-3. **Production**: Keep disabled until ready for public release
-
-```bash
-# Enable for development
-echo "EXPO_PUBLIC_ENABLE_CUSTOM_DASHBOARD=true" >> .env
-
-# Run development server
-npx expo start
-
-# Test the feature
-npm test
-```
-
-## 💾 Supabase Dashboard Persistence
-
-The custom dashboard includes **full persistence** using Supabase for secure cloud storage and authentication.
-
-### Features
-
-- **User Authentication** - Secure sign up/sign in with email and password
-- **Cloud Storage** - Dashboard layouts saved to Supabase database
-- **Row Level Security** - Users can only access their own dashboards
-- **Multiple Dashboards** - Create and manage multiple dashboard configurations
-- **Real-time Sync** - Changes saved immediately and available across devices
-
-### Setup Requirements
-
-1. **Create Supabase Project**: Sign up at [supabase.com](https://supabase.com)
-2. **Run Migration**: Apply the database schema from `supabase/migrations/001_create_user_dashboards.sql`
-3. **Configure Authentication**: Enable email authentication in Supabase dashboard
-4. **Update Environment**: Add Supabase URL and anon key to `.env` file
-
-**📖 Complete setup instructions**: [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
-
-### Usage
-
-1. **Sign Up/Sign In**: Use the authentication buttons in the dashboard
-2. **Add Widgets**: Create your custom dashboard layout
-3. **Save**: Click "Save to Supabase" to persist your layout
-4. **Load**: Dashboard automatically loads saved layout on refresh
-5. **Manage**: Create multiple dashboards and switch between them
-
-### API Integration
-
-```typescript
-// The system provides these key functions:
-await DashboardAPI.createDashboard(name, layout);
-await DashboardAPI.getDefaultDashboard();
-await DashboardAPI.saveToSupabase();
-await DashboardAPI.loadFromSupabase();
-```
-
-### Security
-
-- **Row Level Security (RLS)**: Database policies ensure data isolation
-- **JWT Authentication**: Secure token-based authentication
-- **Client-side Validation**: Input sanitization and error handling
-- **Environment Variables**: Sensitive keys stored securely
 
 ## 🛠️ Technologies Used
 
@@ -222,9 +142,9 @@ await DashboardAPI.loadFromSupabase();
 - **Expo** - Development platform and build tools
 - **TypeScript** - Type-safe JavaScript
 - **Zustand** - Lightweight state management
-- **Supabase** - Backend-as-a-Service with authentication and database
 - **AsyncStorage** - Local data persistence
 - **ExchangeRate-API** - Real-time currency data
+- **React Navigation** - Navigation system
 
 ## 📋 API Reference
 
@@ -234,6 +154,54 @@ This app uses the [ExchangeRate-API](https://www.exchangerate-api.com/) for curr
 - **Endpoints**: Latest rates, conversion rates
 - **Update Frequency**: Hourly
 
+### Supported Providers
+
+The app supports multiple exchange rate providers:
+- **ExchangeRate-API** (Primary)
+- **RateSnap Provider** (Fallback)
+
+Providers can be configured in the settings and will automatically switch if the primary provider is unavailable.
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+The project includes:
+- Unit tests for currency conversion logic
+- Component testing with React Testing Library
+- Integration tests for the conversion workflow
+
+## 🚀 Deployment
+
+### Building for Production
+
+1. **Build for iOS**
+   ```bash
+   eas build --platform ios
+   ```
+
+2. **Build for Android**
+   ```bash
+   eas build --platform android
+   ```
+
+3. **Build for Web**
+   ```bash
+   npx expo export:web
+   ```
+
+### Environment Variables for Production
+
+Ensure these variables are set in your production environment:
+```env
+EXPO_PUBLIC_API_KEY=your_production_api_key
+EXPO_PUBLIC_API_URL=https://v6.exchangerate-api.com/v6/
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -241,6 +209,13 @@ This app uses the [ExchangeRate-API](https://www.exchangerate-api.com/) for curr
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Add tests for new features
+- Update documentation for API changes
+- Ensure cross-platform compatibility
 
 ## 📄 License
 
@@ -258,6 +233,15 @@ If you have any questions or issues:
 
 - Create an [issue](https://github.com/yourusername/ratesnap-mobile/issues) on GitHub
 - Check the [Terms of Use](https://docs.google.com/document/d/e/2PACX-1vSqgDzlbEnxw-KoCS6ecj_tGzjSlkxDc7bUBMwzor65LKNLTEqzxm4q2iVvStCkmzo4N6dnVlcRGRuo/pub) for app usage guidelines
+
+## 📝 Changelog
+
+### v2.0.0 - Streamlined Release
+- **Improved**: Core currency conversion performance
+- **Enhanced**: Cleaner, more maintainable codebase
+- **Added**: Enhanced theme system with smooth transitions
+- **Added**: Location-based currency detection
+- **Added**: Built-in calculator functionality
 
 ---
 
