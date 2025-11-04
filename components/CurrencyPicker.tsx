@@ -183,6 +183,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 50,
+    backgroundColor: "#fafbfc",
   },
   header: {
     flexDirection: "row",
@@ -193,10 +194,12 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     fontSize: 16,
-    color: "#2563eb",
+    color: "#059669",
+    fontWeight: "500",
   },
   title: {
     fontSize: 20,
+    color: "#374151",
   },
   searchInput: {
     borderWidth: 1,
@@ -204,9 +207,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#ffffff",
     marginHorizontal: 20,
     marginBottom: 20,
+    color: "#374151",
   },
   list: {
     flex: 1,
@@ -215,10 +219,12 @@ const styles = StyleSheet.create({
   currencyItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    borderBottomColor: "#f1f5f9",
+    backgroundColor: "#ffffff",
   },
   selectedItem: {
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "#f0fdf4",
+    borderBottomColor: "#dcfce7",
   },
   currencyItemContent: {
     flexDirection: "row",
@@ -231,7 +237,7 @@ const styles = StyleSheet.create({
   currencyCode: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1f2937",
+    color: "#374151",
   },
   countryNames: {
     fontSize: 12,
@@ -239,7 +245,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   selectedText: {
-    fontWeight: "bold",
-    color: "#2563eb",
+    fontWeight: "600",
+    color: "#059669",
   },
 });
