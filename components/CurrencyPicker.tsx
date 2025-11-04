@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   View,
-  Text,
   Modal,
   FlatList,
   TouchableOpacity,
@@ -138,7 +137,7 @@ export default function CurrencyPicker({
         </View>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search currencies or countries (e.g., 'Japan', 'USD', 'Germany')..."
+          placeholder="Search currencies"
           value={search}
           onChangeText={setSearch}
         />

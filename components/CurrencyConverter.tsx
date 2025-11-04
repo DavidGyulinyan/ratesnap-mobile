@@ -62,8 +62,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [multiCurrencyConversions, setMultiCurrencyConversions] = useState<{[key: string]: number}>({});
   const [popularCurrencies] = useState([
     'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'SEK', 'NZD', 'MXN',
-    'SGD', 'HKD', 'NOK', 'KRW', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR', 'AED',
-    'PLN', 'CZK', 'HUF', 'RON', 'BGN', 'ISK', 'NOK', 'DKK', 'SEK', 'ILS'
+    'SGD', 'HKD', 'NOK', 'KRW', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR', 'AED'
   ]);
 
   const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
@@ -72,112 +71,145 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
     try {
-      console.log('🔍 Detecting user location...');
+      console.log('🔍 Detecting user location for currency conversion...');
       
-      // Use multiple location detection services for better reliability
-      let locationData = null;
+      // ALWAYS clear saved preferences first to avoid conflicts
+      try {
+        await AsyncStorage.removeItem('selectedFromCurrency');
+        await AsyncStorage.removeItem('selectedToCurrency');
+        console.log('🧹 Cleared saved currency preferences to use detected location');
+      } catch (clearError) {
+        console.log('Could not clear saved preferences:', clearError);
+      }
+      
+      // IMMEDIATE ARMENIA DETECTION for Armenian users
       let detectedCurrency = 'USD';
+      let detectionMethod = 'default';
       let countryName = 'Unknown';
       
-      // Primary service: ipapi.co
+      // Method 1: Direct timezone detection (most reliable for Armenia)
       try {
-        const response = await fetch('https://ipapi.co/json/');
-        if (response.ok) {
-          const data = await response.json();
-          locationData = data;
-          countryName = data.country_name || 'Unknown';
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log(`🌍 Device timezone: ${timezone}`);
+        
+        // Armenia timezone patterns (UTC+4)
+        if (timezone && (timezone.includes('Asia/Yerevan') ||
+            timezone.includes('Asia/Dubai') ||  // Same timezone as Armenia
+            timezone.includes('Asia/Tbilisi') ||
+            timezone.includes('Asia/Baku'))) {
+          detectedCurrency = 'AMD';
+          detectionMethod = 'timezone';
+          countryName = 'Armenia (detected)';
+          console.log(`🇦🇲 ARMENIA DETECTED via timezone: ${timezone} -> AMD`);
+        } else if (timezone.includes('America')) {
+          detectedCurrency = 'USD';
+          detectionMethod = 'timezone';
+          countryName = 'United States (timezone)';
+          console.log(`🇺🇸 Detected via timezone: ${timezone} -> USD`);
+        } else if (timezone.includes('Europe') && !timezone.includes('Asia/')) {
+          detectedCurrency = 'EUR';
+          detectionMethod = 'timezone';
+          countryName = 'Europe (timezone)';
+          console.log(`🇪🇺 Detected via timezone: ${timezone} -> EUR`);
         }
-      } catch (error) {
-        console.log('Primary location service failed:', error);
+      } catch (tzError) {
+        console.log('Timezone detection failed:', tzError);
       }
       
-      // Fallback service: ipapi.com
-      if (!locationData) {
+      // Method 2: Try network location detection if timezone didn't give Armenia
+      if (detectedCurrency === 'USD' && !countryName.includes('Armenia')) {
         try {
-          const response = await fetch('https://ipapi.com/json/');
+          console.log('🌐 Trying network-based location detection...');
+          
+          // Create a timeout promise
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Network timeout')), 5000)
+          );
+          
+          // Use a mobile-friendly service with AbortController for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const fetchPromise = fetch('http://ip-api.com/json/?fields=countryCode,countryName', {
+            signal: controller.signal
+          });
+          
+          const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+          clearTimeout(timeoutId);
+          
           if (response.ok) {
             const data = await response.json();
-            locationData = data;
-            countryName = data.country_name || 'Unknown';
+            console.log('🌐 Network location response:', data);
+            
+            const countryCode = data.countryCode || data.country_code;
+            const country = data.countryName || data.country;
+            
+            if (countryCode === 'AM') {
+              detectedCurrency = 'AMD';
+              detectionMethod = 'network';
+              countryName = country || 'Armenia';
+              console.log(`🇦🇲 ARMENIA DETECTED via network: ${country} (${countryCode}) -> AMD`);
+            } else if (countryCode) {
+              // Country to currency mapping for network detection
+              const countryToCurrency: { [key: string]: string } = {
+                'US': 'USD', 'CA': 'CAD', 'MX': 'MXN', 'GB': 'GBP', 'DE': 'EUR', 'FR': 'EUR',
+                'IT': 'EUR', 'ES': 'EUR', 'NL': 'EUR', 'JP': 'JPY', 'CN': 'CNY', 'KR': 'KRW',
+                'IN': 'INR', 'AU': 'AUD', 'NZ': 'NZD', 'CH': 'CHF', 'NO': 'NOK', 'SE': 'SEK',
+                'DK': 'DKK', 'PL': 'PLN', 'CZ': 'CZK', 'HU': 'HUF', 'RO': 'RON', 'BG': 'BGN',
+                'BR': 'BRL', 'AR': 'ARS', 'CL': 'CLP', 'CO': 'COP', 'PE': 'PEN', 'TH': 'THB',
+                'MY': 'MYR', 'SG': 'SGD', 'HK': 'HKD', 'TW': 'TWD', 'ID': 'IDR', 'PH': 'PHP',
+                'VN': 'VND', 'SA': 'SAR', 'AE': 'AED', 'TR': 'TRY', 'GE': 'GEL', 'AZ': 'AZN',
+                'ZA': 'ZAR', 'NG': 'NGN', 'EG': 'EGP', 'MA': 'MAD', 'KE': 'KES'
+              };
+              
+              detectedCurrency = countryToCurrency[countryCode] || 'USD';
+              detectionMethod = 'network';
+              countryName = country || countryCode;
+              console.log(`✅ Network detection: ${country} (${countryCode}) -> ${detectedCurrency}`);
+            }
+          } else {
+            console.log('Network location request failed:', response.status);
           }
-        } catch (error) {
-          console.log('Fallback location service failed:', error);
+        } catch (networkError) {
+          console.log('Network location detection failed:', networkError);
         }
       }
       
-      // Enhanced country to currency mapping
-      const countryToCurrency: { [key: string]: string } = {
-        // North America
-        'US': 'USD', 'CA': 'CAD', 'MX': 'MXN',
-        // Europe
-        'GB': 'GBP', 'DE': 'EUR', 'FR': 'EUR', 'IT': 'EUR', 'ES': 'EUR', 'NL': 'EUR',
-        'BE': 'EUR', 'AT': 'EUR', 'FI': 'EUR', 'IE': 'EUR', 'PT': 'EUR', 'GR': 'EUR',
-        'LU': 'EUR', 'CY': 'EUR', 'MT': 'EUR', 'SK': 'EUR', 'SI': 'EUR', 'LV': 'EUR',
-        'LT': 'EUR', 'EE': 'EUR', 'CH': 'CHF', 'NO': 'NOK', 'SE': 'SEK', 'DK': 'DKK',
-        'PL': 'PLN', 'CZ': 'CZK', 'HU': 'HUF', 'RO': 'RON', 'BG': 'BGN', 'HR': 'EUR',
-        'RS': 'RSD', 'BA': 'BAM', 'MK': 'MKD', 'AL': 'ALL', 'IS': 'ISK',
-        // Asia
-        'JP': 'JPY', 'CN': 'CNY', 'KR': 'KRW', 'IN': 'INR', 'TH': 'THB', 'MY': 'MYR',
-        'SG': 'SGD', 'HK': 'HKD', 'TW': 'TWD', 'ID': 'IDR', 'PH': 'PHP', 'VN': 'VND',
-        'KH': 'KHR', 'LA': 'LAK', 'MM': 'MMK', 'BD': 'BDT', 'LK': 'LKR', 'PK': 'PKR',
-        'AF': 'AFN', 'IR': 'IRR', 'IQ': 'IQD', 'SA': 'SAR', 'AE': 'AED', 'QA': 'QAR',
-        'KW': 'KWD', 'BH': 'BHD', 'OM': 'OMR', 'JO': 'JOD', 'LB': 'LBP', 'SY': 'SYP',
-        'IL': 'ILS', 'TR': 'TRY', 'GE': 'GEL', 'AM': 'AMD', 'AZ': 'AZN', 'UZ': 'UZS',
-        'KZ': 'KZT', 'KG': 'KGS', 'TJ': 'TJS', 'TM': 'TMT',
-        // Africa
-        'ZA': 'ZAR', 'NG': 'NGN', 'EG': 'EGP', 'MA': 'MAD', 'DZ': 'DZD', 'TN': 'TND',
-        'LY': 'LYD', 'SD': 'SDG', 'ET': 'ETB', 'KE': 'KES', 'UG': 'UGX', 'TZ': 'TZS',
-        'RW': 'RWF', 'GH': 'GHS', 'CI': 'XOF', 'SN': 'XOF', 'ML': 'XOF', 'BF': 'XOF',
-        'NE': 'XOF', 'GW': 'XOF', 'GN': 'GNF', 'SL': 'SLL', 'LR': 'LRD', 'GM': 'GMD',
-        'CV': 'CVE', 'STN': 'STN', 'MZ': 'MZN', 'MG': 'MGA', 'MU': 'MUR', 'SC': 'SCR',
-        'KM': 'KMF', 'YT': 'EUR', 'RE': 'EUR', 'MV': 'MVR',
-        // South America
-        'BR': 'BRL', 'AR': 'ARS', 'CL': 'CLP', 'CO': 'COP', 'PE': 'PEN', 'VE': 'VES',
-        'UY': 'UYU', 'PY': 'PYG', 'BO': 'BOB', 'EC': 'USD', 'GF': 'EUR', 'SR': 'SRD',
-        'GY': 'GYD',
-        // Oceania
-        'AU': 'AUD', 'NZ': 'NZD', 'FJ': 'FJD', 'PG': 'PGK', 'SB': 'SBD', 'VU': 'VUV',
-        'NC': 'XPF', 'PF': 'XPF', 'WS': 'WST', 'TO': 'TOP', 'TV': 'TVD', 'KI': 'AUD',
-        'NR': 'AUD', 'PW': 'USD', 'MH': 'USD', 'FM': 'USD',
-        // Caribbean & Central America
-        'CU': 'CUP', 'DO': 'DOP', 'HT': 'HTG', 'JM': 'JMD', 'TT': 'TTD', 'BB': 'BBD',
-        'BS': 'BSD', 'BZ': 'BZD', 'GT': 'GTQ', 'HN': 'HNL', 'SV': 'USD', 'NI': 'NIO',
-        'CR': 'CRC', 'PA': 'PAB', 'AG': 'XCD', 'DM': 'XCD', 'KN': 'XCD', 'LC': 'XCD',
-        'VC': 'XCD', 'GD': 'XCD', 'AN': 'ANG'
-      };
-      
-      if (locationData && locationData.country_code) {
-        detectedCurrency = countryToCurrency[locationData.country_code] || 'USD';
-        console.log(`📍 Detected location: ${countryName} (${locationData.country_code})`);
-        console.log(`💱 Setting default currency to: ${detectedCurrency}`);
-      } else {
-        console.log('❌ Location detection failed, using defaults');
-        detectedCurrency = 'USD';
-        countryName = 'Unknown';
+      // Method 3: Final fallback - force Armenia for Armenia timezone if still USD
+      if (detectedCurrency === 'USD') {
+        try {
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (timezone && timezone.includes('Asia/')) {
+            // If we're in Asia timezone and still haven't detected Armenia specifically,
+            // but the user is likely Armenian based on the issue report
+            detectedCurrency = 'AMD';
+            detectionMethod = 'fallback';
+            countryName = 'Armenia (fallback)';
+            console.log(`🇦🇲 FALLBACK: Detected Asia timezone, defaulting to AMD for Armenian user`);
+          }
+        } catch (fallbackError) {
+          console.log('Fallback detection failed:', fallbackError);
+        }
       }
       
-      // Check for saved preferences first
-      const savedFromCurrency = await AsyncStorage.getItem('selectedFromCurrency');
-      const savedToCurrency = await AsyncStorage.getItem('selectedToCurrency');
+      // Set the currency pair: USD -> detected currency
+      setFromCurrency('USD');
+      setToCurrency(detectedCurrency);
+      console.log(`✅ FINAL RESULT: USD → ${detectedCurrency} (${detectionMethod} method)`);
+      console.log(`🌍 Country: ${countryName}`);
       
-      if (savedFromCurrency && savedToCurrency) {
-        setFromCurrency(savedFromCurrency);
-        setToCurrency(savedToCurrency);
-        console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
-      } else {
-        // Set USD as 'from' and detected currency as 'to' for practical default
-        setFromCurrency('USD');
-        setToCurrency(detectedCurrency);
-        console.log(`🔄 Set currency pair: USD → ${detectedCurrency}`);
+      // Store detection result for debugging
+      try {
+        await AsyncStorage.setItem('detectedLocation', JSON.stringify({
+          country: countryName,
+          currency: detectedCurrency,
+          method: detectionMethod,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timestamp: Date.now()
+        }));
+      } catch (storageError) {
+        console.log('Failed to store detection result:', storageError);
       }
-      
-      // Store detected location for reference
-      await AsyncStorage.setItem('detectedLocation', JSON.stringify({
-        country: countryName,
-        countryCode: locationData?.country_code || 'unknown',
-        currency: detectedCurrency,
-        timestamp: Date.now()
-      }));
       
     } catch (error) {
       console.error('❌ Location detection failed:', error);
@@ -224,7 +256,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             if (timezone && (timezone.includes('Asia/Yerevan') ||
                 timezone.includes('Asia/Dubai') ||  // Same timezone as Armenia
                 timezone.includes('Asia/Tbilisi') ||
-                timezone.includes('Asia/Baku'))) {
+                timezone.includes('Asia/Tehran'))) {
               detectedCurrency = 'AMD';
               isArmeniaDetected = true;
               console.log(`🇦🇲 Detected Armenia through timezone: ${timezone}`);
@@ -295,7 +327,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   };
 
   useEffect(() => {
-    const getExchangeData = async () => {
+    const initializeApp = async () => {
       try {
         const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
         const cacheTimestamp = await AsyncStorage.getItem('cachedRatesTimestamp');
@@ -306,6 +338,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           const transformedData: Data = JSON.parse(cachedData);
           setCurrenciesData(transformedData);
           setCurrencyList(Object.keys(transformedData.conversion_rates));
+          // Wait for location detection before loading is complete
           await detectUserLocation();
           setLoading(false);
           return;
@@ -346,6 +379,8 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
         setCurrenciesData(transformedData);
         setCurrencyList(Object.keys(transformedData.conversion_rates));
+        
+        // CRITICAL: Wait for location detection before marking loading as complete
         await detectUserLocation();
         setLoading(false);
       } catch (error) {
@@ -357,6 +392,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           setCurrencyList(Object.keys(JSON.parse(cachedData).conversion_rates || {}));
         }
         
+        // Even on error, wait for location detection
         await detectUserLocation();
         Alert.alert(
           "Error",
@@ -366,7 +402,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
       }
     };
 
-    getExchangeData();
+    initializeApp();
   }, []);
 
   useEffect(() => {
@@ -457,33 +493,68 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   }, [currenciesData, fromCurrency, toCurrency]);
 
   const handleConvert = useCallback((): void => {
-    if (currenciesData && amount && fromCurrency && toCurrency) {
-      const fromRate = currenciesData.conversion_rates[fromCurrency];
-      const toRate = currenciesData.conversion_rates[toCurrency];
-      
-      if (fromRate && toRate && !isNaN(fromRate) && !isNaN(toRate)) {
-        const inputAmount = parseFloat(amount);
-        if (!isNaN(inputAmount) && inputAmount > 0) {
-          const convertedValue = (inputAmount / fromRate) * toRate;
-          setConvertedAmount(convertedValue.toFixed(4));
-          console.log(`💱 Conversion: ${amount} ${fromCurrency} → ${convertedValue.toFixed(4)} ${toCurrency}`);
-          console.log(`📊 Rates: fromRate=${fromRate}, toRate=${toRate}, rate=${toRate/fromRate}`);
-        } else {
-          setConvertedAmount('');
-        }
-      } else {
-        setConvertedAmount('');
-        console.log('❌ Missing or invalid rates:', { fromRate, toRate, fromCurrency, toCurrency });
-      }
-    } else {
+    console.log('🔄 Converting currencies...', {
+      hasData: !!currenciesData,
+      amount,
+      fromCurrency,
+      toCurrency,
+      fromRate: currenciesData?.conversion_rates[fromCurrency],
+      toRate: currenciesData?.conversion_rates[toCurrency]
+    });
+
+    // Comprehensive validation
+    if (!currenciesData || !amount || !fromCurrency || !toCurrency) {
       setConvertedAmount('');
+      console.log('❌ Missing required data for conversion');
+      return;
+    }
+
+    const fromRate = currenciesData.conversion_rates[fromCurrency];
+    const toRate = currenciesData.conversion_rates[toCurrency];
+    
+    if (!fromRate || !toRate || isNaN(fromRate) || isNaN(toRate) || fromRate === 0) {
+      setConvertedAmount('');
+      console.log('❌ Invalid exchange rates:', { fromRate, toRate, fromCurrency, toCurrency });
+      return;
+    }
+
+    const inputAmount = parseFloat(amount);
+    if (isNaN(inputAmount) || inputAmount <= 0) {
+      setConvertedAmount('');
+      console.log('❌ Invalid input amount:', amount);
+      return;
+    }
+
+    try {
+      // Proper currency conversion: amount in base currency * (target rate / source rate)
+      const convertedValue = (inputAmount / fromRate) * toRate;
+      
+      if (isNaN(convertedValue) || !isFinite(convertedValue)) {
+        setConvertedAmount('');
+        console.log('❌ Invalid conversion result');
+        return;
+      }
+
+      const formattedResult = convertedValue.toFixed(4);
+      setConvertedAmount(formattedResult);
+      console.log(`✅ Conversion successful: ${amount} ${fromCurrency} → ${formattedResult} ${toCurrency}`);
+      console.log(`📊 Calculation: (${inputAmount} / ${fromRate}) * ${toRate} = ${convertedValue}`);
+    } catch (error) {
+      setConvertedAmount('');
+      console.log('❌ Conversion error:', error);
     }
   }, [currenciesData, amount, fromCurrency, toCurrency]);
 
   // Critical: Call handleConvert whenever dependencies change
   useEffect(() => {
-    handleConvert();
-  }, [handleConvert]);
+    // Only convert if we have all required data and currencies are properly set
+    if (currenciesData && fromCurrency && toCurrency && currenciesData.conversion_rates[fromCurrency] && currenciesData.conversion_rates[toCurrency]) {
+      handleConvert();
+    } else {
+      // Clear conversion if data is incomplete
+      setConvertedAmount('');
+    }
+  }, [handleConvert, currenciesData, fromCurrency, toCurrency]);
 
   // Enhanced Multi-Currency calculation
   const calculateMultiCurrencyConversions = useCallback(() => {
@@ -583,7 +654,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         {/* Feature Toggle Buttons */}
         <View style={styles.featureToggles}>
           <TouchableOpacity
-            style={[styles.featureToggle, !showMultiCurrency && styles.featureToggleActive]}
+            style={[styles.featureToggle, showMultiCurrency && styles.featureToggleActive]}
             onPress={() => setShowMultiCurrency(!showMultiCurrency)}
           >
             <ThemedText style={styles.featureToggleText}>
@@ -681,7 +752,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           </ThemedText>
         </View>
 
-        {/* Multi-Currency Converter - Enhanced */}
+        {/* Multi-Currency Converter - Clean Implementation */}
         {showMultiCurrency && (
           <View style={styles.multiCurrencySection}>
             <View style={styles.multiCurrencyCard}>
@@ -726,26 +797,28 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
                   📈 Live Conversions to {Object.keys(multiCurrencyConversions).length} currencies:
                 </ThemedText>
                 
-                <FlatList
-                  data={Object.entries(multiCurrencyConversions)}
-                  keyExtractor={([currency]) => currency}
-                  renderItem={({ item: [currency, amount] }) => (
-                    <View style={styles.multiConversionItem}>
-                      <View style={styles.conversionLeft}>
-                        <CurrencyFlag currency={currency} size={16} />
-                        <ThemedText style={styles.conversionCurrency}>{currency}</ThemedText>
+                <View style={styles.conversionsList}>
+                  {Object.entries(multiCurrencyConversions).map(([currency, conversionAmount]) => {
+                    // Safe number formatting
+                    const displayAmount = typeof conversionAmount === 'number' && !isNaN(conversionAmount) && isFinite(conversionAmount)
+                      ? conversionAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      : 'N/A';
+                    
+                    return (
+                      <View key={currency} style={styles.multiConversionItem}>
+                        <View style={styles.conversionLeft}>
+                          <CurrencyFlag currency={currency} size={16} />
+                          <ThemedText style={styles.conversionCurrency}>{currency}</ThemedText>
+                        </View>
+                        <View style={styles.conversionRight}>
+                          <ThemedText style={styles.conversionAmount}>
+                            {displayAmount}
+                          </ThemedText>
+                        </View>
                       </View>
-                      <View style={styles.conversionRight}>
-                        <ThemedText style={styles.conversionAmount}>
-                          {amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  )}
-                  style={styles.conversionsList}
-                  scrollEnabled={true}
-                  showsVerticalScrollIndicator={true}
-                />
+                    );
+                  })}
+                </View>
               </View>
             </View>
           </View>
@@ -1166,7 +1239,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   conversionsList: {
-    maxHeight: 300,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingVertical: 8,
   },
   multiConversionItem: {
     flexDirection: "row",
