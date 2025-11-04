@@ -729,40 +729,13 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Status Section */}
-          <View style={styles.statusSection}>
-            <View style={styles.statusCard}>
-              <ThemedText style={styles.statusTitle}>📱 App Status</ThemedText>
-              <View style={styles.statusRow}>
-                <View style={styles.statusIndicator} />
-                <ThemedText style={styles.statusText}>
-                  Online - Real-time rates
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.lastUpdate}>
-                Last updated: {new Date().toLocaleTimeString()}
-              </ThemedText>
-            </View>
-          </View>
-
           {/* Features Preview */}
           <View style={styles.featuresSection}>
             <ThemedText style={styles.sectionTitle}>
               ✨ Dashboard Features
             </ThemedText>
             <View style={styles.featuresList}>
-              <View style={styles.featureItem}>
-                <ThemedText style={styles.featureIcon}>🎛️</ThemedText>
-                <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
-                    Widget System
-                  </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
-                    Customize your dashboard with different widgets
-                  </ThemedText>
-                </View>
-              </View>
-
+              
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
@@ -819,16 +792,6 @@ export default function HomeScreen() {
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
                     Intelligent rate caching with offline fallbacks
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.featureItem}>
-                <ThemedText style={styles.featureIcon}>🎨</ThemedText>
-                <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>Modern UI</ThemedText>
-                  <ThemedText style={styles.featureDescription}>
-                    Beautiful, responsive design with smooth animations
                   </ThemedText>
                 </View>
               </View>
@@ -968,43 +931,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 18,
     paddingHorizontal: 4,
-  },
-  statusSection: {
-    marginBottom: 24,
-  },
-  statusCard: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 12,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10b981",
-    marginRight: 8,
-  },
-  statusText: {
-    fontSize: 14,
-    color: "#10b981",
-    fontWeight: "500",
-  },
-  lastUpdate: {
-    fontSize: 12,
-    color: "#6b7280",
   },
   featuresSection: {
     backgroundColor: "#ffffff",
