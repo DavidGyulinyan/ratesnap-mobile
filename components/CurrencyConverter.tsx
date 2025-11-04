@@ -17,6 +17,7 @@ import { ThemedText } from "./themed-text";
 import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
+import MultiCurrencyConverter from "./MultiCurrencyConverter";
 
 interface SavedRate {
   id: string;
@@ -59,11 +60,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
-  const [multiCurrencyConversions, setMultiCurrencyConversions] = useState<{[key: string]: number}>({});
-  const [popularCurrencies] = useState([
-    'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'SEK', 'NZD', 'MXN',
-    'SGD', 'HKD', 'NOK', 'KRW', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR', 'AED'
-  ]);
 
   const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
   const CURRENCYFREAKS_API_KEY = "870b638bf16a4be185dff4dac89e557a";
@@ -556,37 +552,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   }, [handleConvert, currenciesData, fromCurrency, toCurrency]);
 
-  // Enhanced Multi-Currency calculation
-  const calculateMultiCurrencyConversions = useCallback(() => {
-    if (!currenciesData || !amount || parseFloat(amount) <= 0) {
-      setMultiCurrencyConversions({});
-      return;
-    }
-
-    const fromRate = currenciesData.conversion_rates[fromCurrency];
-    if (!fromRate) {
-      setMultiCurrencyConversions({});
-      return;
-    }
-
-    const inputAmount = parseFloat(amount);
-    const conversionResults: {[key: string]: number} = {};
-
-    popularCurrencies.forEach(currency => {
-      if (currenciesData.conversion_rates[currency]) {
-        const toRate = currenciesData.conversion_rates[currency];
-        const convertedAmount = (inputAmount / fromRate) * toRate;
-        conversionResults[currency] = convertedAmount;
-      }
-    });
-
-    setMultiCurrencyConversions(conversionResults);
-  }, [currenciesData, amount, fromCurrency, popularCurrencies]);
-
-  useEffect(() => {
-    calculateMultiCurrencyConversions();
-  }, [calculateMultiCurrencyConversions]);
-
   const mergeHistoryWithList = (
     history: { from: string; to: string }[],
     list: string[]
@@ -658,7 +623,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             onPress={() => setShowMultiCurrency(!showMultiCurrency)}
           >
             <ThemedText style={styles.featureToggleText}>
-              📊 Multi-Currency ({Object.keys(multiCurrencyConversions).length})
+              📊 Multi-Currency
             </ThemedText>
           </TouchableOpacity>
           
@@ -752,76 +717,17 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           </ThemedText>
         </View>
 
-        {/* Multi-Currency Converter - Clean Implementation */}
-        {showMultiCurrency && (
-          <View style={styles.multiCurrencySection}>
-            <View style={styles.multiCurrencyCard}>
-              <View style={styles.multiCurrencyHeader}>
-                <ThemedText style={styles.multiCurrencyTitle}>
-                  📊 Multi-Currency Converter
-                </ThemedText>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setShowMultiCurrency(false)}
-                >
-                  <ThemedText style={styles.closeButtonText}>×</ThemedText>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.inputSection}>
-                <View style={styles.amountInputContainer}>
-                  <ThemedText style={styles.inputLabel}>Amount:</ThemedText>
-                  <TextInput
-                    style={styles.amountInput}
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="numeric"
-                    placeholder="Enter amount"
-                  />
-                </View>
-
-                <View style={styles.currencyInputContainer}>
-                  <ThemedText style={styles.inputLabel}>From:</ThemedText>
-                  <TouchableOpacity
-                    style={styles.currencyInput}
-                    onPress={() => setShowFromPicker(true)}
-                  >
-                    <CurrencyFlag currency={fromCurrency} size={20} />
-                    <ThemedText style={styles.currencyInputText}>{fromCurrency}</ThemedText>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.resultsSection}>
-                <ThemedText style={styles.resultsTitle}>
-                  📈 Live Conversions to {Object.keys(multiCurrencyConversions).length} currencies:
-                </ThemedText>
-                
-                <View style={styles.conversionsList}>
-                  {Object.entries(multiCurrencyConversions).map(([currency, conversionAmount]) => {
-                    // Safe number formatting
-                    const displayAmount = typeof conversionAmount === 'number' && !isNaN(conversionAmount) && isFinite(conversionAmount)
-                      ? conversionAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                      : 'N/A';
-                    
-                    return (
-                      <View key={currency} style={styles.multiConversionItem}>
-                        <View style={styles.conversionLeft}>
-                          <CurrencyFlag currency={currency} size={16} />
-                          <ThemedText style={styles.conversionCurrency}>{currency}</ThemedText>
-                        </View>
-                        <View style={styles.conversionRight}>
-                          <ThemedText style={styles.conversionAmount}>
-                            {displayAmount}
-                          </ThemedText>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            </View>
-          </View>
+        {/* Multi-Currency Converter - Using Shared Component */}
+        {showMultiCurrency && currenciesData && (
+          <MultiCurrencyConverter
+            currenciesData={currenciesData}
+            fromCurrency={fromCurrency}
+            toCurrency={toCurrency}
+            amount={amount}
+            onAmountChange={setAmount}
+            showCloseButton={true}
+            onClose={() => setShowMultiCurrency(false)}
+          />
         )}
 
         {/* Saved Rates Section - Enhanced */}
@@ -1134,12 +1040,11 @@ const styles = StyleSheet.create({
     borderColor: "#6d28d9",
   },
   swapButtonText: {
-  
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
   },
-   swapArrows: {
+  swapArrows: {
     color: "#7c3aed",
     fontSize: 18,
     fontWeight: "bold",
@@ -1164,115 +1069,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     fontStyle: "italic",
-  },
-  // Multi-Currency Styles
-  multiCurrencySection: {
-    marginBottom: 24,
-  },
-  multiCurrencyCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#8b5cf6",
-    padding: 20,
-  },
-  multiCurrencyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  multiCurrencyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  closeButton: {
-    padding: 4,
-    backgroundColor: "#fee2e2",
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: "#dc2626",
-    fontWeight: "bold",
-  },
-  inputSection: {
-    marginBottom: 20,
-  },
-  currencyInputContainer: {
-    marginBottom: 12,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-  },
-  currencyInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#ffffff",
-  },
-  currencyInputText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  resultsSection: {
-    marginTop: 16,
-  },
-  resultsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  conversionsList: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingVertical: 8,
-  },
-  multiConversionItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: "#f8fafc",
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  conversionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  conversionCurrency: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  conversionRight: {
-    alignItems: "flex-end",
-  },
-  conversionAmount: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#1f2937",
   },
   savedRatesSection: {
     marginTop: 20,

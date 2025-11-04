@@ -13,6 +13,7 @@ import { ThemedText } from "@/components/themed-text";
 import CurrencyFlag from "@/components/CurrencyFlag";
 import { detectUserLocation } from "@/components/LocationDetection";
 import CurrencyConverter from "@/components/CurrencyConverter";
+import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import CurrencyPicker from "@/components/CurrencyPicker";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
@@ -50,15 +51,13 @@ export default function HomeScreen() {
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
-  const [multiAmount, setMultiAmount] = useState("1");
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR"); // Default to EUR, will be updated by location detection
-  const [conversions, setConversions] = useState<{ [key: string]: number }>({});
+  const [multiAmount, setMultiAmount] = useState("1");
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [rateAlerts, setRateAlerts] = useState<any[]>([]);
-  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
 
   // Rate alert form state
   const [newAlert, setNewAlert] = useState({
@@ -67,9 +66,6 @@ export default function HomeScreen() {
     targetRate: "",
     condition: "below" as "above" | "below",
   });
-
-  // Currency picker state for multi-currency management
-  const [showCurrencyManager, setShowCurrencyManager] = useState(false);
 
   useEffect(() => {
     // Use imported location detection utility
@@ -100,7 +96,6 @@ export default function HomeScreen() {
     loadExchangeRates();
     loadSavedRates();
     loadRateAlerts();
-    loadSelectedCurrencies();
   }, []);
 
   const loadExchangeRates = async () => {
@@ -137,30 +132,6 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error("Error loading rate alerts:", error);
-    }
-  };
-
-  const loadSelectedCurrencies = async () => {
-    try {
-      const saved = await AsyncStorage.getItem("selectedCurrencies");
-      if (saved) {
-        setSelectedCurrencies(JSON.parse(saved));
-      } else {
-        // Default to some popular currencies (avoiding default toCurrency to prevent filtering)
-        const defaults = [
-          "GBP",
-          "JPY",
-          "CAD",
-          "AUD",
-          "CHF",
-          "CNY",
-          "SEK",
-          "NZD",
-        ];
-        setSelectedCurrencies(defaults);
-      }
-    } catch (error) {
-      console.error("Error loading selected currencies:", error);
     }
   };
 
@@ -292,35 +263,6 @@ export default function HomeScreen() {
     );
   };
 
-  const calculateMultiConversions = useCallback(() => {
-    if (!currenciesData || !multiAmount || parseFloat(multiAmount) <= 0) {
-      setConversions({});
-      return;
-    }
-
-    // Always use USD as the base currency for multi-currency conversions
-    const usdRate = currenciesData.conversion_rates?.["USD"];
-    if (!usdRate) {
-      setConversions({});
-      return;
-    }
-
-    const inputAmount = parseFloat(multiAmount);
-    const conversionResults: { [key: string]: number } = {};
-
-    // Convert from USD to all selected currencies
-    selectedCurrencies.forEach((currency) => {
-      if (currenciesData.conversion_rates?.[currency]) {
-        const targetRate = currenciesData.conversion_rates[currency];
-        // Convert: USD → target currency
-        const convertedAmount = (inputAmount / usdRate) * targetRate;
-        conversionResults[currency] = convertedAmount;
-      }
-    });
-
-    setConversions(conversionResults);
-  }, [currenciesData, multiAmount, selectedCurrencies]);
-
   const handleFromCurrencySelect = (currency: string) => {
     setNewAlert({
       ...newAlert,
@@ -336,29 +278,6 @@ export default function HomeScreen() {
     });
     setShowToCurrencyPicker(false);
   };
-
-  const saveSelectedCurrencies = async (currencies: string[]) => {
-    try {
-      setSelectedCurrencies(currencies);
-      await AsyncStorage.setItem(
-        "selectedCurrencies",
-        JSON.stringify(currencies)
-      );
-    } catch (error) {
-      console.error("Error saving selected currencies:", error);
-    }
-  };
-
-  const toggleCurrency = (currency: string) => {
-    const updated = selectedCurrencies.includes(currency)
-      ? selectedCurrencies.filter((c) => c !== currency)
-      : [...selectedCurrencies, currency];
-    saveSelectedCurrencies(updated);
-  };
-
-  useEffect(() => {
-    calculateMultiConversions();
-  }, [calculateMultiConversions]);
 
   const renderMainContent = () => {
     if (currentView === "converter") {
@@ -466,113 +385,18 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Inline Multi-Currency Converter */}
-          {showMultiCurrency && (
-            <View style={styles.multiCurrencySection}>
-              <View style={styles.multiCurrencyCard}>
-                <View style={styles.multiCurrencyHeader}>
-                  <ThemedText style={styles.multiCurrencyTitle}>
-                    📊 Multi-Currency Converter
-                  </ThemedText>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowMultiCurrency(false)}
-                  >
-                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Input Section */}
-                <View style={styles.inputSection}>
-                  <View style={styles.amountInputContainer}>
-                    <ThemedText style={styles.inputLabel}>Amount:</ThemedText>
-                    <TextInput
-                      style={styles.amountInput}
-                      value={multiAmount}
-                      onChangeText={setMultiAmount}
-                      keyboardType="numeric"
-                      placeholder="Enter amount"
-                    />
-                  </View>
-
-                  <View style={styles.currencyInputContainer}>
-                    <ThemedText style={styles.inputLabel}>From:</ThemedText>
-                    <TouchableOpacity style={styles.currencyInput}>
-                      <CurrencyFlag currency={"USD"} size={16} />
-                      <ThemedText style={styles.currencyInputText}>
-                        USD (Fixed Base)
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Results Section */}
-                <View style={styles.resultsSection}>
-                  <ThemedText style={styles.resultsTitle}>
-                    {multiAmount} USD converts to:
-                  </ThemedText>
-
-                  {/* Show user's currency conversion prominently */}
-                  {toCurrency && conversions[toCurrency] && (
-                    <View style={styles.primaryConversion}>
-                      <ThemedText style={styles.primaryConversionTitle}>
-                        🌍 Your Local Currency ({toCurrency})
-                      </ThemedText>
-                      <View style={styles.primaryConversionItem}>
-                        <CurrencyFlag currency={toCurrency} size={20} />
-                        <ThemedText style={styles.primaryConversionAmount}>
-                          {conversions[toCurrency].toFixed(4)} {toCurrency}
-                        </ThemedText>
-                      </View>
-                    </View>
-                  )}
-
-                  <View style={styles.conversionsGrid}>
-                    {Object.entries(conversions)
-                      .filter(([currency]) => currency !== toCurrency) // Don't duplicate user's currency
-                      .filter(([currency]) =>
-                        selectedCurrencies.includes(currency)
-                      ) // Only show selected currencies
-                      .map(([currency, amount]) => (
-                        <View key={currency} style={styles.conversionItem}>
-                          <View style={styles.conversionLeft}>
-                            <CurrencyFlag currency={currency} size={16} />
-                            <View style={styles.conversionInfo}>
-                              <ThemedText style={styles.conversionCurrency}>
-                                {currency}
-                              </ThemedText>
-                              <ThemedText style={styles.conversionAmount}>
-                                {amount.toFixed(4)}
-                              </ThemedText>
-                            </View>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.removeCurrencyButton}
-                            onPress={() => toggleCurrency(currency)}
-                          >
-                            <ThemedText style={styles.removeCurrencyText}>
-                              ×
-                            </ThemedText>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-
-                    {/* Manage Currencies Button */}
-                    {Object.keys(conversions).length > 0 && (
-                      <TouchableOpacity
-                        style={styles.manageCurrenciesButton}
-                        onPress={() => setShowCurrencyManager(true)}
-                      >
-                        <ThemedText style={styles.manageCurrenciesText}>
-                          ⚙️ Manage Currencies ({selectedCurrencies.length}{" "}
-                          selected)
-                        </ThemedText>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              </View>
-            </View>
+          {/* Inline Multi-Currency Converter - Using Shared Component */}
+          {showMultiCurrency && currenciesData && (
+            <MultiCurrencyConverter
+              currenciesData={currenciesData}
+              fromCurrency="USD"
+              toCurrency={toCurrency}
+              amount={multiAmount}
+              onAmountChange={setMultiAmount}
+              showCloseButton={true}
+              onClose={() => setShowMultiCurrency(false)}
+              style={{ marginBottom: 24 }}
+            />
           )}
 
           {/* Inline Rate Alerts */}
@@ -914,18 +738,6 @@ export default function HomeScreen() {
         selectedCurrency={newAlert.toCurrency}
         onSelect={handleToCurrencySelect}
         onClose={() => setShowToCurrencyPicker(false)}
-      />
-
-      {/* Currency Manager Modal */}
-      <CurrencyPicker
-        visible={showCurrencyManager}
-        currencies={currencyList}
-        selectedCurrency=""
-        onSelect={(currency) => {
-          toggleCurrency(currency);
-          setShowCurrencyManager(false);
-        }}
-        onClose={() => setShowCurrencyManager(false)}
       />
     </>
   );
