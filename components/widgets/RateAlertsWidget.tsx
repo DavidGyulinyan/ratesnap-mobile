@@ -32,6 +32,7 @@ export default function RateAlertsWidget({
 }: RateAlertsWidgetProps) {
   const [alerts, setAlerts] = useState<RateAlert[]>([]);
   const [showAddAlert, setShowAddAlert] = useState(false);
+  const [showDetailedView, setShowDetailedView] = useState(false);
   const [newAlert, setNewAlert] = useState({
     fromCurrency: 'USD',
     toCurrency: 'EUR',
@@ -53,6 +54,31 @@ export default function RateAlertsWidget({
       const stored = await AsyncStorage.getItem('rateAlerts');
       if (stored) {
         setAlerts(JSON.parse(stored));
+      } else {
+        // Add demo alerts for demonstration - REMOVE IN PRODUCTION
+        const demoAlerts: RateAlert[] = [
+          {
+            id: 'demo-1',
+            fromCurrency: 'USD',
+            toCurrency: 'EUR',
+            targetRate: 0.85,
+            condition: 'below',
+            isActive: true,
+            createdAt: Date.now() - 1000 * 60 * 60 * 24 // 1 day ago
+          },
+          {
+            id: 'demo-2',
+            fromCurrency: 'EUR',
+            toCurrency: 'GBP',
+            targetRate: 0.85,
+            condition: 'above',
+            isActive: false,
+            createdAt: Date.now() - 1000 * 60 * 60 * 12 // 12 hours ago
+          }
+        ];
+        setAlerts(demoAlerts);
+        // Store demo alerts so they persist
+        await AsyncStorage.setItem('rateAlerts', JSON.stringify(demoAlerts));
       }
     } catch (error) {
       console.error('Error loading rate alerts:', error);
@@ -119,6 +145,29 @@ export default function RateAlertsWidget({
     );
   };
 
+  const deleteAllAlerts = async () => {
+    if (alerts.length === 0) return;
+    
+    Alert.alert(
+      'Delete All Alerts',
+      `Are you sure you want to delete all ${alerts.length} rate alerts? This action cannot be undone.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            await saveAlerts([]);
+            setShowDetailedView(false); // Close detailed view if open
+          },
+        },
+      ]
+    );
+  };
+
   const toggleAlert = async (alertId: string) => {
     const updatedAlerts = alerts.map(alert =>
       alert.id === alertId ? { ...alert, isActive: !alert.isActive } : alert
@@ -175,10 +224,79 @@ export default function RateAlertsWidget({
           style={[styles.alertAction, styles.alertActionDelete]}
           onPress={() => deleteAlert(item.id)}
         >
-          <ThemedText style={styles.alertActionText}>🗑️</ThemedText>
+          <ThemedText style={styles.alertActionText}>🗑️ DELETE</ThemedText>
         </TouchableOpacity>
       </View>
     </View>
+  );
+
+  const renderDetailedViewModal = () => (
+    <Modal 
+      visible={showDetailedView} 
+      animationType="slide" 
+      onRequestClose={() => setShowDetailedView(false)}
+    >
+      <ThemedView style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={() => setShowDetailedView(false)}>
+            <ThemedText style={styles.closeButton}>← Back</ThemedText>
+          </TouchableOpacity>
+          <ThemedText type="title" style={styles.modalTitle}>
+            📋 All Rate Alerts ({alerts.length})
+          </ThemedText>
+          <TouchableOpacity onPress={() => setShowDetailedView(false)}>
+            <ThemedText style={styles.closeButton}>×</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.modalContent}>
+          {/* Delete All Button at Top */}
+          {alerts.length > 0 && (
+            <TouchableOpacity
+              style={styles.deleteAllButtonModal}
+              onPress={deleteAllAlerts}
+            >
+              <ThemedText style={styles.deleteAllButtonModalText}>
+                🗑️ DELETE ALL ALERTS ({alerts.length})
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+
+          {/* All Alerts List */}
+          {alerts.length === 0 ? (
+            <View style={styles.emptyState}>
+              <ThemedText style={styles.emptyStateText}>
+                No rate alerts set
+              </ThemedText>
+              <ThemedText style={styles.emptyStateSubtext}>
+                Get notified when rates reach your targets
+              </ThemedText>
+            </View>
+          ) : (
+            <FlatList
+              data={alerts}
+              renderItem={renderAlert}
+              keyExtractor={item => item.id}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.alertsListModal}
+            />
+          )}
+
+          {/* Add New Alert Button */}
+          <TouchableOpacity 
+            style={styles.addAlertButtonModal} 
+            onPress={() => {
+              setShowDetailedView(false);
+              setShowAddAlert(true);
+            }}
+          >
+            <ThemedText style={styles.addAlertButtonModalText}>
+              ➕ Add New Alert
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
+    </Modal>
   );
 
   const renderAddAlertModal = () => (
@@ -282,44 +400,67 @@ export default function RateAlertsWidget({
         onToggle={onToggle}
         isEditMode={isEditMode}
       >
-        <View style={styles.alertsContainer}>
-          {alerts.length === 0 ? (
-            <View style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
-                No rate alerts set
-              </ThemedText>
-              <ThemedText style={styles.emptyStateSubtext}>
-                Get notified when rates reach your targets
-              </ThemedText>
-            </View>
-          ) : (
-            <View style={styles.alertsList}>
-              <FlatList
-                data={alerts.slice(0, 2)} // Show only first 2 in widget
-                renderItem={renderAlert}
-                keyExtractor={item => item.id}
-                scrollEnabled={false}
-                showsVerticalScrollIndicator={false}
-              />
-              
-              {alerts.length > 2 && (
-                <ThemedText style={styles.showMoreText}>
-                  {alerts.length - 2} more alerts...
+        {/* Click to open detailed view */}
+        <TouchableOpacity 
+          style={styles.widgetClickArea} 
+          onPress={() => setShowDetailedView(true)}
+          activeOpacity={0.7}
+        >
+          {alerts.length > 0 && (
+            <View style={styles.widgetHeader}>
+              <TouchableOpacity
+                style={styles.deleteAllButtonHeader}
+                onPress={deleteAllAlerts}
+              >
+                <ThemedText style={styles.deleteAllButtonHeaderText}>
+                  🗑️ Delete All ({alerts.length})
                 </ThemedText>
-              )}
+              </TouchableOpacity>
             </View>
           )}
 
-          <TouchableOpacity
-            style={styles.addAlertButtonWidget}
-            onPress={() => setShowAddAlert(true)}
-          >
-            <ThemedText style={styles.addAlertButtonWidgetText}>
-              + Add Alert
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.alertsContainer}>
+            {alerts.length === 0 ? (
+              <View style={styles.emptyState}>
+                <ThemedText style={styles.emptyStateText}>
+                  No rate alerts set
+                </ThemedText>
+                <ThemedText style={styles.emptyStateSubtext}>
+                  Get notified when rates reach your targets
+                </ThemedText>
+              </View>
+            ) : (
+              <View style={styles.alertsList}>
+                <FlatList
+                  data={alerts.slice(0, 2)} // Show only first 2 in widget
+                  renderItem={renderAlert}
+                  keyExtractor={item => item.id}
+                  scrollEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
+                
+                {alerts.length > 2 && (
+                  <ThemedText style={styles.showMoreText}>
+                    {alerts.length - 2} more alerts...
+                  </ThemedText>
+                )}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.addAlertButtonWidget}
+              onPress={() => setShowAddAlert(true)}
+            >
+              <ThemedText style={styles.addAlertButtonWidgetText}>
+                {alerts.length === 0 ? '+ Create Your First Alert' : '+ Add Alert'}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </BaseWidget>
+
+      {/* Detailed View Modal */}
+      {renderDetailedViewModal()}
 
       {renderAddAlertModal()}
     </>
@@ -327,6 +468,12 @@ export default function RateAlertsWidget({
 }
 
 const styles = StyleSheet.create({
+  widgetClickArea: {
+    // Make the entire widget clickable
+  },
+  widgetHeader: {
+    marginBottom: 12,
+  },
   alertsContainer: {
     gap: 12,
   },
@@ -436,12 +583,44 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 6,
     alignItems: 'center',
+    marginTop: 8,
   },
   addAlertButtonWidgetText: {
     color: 'white',
     fontWeight: '600',
     fontSize: 14,
   },
+  deleteAllButtonWidget: {
+    backgroundColor: '#dc2626',
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  deleteAllButtonWidgetText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  deleteAllButtonHeader: {
+    backgroundColor: '#dc2626',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#dc2626',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  deleteAllButtonHeaderText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  // Modal styles
   modalContainer: {
     flex: 1,
     paddingTop: 50,
@@ -452,18 +631,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 20,
+    paddingVertical: 10,
   },
   closeButton: {
     fontSize: 16,
     color: '#2563eb',
+    fontWeight: '600',
   },
   modalTitle: {
     fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   modalContent: {
     flex: 1,
     paddingHorizontal: 20,
     gap: 20,
+  },
+  deleteAllButtonModal: {
+    backgroundColor: '#dc2626',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#b91c1c',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  deleteAllButtonModalText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  alertsListModal: {
+    paddingBottom: 20,
+  },
+  addAlertButtonModal: {
+    backgroundColor: '#2563eb',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  addAlertButtonModalText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   inputGroup: {
     gap: 8,

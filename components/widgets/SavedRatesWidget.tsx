@@ -38,41 +38,50 @@ export default function SavedRatesWidget({
 
   const loadSavedRates = async () => {
     try {
-      const stored = await AsyncStorage.getItem('savedRates');
+      const stored = await AsyncStorage.getItem("savedRates");
       if (stored) {
         const rates = JSON.parse(stored);
         setSavedRates(rates);
       }
     } catch (error) {
-      console.error('Error loading saved rates:', error);
+      console.error("Error loading saved rates:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteRate = async (id: string) => {
-    Alert.alert(
-      'Delete Rate',
-      'Are you sure you want to delete this saved rate?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const updatedRates = savedRates.filter(rate => rate.id !== id);
-            setSavedRates(updatedRates);
-            await AsyncStorage.setItem('savedRates', JSON.stringify(updatedRates));
-          }
-        }
-      ]
-    );
+    Alert.alert("Delete Rate", "Are you sure you want to delete this saved rate?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          const updatedRates = savedRates.filter((rate) => rate.id !== id);
+          setSavedRates(updatedRates);
+          await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteAll = async () => {
+    Alert.alert("Delete All", "Are you sure you want to delete all saved rates?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete All",
+        style: "destructive",
+        onPress: async () => {
+          setSavedRates([]);
+          await AsyncStorage.removeItem("savedRates");
+        },
+      },
+    ]);
   };
 
   const handleSelectRate = (from: string, to: string) => {
-    // Store selected currencies for the main converter
-    AsyncStorage.setItem('selectedFromCurrency', from);
-    AsyncStorage.setItem('selectedToCurrency', to);
+    AsyncStorage.setItem("selectedFromCurrency", from);
+    AsyncStorage.setItem("selectedToCurrency", to);
     onNavigateToConverter?.();
   };
 
@@ -97,7 +106,7 @@ export default function SavedRatesWidget({
           </ThemedText>
         </View>
       </TouchableOpacity>
-      
+
       {isEditMode && (
         <TouchableOpacity
           style={styles.deleteButton}
@@ -133,9 +142,7 @@ export default function SavedRatesWidget({
     >
       {savedRates.length === 0 ? (
         <View style={styles.emptyState}>
-          <ThemedText style={styles.emptyStateText}>
-            No saved rates yet
-          </ThemedText>
+          <ThemedText style={styles.emptyStateText}>No saved rates yet</ThemedText>
           <ThemedText style={styles.emptyStateSubtext}>
             Use the converter to save frequently used rates
           </ThemedText>
@@ -143,13 +150,14 @@ export default function SavedRatesWidget({
       ) : (
         <View style={styles.ratesList}>
           <FlatList
-            data={savedRates.slice(0, 3)} // Show only first 3 in widget
+            data={savedRates.slice(0, 3)}
             renderItem={renderSavedRate}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             scrollEnabled={false}
             showsVerticalScrollIndicator={false}
           />
-          
+
+          {/* Show more button */}
           {savedRates.length > 3 && (
             <TouchableOpacity
               style={styles.showMoreButton}
@@ -160,6 +168,13 @@ export default function SavedRatesWidget({
               </ThemedText>
             </TouchableOpacity>
           )}
+
+          {/* Delete All button (only visible in edit mode) */}
+          {isEditMode && savedRates.length > 0 && (
+            <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAll}>
+              <ThemedText style={styles.deleteAllButtonText}>Delete All</ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </BaseWidget>
@@ -168,63 +183,63 @@ export default function SavedRatesWidget({
 
 const styles = StyleSheet.create({
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 20,
   },
   emptyStateText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     marginBottom: 4,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
+    color: "#9ca3af",
+    textAlign: "center",
   },
   ratesList: {
-    maxHeight: 200,
+    maxHeight: 240,
   },
   rateItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: "#f1f5f9",
   },
   rateContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   rateFlags: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginRight: 12,
   },
   arrow: {
     marginHorizontal: 8,
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   rateInfo: {
     flex: 1,
   },
   rateTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 2,
   },
   rateValue: {
     fontSize: 12,
-    color: '#2563eb',
-    fontWeight: '500',
+    color: "#2563eb",
+    fontWeight: "500",
     marginBottom: 2,
   },
   rateDate: {
     fontSize: 10,
-    color: '#9ca3af',
+    color: "#9ca3af",
   },
   deleteButton: {
     padding: 8,
@@ -235,11 +250,23 @@ const styles = StyleSheet.create({
   },
   showMoreButton: {
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   showMoreButtonText: {
-    color: '#2563eb',
+    color: "#2563eb",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  deleteAllButton: {
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  deleteAllButtonText: {
+    color: "#dc2626",
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

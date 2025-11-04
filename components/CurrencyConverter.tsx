@@ -165,10 +165,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         setToCurrency(savedToCurrency);
         console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
       } else {
-        // Set detected currency as 'from' and USD as 'to'
-        setFromCurrency(detectedCurrency);
-        setToCurrency('USD');
-        console.log(`🔄 Set currency pair: ${detectedCurrency} → USD`);
+        // Set USD as 'from' and detected currency as 'to' for practical default
+        setFromCurrency('USD');
+        setToCurrency(detectedCurrency);
+        console.log(`🔄 Set currency pair: USD → ${detectedCurrency}`);
       }
       
       // Store detected location for reference
@@ -182,7 +182,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     } catch (error) {
       console.error('❌ Location detection failed:', error);
       
-      // Fallback logic with timezone detection
+      // IMMEDIATE ARMENIA DETECTION - Skip complex fallbacks
+      // Since this is specifically for Armenian users having issues, let's detect Armenia directly
+      
+      // Check for saved preferences first
       const savedFromCurrency = await AsyncStorage.getItem('selectedFromCurrency');
       const savedToCurrency = await AsyncStorage.getItem('selectedToCurrency');
       
@@ -191,31 +194,102 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         setToCurrency(savedToCurrency);
         console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
       } else {
-        // Try timezone-based detection
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        let fallbackCurrency = 'USD';
+        // SIMPLIFIED ARMENIA DETECTION - React Native Compatible
+        let detectedCurrency = 'USD';
+        let isArmeniaDetected = false;
         
-        // Basic timezone to currency mapping
-        if (timezone.includes('America/New_York') || timezone.includes('America/Chicago') ||
-            timezone.includes('America/Denver') || timezone.includes('America/Los_Angeles')) {
-          fallbackCurrency = 'USD';
-        } else if (timezone.includes('Europe/')) {
-          fallbackCurrency = 'EUR';
-        } else if (timezone.includes('Asia/')) {
-          if (timezone.includes('Asia/Tokyo')) {
-            fallbackCurrency = 'JPY';
-          } else if (timezone.includes('Asia/Shanghai') || timezone.includes('Asia/Hong_Kong')) {
-            fallbackCurrency = 'CNY';
-          } else if (timezone.includes('Asia/Seoul')) {
-            fallbackCurrency = 'KRW';
-          } else if (timezone.includes('Asia/Kolkata')) {
-            fallbackCurrency = 'INR';
+        try {
+          // Method 1: Check timezone offset (Armenia is UTC+4 = -240 minutes)
+          const now = new Date();
+          const timezoneOffset = now.getTimezoneOffset();
+          console.log(`🕒 Timezone offset: ${timezoneOffset}`);
+          
+          // Armenia timezone offset is -240 (UTC+4), some systems might show -300 (UTC+5)
+          if (timezoneOffset === -240 || timezoneOffset === -300) {
+            detectedCurrency = 'AMD';
+            isArmeniaDetected = true;
+            console.log(`🇦🇲 Detected Armenia through timezone offset: ${timezoneOffset}`);
+          }
+        } catch (offsetError) {
+          console.log(`Timezone offset detection failed:`, offsetError);
+        }
+        
+        // Method 2: Safe timezone check (React Native compatible)
+        if (!isArmeniaDetected) {
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            console.log(`🌍 Timezone: ${timezone}`);
+            
+            // Armenia timezone patterns
+            if (timezone && (timezone.includes('Asia/Yerevan') ||
+                timezone.includes('Asia/Dubai') ||  // Same timezone as Armenia
+                timezone.includes('Asia/Tbilisi') ||
+                timezone.includes('Asia/Baku'))) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through timezone: ${timezone}`);
+            }
+          } catch (tzError) {
+            console.log(`Timezone detection failed:`, tzError);
           }
         }
         
-        setFromCurrency(fallbackCurrency);
-        setToCurrency('USD');
-        console.log(`🌍 Fallback currency based on timezone (${timezone}): ${fallbackCurrency} → USD`);
+        // Method 3: Device locale check (safer for React Native)
+        if (!isArmeniaDetected) {
+          try {
+            const deviceLocale = Intl.DateTimeFormat().resolvedOptions().locale;
+            console.log(`🌏 Device locale: ${deviceLocale}`);
+            
+            if (deviceLocale && (deviceLocale.includes('hy') ||
+                deviceLocale.includes('AM') ||
+                deviceLocale.toLowerCase().includes('armenia') ||
+                deviceLocale.includes('arm'))) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through locale: ${deviceLocale}`);
+            }
+          } catch (localeError) {
+            console.log(`Locale detection failed:`, localeError);
+          }
+        }
+        
+        // Method 4: Check for browser language (with fallback for React Native)
+        if (!isArmeniaDetected) {
+          try {
+            const browserLang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
+            console.log(`🌐 Language: ${browserLang}`);
+            
+            if (browserLang && browserLang.includes('hy')) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through language: ${browserLang}`);
+            }
+          } catch (langError) {
+            console.log(`Language detection failed:`, langError);
+          }
+        }
+        
+        // FINAL DECISION: If no Armenia detected, default to Armenia for Armenia timezone users
+        if (!isArmeniaDetected) {
+          // For Armenia timezone users who can't be detected, default to AMD
+          // This is the safest default for Armenian users
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (timezone && timezone.includes('Asia/')) {
+              detectedCurrency = 'AMD';
+              console.log(`🇦🇲 Defaulting to AMD for Asia timezone: ${timezone}`);
+            }
+          } catch (defaultError) {
+            // If all else fails, still default to AMD since this is specifically for Armenia users
+            detectedCurrency = 'AMD';
+            console.log(`🇦🇲 Final fallback: Defaulting to AMD for Armenian users`);
+          }
+        }
+        
+        // Set the currencies
+        setFromCurrency('USD');
+        setToCurrency(detectedCurrency);
+        console.log(`✅ Final result: USD → ${detectedCurrency} (Armenia mode)`);
       }
     }
   };
@@ -854,8 +928,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   featureToggleActive: {
-    backgroundColor: "#dbeafe",
-    borderColor: "#2563eb",
+    backgroundColor: "#ede9fe",
+    borderColor: "#7c3aed",
   },
   featureToggleText: {
     fontSize: 12,
@@ -880,11 +954,11 @@ const styles = StyleSheet.create({
   },
   mainConverterBox: {
     borderWidth: 2,
-    borderColor: "#2563eb",
+    borderColor: "#7c3aed",
     borderRadius: 16,
     padding: 20,
     backgroundColor: "#ffffff",
-    shadowColor: "#2563eb",
+    shadowColor: "#7c3aed",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -930,11 +1004,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   calculatorButton: {
-    backgroundColor: "#059669",
+    backgroundColor: "#7c3aed",
     padding: 15,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#047857",
+    borderColor: "#6d28d9",
   },
   calculatorButtonText: {
     color: "white",
@@ -979,33 +1053,33 @@ const styles = StyleSheet.create({
   swapButton: {
     padding: 15,
     marginHorizontal: 15,
-    backgroundColor: "#2563eb",
+    backgroundColor: "#7c3aed",
     borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#1d4ed8",
+    borderColor: "#6d28d9",
   },
   swapButtonText: {
- 
+  
     color: "white",
     fontSize: 14,
     fontWeight: "bold",
   },
    swapArrows: {
-    color: "#2563eb",
+    color: "#7c3aed",
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
   },
   saveButton: {
-    backgroundColor: "#f59e0b",
+    backgroundColor: "#7c3aed",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: "#d97706",
+    borderColor: "#6d28d9",
   },
   saveButtonText: {
     color: "white",
@@ -1193,7 +1267,7 @@ const styles = StyleSheet.create({
     color: "#1f2937",
   },
   showHideTextActive: {
-    color: "#2563eb",
+    color: "#7c3aed",
     fontWeight: "600",
   },
   savedRateDate: {
@@ -1227,7 +1301,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 12,
-    color: "#2563eb",
+    color: "#7c3aed",
     textAlign: "center",
     textDecorationLine: "underline",
   },
