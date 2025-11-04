@@ -58,6 +58,7 @@ export default function HomeScreen() {
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [rateAlerts, setRateAlerts] = useState<any[]>([]);
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([]);
 
   // Rate alert form state
   const [newAlert, setNewAlert] = useState({
@@ -66,6 +67,9 @@ export default function HomeScreen() {
     targetRate: "",
     condition: "below" as "above" | "below",
   });
+
+  // Currency picker state for multi-currency management
+  const [showCurrencyManager, setShowCurrencyManager] = useState(false);
 
   useEffect(() => {
     // Use imported location detection utility
@@ -77,22 +81,26 @@ export default function HomeScreen() {
           // This creates an initial conversion: USD → user's currency
           setFromCurrency("USD");
           setToCurrency(detectedCurrency);
-          
+
           // Update new alert defaults to use user's currency as well
-          setNewAlert(prev => ({
+          setNewAlert((prev) => ({
             ...prev,
-            toCurrency: detectedCurrency
+            toCurrency: detectedCurrency,
           }));
         }
       } catch (error) {
-        console.warn("Location detection failed, using default currency:", error);
+        console.warn(
+          "Location detection failed, using default currency:",
+          error
+        );
       }
     };
-    
+
     initApp();
     loadExchangeRates();
     loadSavedRates();
     loadRateAlerts();
+    loadSelectedCurrencies();
   }, []);
 
   const loadExchangeRates = async () => {
@@ -132,6 +140,30 @@ export default function HomeScreen() {
     }
   };
 
+  const loadSelectedCurrencies = async () => {
+    try {
+      const saved = await AsyncStorage.getItem("selectedCurrencies");
+      if (saved) {
+        setSelectedCurrencies(JSON.parse(saved));
+      } else {
+        // Default to some popular currencies (avoiding default toCurrency to prevent filtering)
+        const defaults = [
+          "GBP",
+          "JPY",
+          "CAD",
+          "AUD",
+          "CHF",
+          "CNY",
+          "SEK",
+          "NZD",
+        ];
+        setSelectedCurrencies(defaults);
+      }
+    } catch (error) {
+      console.error("Error loading selected currencies:", error);
+    }
+  };
+
   const createRateAlert = async () => {
     if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
       alert("Please enter a valid target rate");
@@ -164,20 +196,25 @@ export default function HomeScreen() {
 
   const deleteAlert = async (alertId: string) => {
     Alert.alert(
-      'Delete Alert',
-      'Are you sure you want to delete this rate alert?',
+      "Delete Alert",
+      "Are you sure you want to delete this rate alert?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
-            const updatedAlerts = rateAlerts.filter((alert) => alert.id !== alertId);
+            const updatedAlerts = rateAlerts.filter(
+              (alert) => alert.id !== alertId
+            );
             setRateAlerts(updatedAlerts);
-            await AsyncStorage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
+            await AsyncStorage.setItem(
+              "rateAlerts",
+              JSON.stringify(updatedAlerts)
+            );
           },
         },
       ]
@@ -186,18 +223,18 @@ export default function HomeScreen() {
 
   const deleteAllAlerts = async () => {
     if (rateAlerts.length === 0) return;
-    
+
     Alert.alert(
-      'Delete All Alerts',
+      "Delete All Alerts",
       `Are you sure you want to delete all ${rateAlerts.length} rate alerts? This action cannot be undone.`,
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete All',
-          style: 'destructive',
+          text: "Delete All",
+          style: "destructive",
           onPress: async () => {
             setRateAlerts([]);
             await AsyncStorage.setItem("rateAlerts", JSON.stringify([]));
@@ -209,20 +246,23 @@ export default function HomeScreen() {
 
   const deleteSavedRate = async (index: number) => {
     Alert.alert(
-      'Delete Saved Rate',
-      'Are you sure you want to delete this saved rate?',
+      "Delete Saved Rate",
+      "Are you sure you want to delete this saved rate?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             const updatedRates = savedRates.filter((_, i) => i !== index);
             setSavedRates(updatedRates);
-            await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+            await AsyncStorage.setItem(
+              "savedRates",
+              JSON.stringify(updatedRates)
+            );
           },
         },
       ]
@@ -231,18 +271,18 @@ export default function HomeScreen() {
 
   const deleteAllSavedRates = async () => {
     if (savedRates.length === 0) return;
-    
+
     Alert.alert(
-      'Delete All Saved Rates',
+      "Delete All Saved Rates",
       `Are you sure you want to delete all ${savedRates.length} saved rates? This action cannot be undone.`,
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete All',
-          style: 'destructive',
+          text: "Delete All",
+          style: "destructive",
           onPress: async () => {
             setSavedRates([]);
             await AsyncStorage.setItem("savedRates", JSON.stringify([]));
@@ -268,8 +308,8 @@ export default function HomeScreen() {
     const inputAmount = parseFloat(multiAmount);
     const conversionResults: { [key: string]: number } = {};
 
-    // Convert from USD to all popular currencies
-    POPULAR_CURRENCIES.forEach((currency) => {
+    // Convert from USD to all selected currencies
+    selectedCurrencies.forEach((currency) => {
       if (currenciesData.conversion_rates?.[currency]) {
         const targetRate = currenciesData.conversion_rates[currency];
         // Convert: USD → target currency
@@ -279,7 +319,7 @@ export default function HomeScreen() {
     });
 
     setConversions(conversionResults);
-  }, [currenciesData, multiAmount]);
+  }, [currenciesData, multiAmount, selectedCurrencies]);
 
   const handleFromCurrencySelect = (currency: string) => {
     setNewAlert({
@@ -295,6 +335,25 @@ export default function HomeScreen() {
       toCurrency: currency,
     });
     setShowToCurrencyPicker(false);
+  };
+
+  const saveSelectedCurrencies = async (currencies: string[]) => {
+    try {
+      setSelectedCurrencies(currencies);
+      await AsyncStorage.setItem(
+        "selectedCurrencies",
+        JSON.stringify(currencies)
+      );
+    } catch (error) {
+      console.error("Error saving selected currencies:", error);
+    }
+  };
+
+  const toggleCurrency = (currency: string) => {
+    const updated = selectedCurrencies.includes(currency)
+      ? selectedCurrencies.filter((c) => c !== currency)
+      : [...selectedCurrencies, currency];
+    saveSelectedCurrencies(updated);
   };
 
   useEffect(() => {
@@ -452,7 +511,7 @@ export default function HomeScreen() {
                   <ThemedText style={styles.resultsTitle}>
                     {multiAmount} USD converts to:
                   </ThemedText>
-                  
+
                   {/* Show user's currency conversion prominently */}
                   {toCurrency && conversions[toCurrency] && (
                     <View style={styles.primaryConversion}>
@@ -462,41 +521,55 @@ export default function HomeScreen() {
                       <View style={styles.primaryConversionItem}>
                         <CurrencyFlag currency={toCurrency} size={20} />
                         <ThemedText style={styles.primaryConversionAmount}>
-                          {conversions[toCurrency].toFixed(2)} {toCurrency}
+                          {conversions[toCurrency].toFixed(4)} {toCurrency}
                         </ThemedText>
                       </View>
                     </View>
                   )}
-                  
+
                   <View style={styles.conversionsGrid}>
                     {Object.entries(conversions)
                       .filter(([currency]) => currency !== toCurrency) // Don't duplicate user's currency
-                      .slice(0, 7)
+                      .filter(([currency]) =>
+                        selectedCurrencies.includes(currency)
+                      ) // Only show selected currencies
                       .map(([currency, amount]) => (
                         <View key={currency} style={styles.conversionItem}>
-                          <CurrencyFlag currency={currency} size={16} />
-                          <View style={styles.conversionInfo}>
-                            <ThemedText style={styles.conversionCurrency}>
-                              {currency}
-                            </ThemedText>
-                            <ThemedText style={styles.conversionAmount}>
-                              {amount.toFixed(2)}
-                            </ThemedText>
+                          <View style={styles.conversionLeft}>
+                            <CurrencyFlag currency={currency} size={16} />
+                            <View style={styles.conversionInfo}>
+                              <ThemedText style={styles.conversionCurrency}>
+                                {currency}
+                              </ThemedText>
+                              <ThemedText style={styles.conversionAmount}>
+                                {amount.toFixed(4)}
+                              </ThemedText>
+                            </View>
                           </View>
+                          <TouchableOpacity
+                            style={styles.removeCurrencyButton}
+                            onPress={() => toggleCurrency(currency)}
+                          >
+                            <ThemedText style={styles.removeCurrencyText}>
+                              ×
+                            </ThemedText>
+                          </TouchableOpacity>
                         </View>
                       ))}
-                  </View>
 
-                  {Object.keys(conversions).length > 8 && (
-                    <TouchableOpacity
-                      style={styles.showMoreButton}
-                      onPress={() => setCurrentView("converter")}
-                    >
-                      <ThemedText style={styles.showMoreButtonText}>
-                        View all {Object.keys(conversions).length} conversions →
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
+                    {/* Manage Currencies Button */}
+                    {Object.keys(conversions).length > 0 && (
+                      <TouchableOpacity
+                        style={styles.manageCurrenciesButton}
+                        onPress={() => setShowCurrencyManager(true)}
+                      >
+                        <ThemedText style={styles.manageCurrenciesText}>
+                          ⚙️ Manage Currencies ({selectedCurrencies.length}{" "}
+                          selected)
+                        </ThemedText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
             </View>
@@ -542,7 +615,10 @@ export default function HomeScreen() {
                               size={16}
                             />
                             <ThemedText style={styles.alertArrow}>→</ThemedText>
-                            <CurrencyFlag currency={alert.toCurrency} size={16} />
+                            <CurrencyFlag
+                              currency={alert.toCurrency}
+                              size={16}
+                            />
                             <ThemedText style={styles.alertText}>
                               {alert.condition === "below" ? "↓" : "↑"}{" "}
                               {alert.targetRate}
@@ -552,7 +628,9 @@ export default function HomeScreen() {
                             style={styles.alertDeleteButton}
                             onPress={() => deleteAlert(alert.id)}
                           >
-                            <ThemedText style={styles.alertDeleteText}>🗑️</ThemedText>
+                            <ThemedText style={styles.alertDeleteText}>
+                              🗑️
+                            </ThemedText>
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -590,7 +668,10 @@ export default function HomeScreen() {
                         style={[styles.currencyPickerButton, { flex: 1 }]}
                         onPress={() => setShowFromCurrencyPicker(true)}
                       >
-                        <CurrencyFlag currency={newAlert.fromCurrency} size={20} />
+                        <CurrencyFlag
+                          currency={newAlert.fromCurrency}
+                          size={20}
+                        />
                         <ThemedText style={styles.currencyPickerButtonText}>
                           From: {newAlert.fromCurrency}
                         </ThemedText>
@@ -599,7 +680,10 @@ export default function HomeScreen() {
                         style={[styles.currencyPickerButton, { flex: 1 }]}
                         onPress={() => setShowToCurrencyPicker(true)}
                       >
-                        <CurrencyFlag currency={newAlert.toCurrency} size={20} />
+                        <CurrencyFlag
+                          currency={newAlert.toCurrency}
+                          size={20}
+                        />
                         <ThemedText style={styles.currencyPickerButtonText}>
                           To: {newAlert.toCurrency}
                         </ThemedText>
@@ -684,8 +768,13 @@ export default function HomeScreen() {
                           style={styles.savedRateContent}
                           onPress={() => setCurrentView("converter")}
                         >
-                          <CurrencyFlag currency={rate.fromCurrency} size={16} />
-                          <ThemedText style={styles.savedRateArrow}>→</ThemedText>
+                          <CurrencyFlag
+                            currency={rate.fromCurrency}
+                            size={16}
+                          />
+                          <ThemedText style={styles.savedRateArrow}>
+                            →
+                          </ThemedText>
                           <CurrencyFlag currency={rate.toCurrency} size={16} />
                           <View style={styles.savedRateInfo}>
                             <ThemedText style={styles.savedRateTitle}>
@@ -700,7 +789,9 @@ export default function HomeScreen() {
                           style={styles.savedRateDeleteButton}
                           onPress={() => deleteSavedRate(index)}
                         >
-                          <ThemedText style={styles.savedRateDeleteText}>🗑️</ThemedText>
+                          <ThemedText style={styles.savedRateDeleteText}>
+                            🗑️
+                          </ThemedText>
                         </TouchableOpacity>
                       </View>
                     ))}
@@ -735,7 +826,6 @@ export default function HomeScreen() {
               ✨ Dashboard Features
             </ThemedText>
             <View style={styles.featuresList}>
-              
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
@@ -808,7 +898,7 @@ export default function HomeScreen() {
   return (
     <>
       {renderMainContent()}
-      
+
       {/* Currency Pickers for Rate Alerts */}
       <CurrencyPicker
         visible={showFromCurrencyPicker}
@@ -824,6 +914,18 @@ export default function HomeScreen() {
         selectedCurrency={newAlert.toCurrency}
         onSelect={handleToCurrencySelect}
         onClose={() => setShowToCurrencyPicker(false)}
+      />
+
+      {/* Currency Manager Modal */}
+      <CurrencyPicker
+        visible={showCurrencyManager}
+        currencies={currencyList}
+        selectedCurrency=""
+        onSelect={(currency) => {
+          toggleCurrency(currency);
+          setShowCurrencyManager(false);
+        }}
+        onClose={() => setShowCurrencyManager(false)}
       />
     </>
   );
@@ -1059,14 +1161,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   conversionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   conversionItem: {
-    width: "48%",
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     padding: 8,
     backgroundColor: "#f8fafc",
     borderRadius: 6,
@@ -1368,6 +1474,7 @@ const styles = StyleSheet.create({
   primaryConversionItem: {
     flexDirection: "row",
     alignItems: "center",
+    color: "red",
     justifyContent: "center",
   },
   primaryConversionAmount: {
@@ -1375,5 +1482,39 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#0369a1",
     marginLeft: 8,
+  },
+  // Currency Management Styles
+  conversionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  removeCurrencyButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fee2e2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  removeCurrencyText: {
+    color: "#dc2626",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  manageCurrenciesButton: {
+    backgroundColor: "#f3f4f6",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  manageCurrenciesText: {
+    color: "#374151",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
