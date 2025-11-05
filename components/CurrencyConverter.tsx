@@ -68,9 +68,22 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
     try {
-      console.log('🔍 Detecting user location for currency conversion...');
+      console.log('🔍 Checking for saved currency conversions...');
       
-      // ALWAYS clear saved preferences first to avoid conflicts
+      // Check for saved conversions first - PRIORITIZE SAVED DATA
+      const savedFromCurrency = await AsyncStorage.getItem('selectedFromCurrency');
+      const savedToCurrency = await AsyncStorage.getItem('selectedToCurrency');
+      
+      if (savedFromCurrency && savedToCurrency && currencyList.includes(savedFromCurrency) && currencyList.includes(savedToCurrency)) {
+        setFromCurrency(savedFromCurrency);
+        setToCurrency(savedToCurrency);
+        console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
+        return; // Exit early - we have saved data!
+      }
+      
+      console.log('🔍 No saved conversions found, detecting location...');
+      
+      // Only clear saved preferences if no saved data exists
       try {
         await AsyncStorage.removeItem('selectedFromCurrency');
         await AsyncStorage.removeItem('selectedToCurrency');
@@ -326,6 +339,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Set a loading timeout to prevent infinite loading
+        const loadingTimeout = setTimeout(() => {
+          setLoading(false);
+          console.log('⚠️ Loading timeout reached, setting default currencies');
+          // Set defaults if something goes wrong
+          setFromCurrency('USD');
+          setToCurrency('AMD');
+        }, 10000); // 10 second timeout
+
         const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
         const cacheTimestamp = await AsyncStorage.getItem('cachedRatesTimestamp');
         const now = Date.now();
@@ -335,12 +357,16 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           const transformedData: Data = JSON.parse(cachedData);
           setCurrenciesData(transformedData);
           setCurrencyList(Object.keys(transformedData.conversion_rates));
-          // Wait for location detection before loading is complete
-          await detectUserLocation();
+          console.log('📦 Loaded cached exchange rates');
+          
+          // Wait for currency detection/loading before marking complete
+          await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for state updates
+          clearTimeout(loadingTimeout);
           setLoading(false);
           return;
         }
 
+        console.log('🌐 Fetching fresh exchange rates...');
         const response = await fetch(
           `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
         );
@@ -376,9 +402,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
         setCurrenciesData(transformedData);
         setCurrencyList(Object.keys(transformedData.conversion_rates));
+        console.log('📡 Fresh exchange rates loaded');
         
-        // CRITICAL: Wait for location detection before marking loading as complete
-        await detectUserLocation();
+        // Wait for currency detection/loading before marking complete
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for state updates
+        clearTimeout(loadingTimeout);
         setLoading(false);
       } catch (error) {
         console.error("CurrencyFreaks API Fetch Error:", error);
@@ -387,14 +415,14 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         if (cachedData) {
           setCurrenciesData(JSON.parse(cachedData));
           setCurrencyList(Object.keys(JSON.parse(cachedData).conversion_rates || {}));
+          console.log('📦 Using cached data after API error');
+        } else {
+          // Set default currencies if no cache available
+          setFromCurrency('USD');
+          setToCurrency('AMD');
+          console.log('💡 No cached data available, using defaults');
         }
         
-        // Even on error, wait for location detection
-        await detectUserLocation();
-        Alert.alert(
-          "Error",
-          `Failed to fetch latest exchange rates. Using cached data if available.`
-        );
         setLoading(false);
       }
     };
@@ -465,6 +493,57 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
       ),
     ].slice(0, 5);
     await AsyncStorage.setItem("currencyHistory", JSON.stringify(newHistory));
+  };
+
+  const updateFrequentlyUsed = async (currency: string): Promise<void> => {
+    const storedUsage = await AsyncStorage.getItem("frequentlyUsedCurrencies");
+    const usage = storedUsage ? JSON.parse(storedUsage) : {};
+    
+    // Increment usage count
+    usage[currency] = (usage[currency] || 0) + 1;
+    
+    // Keep only top 20 most used currencies
+    const sortedCurrencies = Object.entries(usage)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 20);
+    
+    const updatedUsage: { [key: string]: number } = {};
+    sortedCurrencies.forEach(([curr, count]) => {
+      updatedUsage[curr] = count as number;
+    });
+    
+    await AsyncStorage.setItem("frequentlyUsedCurrencies", JSON.stringify(updatedUsage));
+  };
+
+  const saveLastConversion = async (amount: string, from: string, to: string): Promise<void> => {
+    await AsyncStorage.setItem("lastConversion", JSON.stringify({
+      amount,
+      fromCurrency: from,
+      toCurrency: to,
+      timestamp: Date.now()
+    }));
+  };
+
+  const loadLastConversion = async (): Promise<void> => {
+    try {
+      const stored = await AsyncStorage.getItem("lastConversion");
+      if (stored) {
+        const lastConversion = JSON.parse(stored);
+        // Only restore if it's less than 24 hours old
+        const hoursSinceLastUse = (Date.now() - lastConversion.timestamp) / (1000 * 60 * 60);
+        if (hoursSinceLastUse < 24) {
+          if (lastConversion.amount) setAmount(lastConversion.amount);
+          if (lastConversion.fromCurrency && currencyList.includes(lastConversion.fromCurrency)) {
+            setFromCurrency(lastConversion.fromCurrency);
+          }
+          if (lastConversion.toCurrency && currencyList.includes(lastConversion.toCurrency)) {
+            setToCurrency(lastConversion.toCurrency);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Failed to load last conversion:', error);
+    }
   };
 
   useEffect(() => {
@@ -588,6 +667,13 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   }, []);
 
   const mergedCurrencyList = mergeHistoryWithList(history, currencyList);
+
+  // Load last conversion when currencies are loaded
+  useEffect(() => {
+    if (currencyList.length > 0) {
+      loadLastConversion();
+    }
+  }, [currencyList]);
 
   if (loading) {
     return (
@@ -723,10 +809,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           <MultiCurrencyConverter
             currenciesData={currenciesData}
             fromCurrency={fromCurrency}
-            toCurrency={toCurrency}
-            amount={amount}
-            onAmountChange={setAmount}
-            showCloseButton={true}
+            onFromCurrencyChange={setFromCurrency}
             onClose={() => setShowMultiCurrency(false)}
           />
         )}
@@ -749,6 +832,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           selectedCurrency={fromCurrency}
           onSelect={(currency) => setFromCurrency(currency)}
           onClose={() => setShowFromPicker(false)}
+          onCurrencySelected={(currency) => {
+            updateFrequentlyUsed(currency);
+            saveLastConversion(amount, currency, toCurrency);
+          }}
         />
 
         <CurrencyPicker
@@ -757,6 +844,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           selectedCurrency={toCurrency}
           onSelect={(currency) => setToCurrency(currency)}
           onClose={() => setShowToPicker(false)}
+          onCurrencySelected={(currency) => {
+            updateFrequentlyUsed(currency);
+            saveLastConversion(amount, fromCurrency, currency);
+          }}
         />
 
         {/* Calculator Modal */}

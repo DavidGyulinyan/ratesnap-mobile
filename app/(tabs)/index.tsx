@@ -389,12 +389,10 @@ export default function HomeScreen() {
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && currenciesData && (
             <MultiCurrencyConverter
+              key="multiCurrencyConverter-main"
               currenciesData={currenciesData}
               fromCurrency="USD"
-              toCurrency={toCurrency}
-              amount={multiAmount}
-              onAmountChange={setMultiAmount}
-              showCloseButton={true}
+              onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
               onClose={() => setShowMultiCurrency(false)}
               style={{ marginBottom: 24 }}
             />

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Modal,
@@ -7,6 +7,7 @@ import {
   TextInput,
   StyleSheet,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
@@ -17,6 +18,7 @@ interface CurrencyPickerProps {
   selectedCurrency: string;
   onSelect: (currency: string) => void;
   onClose: () => void;
+  onCurrencySelected?: (currency: string) => void;
 }
 
 // Comprehensive currency to country mapping
@@ -167,8 +169,28 @@ export default function CurrencyPicker({
   selectedCurrency,
   onSelect,
   onClose,
+  onCurrencySelected,
 }: CurrencyPickerProps) {
   const [search, setSearch] = useState("");
+  const [frequentlyUsedCurrencies, setFrequentlyUsedCurrencies] = useState<{[key: string]: number}>({});
+
+  // Load frequently used currencies from storage
+  const loadFrequentlyUsedCurrencies = async () => {
+    try {
+      const stored = await AsyncStorage.getItem("frequentlyUsedCurrencies");
+      if (stored) {
+        setFrequentlyUsedCurrencies(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.log('Failed to load frequently used currencies:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (visible) {
+      loadFrequentlyUsedCurrencies();
+    }
+  }, [visible]);
 
   const enhancedCurrencies = useMemo(() => {
     // Filter out non-currency items - only keep items that have valid currency mappings
@@ -177,18 +199,30 @@ export default function CurrencyPicker({
       CURRENCY_TO_COUNTRIES[currency].length > 0
     );
     
-    // Sort currencies alphabetically
-    const sortedCurrencies = validCurrencies.sort((a, b) => a.localeCompare(b));
-    
-    return sortedCurrencies.map(currency => {
+    // Create currency items with usage count
+    const currencyItems = validCurrencies.map(currency => {
       const countries = CURRENCY_TO_COUNTRIES[currency] || [];
+      const usageCount = frequentlyUsedCurrencies[currency] || 0;
       return {
         code: currency,
         countries: countries,
-        searchText: `${currency} ${countries.join(' ')}`.toLowerCase()
+        searchText: `${currency} ${countries.join(' ')}`.toLowerCase(),
+        usageCount
       };
     });
-  }, [currencies]);
+    
+    // Sort currencies: frequently used first (by usage count), then alphabetical
+    const sortedCurrencies = currencyItems.sort((a, b) => {
+      // First sort by usage count (descending)
+      if (b.usageCount !== a.usageCount) {
+        return b.usageCount - a.usageCount;
+      }
+      // If usage counts are equal, sort alphabetically
+      return a.code.localeCompare(b.code);
+    });
+    
+    return sortedCurrencies;
+  }, [currencies, frequentlyUsedCurrencies]);
 
   const filteredCurrencies = useMemo(() => {
     if (!search.trim()) return enhancedCurrencies;
@@ -198,8 +232,41 @@ export default function CurrencyPicker({
     );
   }, [enhancedCurrencies, search]);
 
-  const handleSelect = (currency: string) => {
+  const updateFrequentlyUsed = async (currency: string) => {
+    try {
+      const storedUsage = await AsyncStorage.getItem("frequentlyUsedCurrencies");
+      const usage = storedUsage ? JSON.parse(storedUsage) : {};
+      
+      // Increment usage count
+      usage[currency] = (usage[currency] || 0) + 1;
+      
+      // Keep only top 20 most used currencies
+      const sortedCurrencies = Object.entries(usage)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 20);
+      
+      const updatedUsage: { [key: string]: number } = {};
+      sortedCurrencies.forEach(([curr, count]) => {
+        updatedUsage[curr] = count as number;
+      });
+      
+      await AsyncStorage.setItem("frequentlyUsedCurrencies", JSON.stringify(updatedUsage));
+    } catch (error) {
+      console.log('Failed to update frequently used currencies:', error);
+    }
+  };
+
+  const handleSelect = async (currency: string) => {
     onSelect(currency);
+    
+    // Update frequently used currencies
+    await updateFrequentlyUsed(currency);
+    
+    // Call the callback if provided
+    if (onCurrencySelected) {
+      onCurrencySelected(currency);
+    }
+    
     onClose();
     setSearch("");
   };
@@ -215,12 +282,22 @@ export default function CurrencyPicker({
             Select Currency
           </ThemedText>
         </View>
+        
+        {/* Search Input */}
         <TextInput
           style={styles.searchInput}
           placeholder="Search currencies"
           value={search}
           onChangeText={setSearch}
         />
+        
+        {/* Frequently Used Section */}
+        {Object.keys(frequentlyUsedCurrencies).length > 0 && !search.trim() && (
+          <View style={styles.sectionHeader}>
+            <ThemedText style={styles.sectionTitle}>⭐ Frequently Used</ThemedText>
+          </View>
+        )}
+        
         <FlatList
           data={filteredCurrencies}
           keyExtractor={(item) => item.code}
@@ -229,35 +306,47 @@ export default function CurrencyPicker({
               style={[
                 styles.currencyItem,
                 item.code === selectedCurrency && styles.selectedItem,
+                item.usageCount > 0 && !search.trim() && styles.frequentlyUsedItem,
               ]}
               onPress={() => handleSelect(item.code)}
             >
               <View style={styles.currencyItemContent}>
-                <CurrencyFlag currency={item.code} size={20} />
-                <View style={styles.currencyInfo}>
-                  <ThemedText
-                    style={
-                      item.code === selectedCurrency ? styles.selectedText : styles.currencyCode
-                    }
-                  >
-                    {item.code}
-                  </ThemedText>
-                  {item.countries.length > 0 && (
-                    <ThemedText style={styles.countryNames}>
-                      {(() => {
-                        // Format as "Country, Full Currency Name" for better readability
-                        const countryName = item.countries[0] || '';
-                        const currencyFullName = CURRENCY_TO_FULL_NAMES[item.code] || '';
-                        
-                        if (currencyFullName) {
-                          return `${countryName}, ${currencyFullName}`;
-                        } else {
-                          // If no currency name found, just show country name with currency code
-                          return `${countryName} (${item.code})`;
+                <View style={styles.currencyLeftContent}>
+                  <CurrencyFlag currency={item.code} size={20} />
+                  <View style={styles.currencyInfo}>
+                    <View style={styles.currencyHeader}>
+                      <ThemedText
+                        style={
+                          item.code === selectedCurrency ? styles.selectedText : styles.currencyCode
                         }
-                      })()}
-                    </ThemedText>
-                  )}
+                      >
+                        {item.code}
+                      </ThemedText>
+                      {item.usageCount > 0 && (
+                        <View style={styles.usageIndicator}>
+                          <ThemedText style={styles.usageCount}>
+                            {item.usageCount}
+                          </ThemedText>
+                        </View>
+                      )}
+                    </View>
+                    {item.countries.length > 0 && (
+                      <ThemedText style={styles.countryNames}>
+                        {(() => {
+                          // Format as "Country, Full Currency Name" for better readability
+                          const countryName = item.countries[0] || '';
+                          const currencyFullName = CURRENCY_TO_FULL_NAMES[item.code] || '';
+                          
+                          if (currencyFullName) {
+                            return `${countryName}, ${currencyFullName}`;
+                          } else {
+                            // If no currency name found, just show country name with currency code
+                            return `${countryName} (${item.code})`;
+                          }
+                        })()}
+                      </ThemedText>
+                    )}
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -324,6 +413,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
   },
+  currencyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   currencyCode: {
     fontSize: 16,
     fontWeight: "600",
@@ -337,5 +431,39 @@ const styles = StyleSheet.create({
   selectedText: {
     fontWeight: "600",
     color: "#059669",
+  },
+  frequentlyUsedItem: {
+    backgroundColor: "#fefce8",
+    borderBottomColor: "#fef3c7",
+  },
+  currencyLeftContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  usageIndicator: {
+    backgroundColor: "#fbbf24",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  usageCount: {
+    color: "#92400e",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#fffbeb",
+    borderBottomWidth: 1,
+    borderBottomColor: "#fbbf24",
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#92400e",
   },
 });
