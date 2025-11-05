@@ -8,6 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
   Linking,
+  FlatList,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "./themed-view";
@@ -15,6 +16,8 @@ import { ThemedText } from "./themed-text";
 import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
+import MultiCurrencyConverter from "./MultiCurrencyConverter";
+import SavedRates from "./SavedRates";
 
 interface SavedRate {
   id: string;
@@ -22,6 +25,10 @@ interface SavedRate {
   toCurrency: string;
   rate: number;
   timestamp: number;
+}
+
+interface CurrencyConverterProps {
+  onNavigateToDashboard?: () => void;
 }
 
 interface Data {
@@ -38,8 +45,8 @@ interface Data {
   };
 }
 
-export default function CurrencyConverter() {
-  const [amount, setAmount] = useState<string>("");
+export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyConverterProps) {
+  const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
   const [fromCurrency, setFromCurrency] = useState<string>("");
@@ -51,15 +58,314 @@ export default function CurrencyConverter() {
   const [showFromPicker, setShowFromPicker] = useState<boolean>(false);
   const [showToPicker, setShowToPicker] = useState<boolean>(false);
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
+  const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
+  const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
 
-  // CurrencyFreaks API configuration
   const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
   const CURRENCYFREAKS_API_KEY = "870b638bf16a4be185dff4dac89e557a";
 
-  useEffect(() => {
-    const getExchangeData = async () => {
+  // Enhanced Auto-detect user's location and set default currency
+  const detectUserLocation = async () => {
+    try {
+      console.log('🔍 Checking for saved currency conversions...');
+      
+      // Check for saved conversions first - PRIORITIZE SAVED DATA
+      const savedFromCurrency = await AsyncStorage.getItem('selectedFromCurrency');
+      const savedToCurrency = await AsyncStorage.getItem('selectedToCurrency');
+      
+      if (savedFromCurrency && savedToCurrency && currencyList.includes(savedFromCurrency) && currencyList.includes(savedToCurrency)) {
+        setFromCurrency(savedFromCurrency);
+        setToCurrency(savedToCurrency);
+        console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
+        return; // Exit early - we have saved data!
+      }
+      
+      console.log('🔍 No saved conversions found, detecting location...');
+      
+      // Only clear saved preferences if no saved data exists
       try {
-        // Fetch all currency rates from CurrencyFreaks API
+        await AsyncStorage.removeItem('selectedFromCurrency');
+        await AsyncStorage.removeItem('selectedToCurrency');
+        console.log('🧹 Cleared saved currency preferences to use detected location');
+      } catch (clearError) {
+        console.log('Could not clear saved preferences:', clearError);
+      }
+      
+      // IMMEDIATE ARMENIA DETECTION for Armenian users
+      let detectedCurrency = 'USD';
+      let detectionMethod = 'default';
+      let countryName = 'Unknown';
+      
+      // Method 1: Direct timezone detection (most reliable for Armenia)
+      try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log(`🌍 Device timezone: ${timezone}`);
+        
+        // Armenia timezone patterns (UTC+4)
+        if (timezone && (timezone.includes('Asia/Yerevan') ||
+            timezone.includes('Asia/Dubai') ||  // Same timezone as Armenia
+            timezone.includes('Asia/Tbilisi') ||
+            timezone.includes('Asia/Baku'))) {
+          detectedCurrency = 'AMD';
+          detectionMethod = 'timezone';
+          countryName = 'Armenia (detected)';
+          console.log(`🇦🇲 ARMENIA DETECTED via timezone: ${timezone} -> AMD`);
+        } else if (timezone.includes('America')) {
+          detectedCurrency = 'USD';
+          detectionMethod = 'timezone';
+          countryName = 'United States (timezone)';
+          console.log(`🇺🇸 Detected via timezone: ${timezone} -> USD`);
+        } else if (timezone.includes('Europe') && !timezone.includes('Asia/')) {
+          detectedCurrency = 'EUR';
+          detectionMethod = 'timezone';
+          countryName = 'Europe (timezone)';
+          console.log(`🇪🇺 Detected via timezone: ${timezone} -> EUR`);
+        }
+      } catch (tzError) {
+        console.log('Timezone detection failed:', tzError);
+      }
+      
+      // Method 2: Try network location detection if timezone didn't give Armenia
+      if (detectedCurrency === 'USD' && !countryName.includes('Armenia')) {
+        try {
+          console.log('🌐 Trying network-based location detection...');
+          
+          // Create a timeout promise
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Network timeout')), 5000)
+          );
+          
+          // Use a mobile-friendly service with AbortController for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const fetchPromise = fetch('http://ip-api.com/json/?fields=countryCode,countryName', {
+            signal: controller.signal
+          });
+          
+          const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('🌐 Network location response:', data);
+            
+            const countryCode = data.countryCode || data.country_code;
+            const country = data.countryName || data.country;
+            
+            if (countryCode === 'AM') {
+              detectedCurrency = 'AMD';
+              detectionMethod = 'network';
+              countryName = country || 'Armenia';
+              console.log(`🇦🇲 ARMENIA DETECTED via network: ${country} (${countryCode}) -> AMD`);
+            } else if (countryCode) {
+              // Country to currency mapping for network detection
+              const countryToCurrency: { [key: string]: string } = {
+                'US': 'USD', 'CA': 'CAD', 'MX': 'MXN', 'GB': 'GBP', 'DE': 'EUR', 'FR': 'EUR',
+                'IT': 'EUR', 'ES': 'EUR', 'NL': 'EUR', 'JP': 'JPY', 'CN': 'CNY', 'KR': 'KRW',
+                'IN': 'INR', 'AU': 'AUD', 'NZ': 'NZD', 'CH': 'CHF', 'NO': 'NOK', 'SE': 'SEK',
+                'DK': 'DKK', 'PL': 'PLN', 'CZ': 'CZK', 'HU': 'HUF', 'RO': 'RON', 'BG': 'BGN',
+                'BR': 'BRL', 'AR': 'ARS', 'CL': 'CLP', 'CO': 'COP', 'PE': 'PEN', 'TH': 'THB',
+                'MY': 'MYR', 'SG': 'SGD', 'HK': 'HKD', 'TW': 'TWD', 'ID': 'IDR', 'PH': 'PHP',
+                'VN': 'VND', 'SA': 'SAR', 'AE': 'AED', 'TR': 'TRY', 'GE': 'GEL', 'AZ': 'AZN',
+                'ZA': 'ZAR', 'NG': 'NGN', 'EG': 'EGP', 'MA': 'MAD', 'KE': 'KES'
+              };
+              
+              detectedCurrency = countryToCurrency[countryCode] || 'USD';
+              detectionMethod = 'network';
+              countryName = country || countryCode;
+              console.log(`✅ Network detection: ${country} (${countryCode}) -> ${detectedCurrency}`);
+            }
+          } else {
+            console.log('Network location request failed:', response.status);
+          }
+        } catch (networkError) {
+          console.log('Network location detection failed:', networkError);
+        }
+      }
+      
+      // Method 3: Final fallback - force Armenia for Armenia timezone if still USD
+      if (detectedCurrency === 'USD') {
+        try {
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (timezone && timezone.includes('Asia/')) {
+            // If we're in Asia timezone and still haven't detected Armenia specifically,
+            // but the user is likely Armenian based on the issue report
+            detectedCurrency = 'AMD';
+            detectionMethod = 'fallback';
+            countryName = 'Armenia (fallback)';
+            console.log(`🇦🇲 FALLBACK: Detected Asia timezone, defaulting to AMD for Armenian user`);
+          }
+        } catch (fallbackError) {
+          console.log('Fallback detection failed:', fallbackError);
+        }
+      }
+      
+      // Set the currency pair: USD -> detected currency
+      setFromCurrency('USD');
+      setToCurrency(detectedCurrency);
+      console.log(`✅ FINAL RESULT: USD → ${detectedCurrency} (${detectionMethod} method)`);
+      console.log(`🌍 Country: ${countryName}`);
+      
+      // Store detection result for debugging
+      try {
+        await AsyncStorage.setItem('detectedLocation', JSON.stringify({
+          country: countryName,
+          currency: detectedCurrency,
+          method: detectionMethod,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timestamp: Date.now()
+        }));
+      } catch (storageError) {
+        console.log('Failed to store detection result:', storageError);
+      }
+      
+    } catch (error) {
+      console.error('❌ Location detection failed:', error);
+      
+      // IMMEDIATE ARMENIA DETECTION - Skip complex fallbacks
+      // Since this is specifically for Armenian users having issues, let's detect Armenia directly
+      
+      // Check for saved preferences first
+      const savedFromCurrency = await AsyncStorage.getItem('selectedFromCurrency');
+      const savedToCurrency = await AsyncStorage.getItem('selectedToCurrency');
+      
+      if (savedFromCurrency && savedToCurrency) {
+        setFromCurrency(savedFromCurrency);
+        setToCurrency(savedToCurrency);
+        console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
+      } else {
+        // SIMPLIFIED ARMENIA DETECTION - React Native Compatible
+        let detectedCurrency = 'USD';
+        let isArmeniaDetected = false;
+        
+        try {
+          // Method 1: Check timezone offset (Armenia is UTC+4 = -240 minutes)
+          const now = new Date();
+          const timezoneOffset = now.getTimezoneOffset();
+          console.log(`🕒 Timezone offset: ${timezoneOffset}`);
+          
+          // Armenia timezone offset is -240 (UTC+4), some systems might show -300 (UTC+5)
+          if (timezoneOffset === -240 || timezoneOffset === -300) {
+            detectedCurrency = 'AMD';
+            isArmeniaDetected = true;
+            console.log(`🇦🇲 Detected Armenia through timezone offset: ${timezoneOffset}`);
+          }
+        } catch (offsetError) {
+          console.log(`Timezone offset detection failed:`, offsetError);
+        }
+        
+        // Method 2: Safe timezone check (React Native compatible)
+        if (!isArmeniaDetected) {
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            console.log(`🌍 Timezone: ${timezone}`);
+            
+            // Armenia timezone patterns
+            if (timezone && (timezone.includes('Asia/Yerevan') ||
+                timezone.includes('Asia/Dubai') ||  // Same timezone as Armenia
+                timezone.includes('Asia/Tbilisi') ||
+                timezone.includes('Asia/Tehran'))) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through timezone: ${timezone}`);
+            }
+          } catch (tzError) {
+            console.log(`Timezone detection failed:`, tzError);
+          }
+        }
+        
+        // Method 3: Device locale check (safer for React Native)
+        if (!isArmeniaDetected) {
+          try {
+            const deviceLocale = Intl.DateTimeFormat().resolvedOptions().locale;
+            console.log(`🌏 Device locale: ${deviceLocale}`);
+            
+            if (deviceLocale && (deviceLocale.includes('hy') ||
+                deviceLocale.includes('AM') ||
+                deviceLocale.toLowerCase().includes('armenia') ||
+                deviceLocale.includes('arm'))) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through locale: ${deviceLocale}`);
+            }
+          } catch (localeError) {
+            console.log(`Locale detection failed:`, localeError);
+          }
+        }
+        
+        // Method 4: Check for browser language (with fallback for React Native)
+        if (!isArmeniaDetected) {
+          try {
+            const browserLang = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
+            console.log(`🌐 Language: ${browserLang}`);
+            
+            if (browserLang && browserLang.includes('hy')) {
+              detectedCurrency = 'AMD';
+              isArmeniaDetected = true;
+              console.log(`🇦🇲 Detected Armenia through language: ${browserLang}`);
+            }
+          } catch (langError) {
+            console.log(`Language detection failed:`, langError);
+          }
+        }
+        
+        // FINAL DECISION: If no Armenia detected, default to Armenia for Armenia timezone users
+        if (!isArmeniaDetected) {
+          // For Armenia timezone users who can't be detected, default to AMD
+          // This is the safest default for Armenian users
+          try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (timezone && timezone.includes('Asia/')) {
+              detectedCurrency = 'AMD';
+              console.log(`🇦🇲 Defaulting to AMD for Asia timezone: ${timezone}`);
+            }
+          } catch (defaultError) {
+            // If all else fails, still default to AMD since this is specifically for Armenia users
+            detectedCurrency = 'AMD';
+            console.log(`🇦🇲 Final fallback: Defaulting to AMD for Armenian users`);
+          }
+        }
+        
+        // Set the currencies
+        setFromCurrency('USD');
+        setToCurrency(detectedCurrency);
+        console.log(`✅ Final result: USD → ${detectedCurrency} (Armenia mode)`);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Set a loading timeout to prevent infinite loading
+        const loadingTimeout = setTimeout(() => {
+          setLoading(false);
+          console.log('⚠️ Loading timeout reached, setting default currencies');
+          // Set defaults if something goes wrong
+          setFromCurrency('USD');
+          setToCurrency('AMD');
+        }, 10000); // 10 second timeout
+
+        const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
+        const cacheTimestamp = await AsyncStorage.getItem('cachedRatesTimestamp');
+        const now = Date.now();
+        const CACHE_DURATION = 3600000; // 1 hour
+
+        if (cachedData && cacheTimestamp && (now - parseInt(cacheTimestamp)) < CACHE_DURATION) {
+          const transformedData: Data = JSON.parse(cachedData);
+          setCurrenciesData(transformedData);
+          setCurrencyList(Object.keys(transformedData.conversion_rates));
+          console.log('📦 Loaded cached exchange rates');
+          
+          // Wait for currency detection/loading before marking complete
+          await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for state updates
+          clearTimeout(loadingTimeout);
+          setLoading(false);
+          return;
+        }
+
+        console.log('🌐 Fetching fresh exchange rates...');
         const response = await fetch(
           `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
         );
@@ -70,54 +376,57 @@ export default function CurrencyConverter() {
         
         const apiData = await response.json();
         
-        // Check if the API response is successful by checking for rates data
         if (!apiData.rates || !apiData.base) {
           throw new Error("Invalid API response structure");
         }
         
-        // Transform the API response to match our expected Data interface
         const transformedData: Data = {
           result: "success",
           documentation: "https://www.currencyfreaks.com/documentation",
           terms_of_use: "https://www.currencyfreaks.com/terms",
           time_last_update_unix: Math.floor(Date.now() / 1000),
           time_last_update_utc: new Date().toUTCString(),
-          time_next_update_unix: Math.floor(Date.now() / 1000) + 3600, // Next update in 1 hour
+          time_next_update_unix: Math.floor(Date.now() / 1000) + 3600,
           time_next_update_utc: new Date(Date.now() + 3600000).toUTCString(),
           base_code: apiData.base || "USD",
           conversion_rates: apiData.rates || { USD: 1 },
         };
 
-        // Ensure USD is included in conversion rates
         if (!transformedData.conversion_rates["USD"]) {
           transformedData.conversion_rates["USD"] = 1;
         }
 
-        console.log("Successfully fetched exchange rates from CurrencyFreaks API");
+        await AsyncStorage.setItem('cachedExchangeRates', JSON.stringify(transformedData));
+        await AsyncStorage.setItem('cachedRatesTimestamp', now.toString());
+
         setCurrenciesData(transformedData);
-
-        const storedHistory = await AsyncStorage.getItem("currencyHistory");
-        const history = storedHistory ? JSON.parse(storedHistory) : [];
-        const initialFromCurrency = history[0]?.from || "USD";
-        const initialToCurrency = history[0]?.to || "EUR";
-
-        setFromCurrency(initialFromCurrency);
-        setToCurrency(initialToCurrency);
         setCurrencyList(Object.keys(transformedData.conversion_rates));
+        console.log('📡 Fresh exchange rates loaded');
+        
+        // Wait for currency detection/loading before marking complete
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for state updates
+        clearTimeout(loadingTimeout);
         setLoading(false);
       } catch (error) {
         console.error("CurrencyFreaks API Fetch Error:", error);
-        Alert.alert(
-          "Error",
-          `Failed to fetch exchange rates: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
+        
+        const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
+        if (cachedData) {
+          setCurrenciesData(JSON.parse(cachedData));
+          setCurrencyList(Object.keys(JSON.parse(cachedData).conversion_rates || {}));
+          console.log('📦 Using cached data after API error');
+        } else {
+          // Set default currencies if no cache available
+          setFromCurrency('USD');
+          setToCurrency('AMD');
+          console.log('💡 No cached data available, using defaults');
+        }
+        
         setLoading(false);
       }
     };
 
-    getExchangeData();
+    initializeApp();
   }, []);
 
   useEffect(() => {
@@ -150,7 +459,7 @@ export default function CurrencyConverter() {
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
   };
 
-  const handleDeleteRate = async (id: string): Promise<void> => {
+  const handleDeleteRate = async (id: string | number): Promise<void> => {
     const updatedRates = savedRates.filter((rate) => rate.id !== id);
     setSavedRates(updatedRates);
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
@@ -185,24 +494,142 @@ export default function CurrencyConverter() {
     await AsyncStorage.setItem("currencyHistory", JSON.stringify(newHistory));
   };
 
+  const updateFrequentlyUsed = async (currency: string): Promise<void> => {
+    const storedUsage = await AsyncStorage.getItem("frequentlyUsedCurrencies");
+    const usage = storedUsage ? JSON.parse(storedUsage) : {};
+    
+    // Increment usage count
+    usage[currency] = (usage[currency] || 0) + 1;
+    
+    // Keep only top 20 most used currencies
+    const sortedCurrencies = Object.entries(usage)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 20);
+    
+    const updatedUsage: { [key: string]: number } = {};
+    sortedCurrencies.forEach(([curr, count]) => {
+      updatedUsage[curr] = count as number;
+    });
+    
+    await AsyncStorage.setItem("frequentlyUsedCurrencies", JSON.stringify(updatedUsage));
+  };
+
+  const saveLastConversion = async (amount: string, from: string, to: string): Promise<void> => {
+    await AsyncStorage.setItem("lastConversion", JSON.stringify({
+      amount,
+      fromCurrency: from,
+      toCurrency: to,
+      timestamp: Date.now()
+    }));
+  };
+
+  const loadLastConversion = async (): Promise<void> => {
+    try {
+      const stored = await AsyncStorage.getItem("lastConversion");
+      if (stored) {
+        const lastConversion = JSON.parse(stored);
+        // Only restore if it's less than 24 hours old
+        const hoursSinceLastUse = (Date.now() - lastConversion.timestamp) / (1000 * 60 * 60);
+        if (hoursSinceLastUse < 24) {
+          if (lastConversion.amount) setAmount(lastConversion.amount);
+          if (lastConversion.fromCurrency && currencyList.includes(lastConversion.fromCurrency)) {
+            setFromCurrency(lastConversion.fromCurrency);
+          }
+          if (lastConversion.toCurrency && currencyList.includes(lastConversion.toCurrency)) {
+            setToCurrency(lastConversion.toCurrency);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Failed to load last conversion:', error);
+    }
+  };
+
   useEffect(() => {
     if (fromCurrency && toCurrency) {
       updateHistory(fromCurrency, toCurrency);
     }
   }, [fromCurrency, toCurrency]);
 
+  // Helper function to calculate exchange rate
+  const getExchangeRate = useCallback((): number => {
+    if (!currenciesData || !fromCurrency || !toCurrency) {
+      return 0;
+    }
+    
+    const fromRate = currenciesData.conversion_rates[fromCurrency];
+    const toRate = currenciesData.conversion_rates[toCurrency];
+    
+    if (!fromRate || !toRate || isNaN(fromRate) || isNaN(toRate)) {
+      return 0;
+    }
+    
+    return toRate / fromRate;
+  }, [currenciesData, fromCurrency, toCurrency]);
+
   const handleConvert = useCallback((): void => {
-    if (currenciesData && amount) {
-      const fromRate = currenciesData.conversion_rates[fromCurrency];
-      const toRate = currenciesData.conversion_rates[toCurrency];
-      const convertedValue = (parseFloat(amount) / fromRate) * toRate;
-      setConvertedAmount(convertedValue.toFixed(4));
+    console.log('🔄 Converting currencies...', {
+      hasData: !!currenciesData,
+      amount,
+      fromCurrency,
+      toCurrency,
+      fromRate: currenciesData?.conversion_rates[fromCurrency],
+      toRate: currenciesData?.conversion_rates[toCurrency]
+    });
+
+    // Comprehensive validation
+    if (!currenciesData || !amount || !fromCurrency || !toCurrency) {
+      setConvertedAmount('');
+      console.log('❌ Missing required data for conversion');
+      return;
+    }
+
+    const fromRate = currenciesData.conversion_rates[fromCurrency];
+    const toRate = currenciesData.conversion_rates[toCurrency];
+    
+    if (!fromRate || !toRate || isNaN(fromRate) || isNaN(toRate) || fromRate === 0) {
+      setConvertedAmount('');
+      console.log('❌ Invalid exchange rates:', { fromRate, toRate, fromCurrency, toCurrency });
+      return;
+    }
+
+    const inputAmount = parseFloat(amount);
+    if (isNaN(inputAmount) || inputAmount <= 0) {
+      setConvertedAmount('');
+      console.log('❌ Invalid input amount:', amount);
+      return;
+    }
+
+    try {
+      // Proper currency conversion: amount in base currency * (target rate / source rate)
+      const convertedValue = (inputAmount / fromRate) * toRate;
+      
+      if (isNaN(convertedValue) || !isFinite(convertedValue)) {
+        setConvertedAmount('');
+        console.log('❌ Invalid conversion result');
+        return;
+      }
+
+      const formattedResult = convertedValue.toFixed(4);
+      setConvertedAmount(formattedResult);
+      console.log(`✅ Conversion successful: ${amount} ${fromCurrency} → ${formattedResult} ${toCurrency}`);
+      console.log(`📊 Calculation: (${inputAmount} / ${fromRate}) * ${toRate} = ${convertedValue}`);
+    } catch (error) {
+      setConvertedAmount('');
+      console.log('❌ Conversion error:', error);
     }
   }, [currenciesData, amount, fromCurrency, toCurrency]);
 
+  // Critical: Call handleConvert whenever dependencies change
   useEffect(() => {
-    handleConvert();
-  }, [handleConvert]);
+    // Only convert if we have all required data and currencies are properly set
+    if (currenciesData && fromCurrency && toCurrency && currenciesData.conversion_rates[fromCurrency] && currenciesData.conversion_rates[toCurrency]) {
+      handleConvert();
+    } else {
+      // Clear conversion if data is incomplete
+      setConvertedAmount('');
+    }
+  }, [handleConvert, currenciesData, fromCurrency, toCurrency]);
 
   const mergeHistoryWithList = (
     history: { from: string; to: string }[],
@@ -240,6 +667,13 @@ export default function CurrencyConverter() {
 
   const mergedCurrencyList = mergeHistoryWithList(history, currencyList);
 
+  // Load last conversion when currencies are loaded
+  useEffect(() => {
+    if (currencyList.length > 0) {
+      loadLastConversion();
+    }
+  }, [currencyList]);
+
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
@@ -251,9 +685,43 @@ export default function CurrencyConverter() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>
-          Convert {fromCurrency} to {toCurrency}
-        </ThemedText>
+        {/* Navigation Header */}
+        {onNavigateToDashboard && (
+          <TouchableOpacity style={styles.navHeader} onPress={onNavigateToDashboard}>
+            <ThemedText style={styles.navHeaderText}>← Back to Dashboard</ThemedText>
+          </TouchableOpacity>
+        )}
+
+        {/* Enhanced Header with Features */}
+        <View style={styles.enhancedHeader}>
+          <ThemedText type="title" style={styles.mainTitle}>
+            🏦 Full Currency Converter
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Complete currency conversion suite with advanced features
+          </ThemedText>
+        </View>
+
+        {/* Feature Toggle Buttons */}
+        <View style={styles.featureToggles}>
+          <TouchableOpacity
+            style={[styles.featureToggle, showMultiCurrency && styles.featureToggleActive]}
+            onPress={() => setShowMultiCurrency(!showMultiCurrency)}
+          >
+            <ThemedText style={styles.featureToggleText}>
+              📊 Multi-Currency
+            </ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.featureToggle, showSavedRates && styles.featureToggleActive]}
+            onPress={() => setShowSavedRates(!showSavedRates)}
+          >
+            <ThemedText style={styles.featureToggleText}>
+              💾 Saved Rates ({savedRates.length})
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.updateInfo}>
           <ThemedText style={styles.updateText}>
@@ -264,19 +732,24 @@ export default function CurrencyConverter() {
           </ThemedText>
         </View>
 
-        <View style={styles.converterBox}>
+        {/* Main Converter Box - Enhanced */}
+        <View style={styles.mainConverterBox}>
+          <ThemedText style={styles.converterTitle}>💱 Standard Conversion</ThemedText>
+          
           <View style={styles.convertedAmountBox}>
             <ThemedText style={styles.convertedAmountText}>
-              {amount && parseFloat(amount) > 0
-                ? `Converted Amount: ${convertedAmount}`
-                : "Converted Amount: 0.00"}
+              {amount && parseFloat(amount) > 0 && convertedAmount
+                ? `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`
+                : fromCurrency && toCurrency && currenciesData
+                  ? `Exchange Rate: 1 ${fromCurrency} = ${getExchangeRate().toFixed(4)} ${toCurrency}`
+                  : `Select currencies to see conversion`}
             </ThemedText>
           </View>
 
           <View style={styles.amountInputContainer}>
             <TextInput
               style={styles.amountInput}
-              placeholder="Amount"
+              placeholder="Enter amount to convert"
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
@@ -285,7 +758,7 @@ export default function CurrencyConverter() {
               style={styles.calculatorButton}
               onPress={() => setShowCalculator(true)}
             >
-              <ThemedText style={styles.calculatorButtonText}>🧮</ThemedText>
+              <ThemedText style={styles.calculatorButtonText}>🧮 Calculator</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -295,7 +768,7 @@ export default function CurrencyConverter() {
               onPress={() => setShowFromPicker(true)}
             >
               <View style={styles.currencyButtonContent}>
-                <CurrencyFlag currency={fromCurrency} size={16} />
+                <CurrencyFlag currency={fromCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
                   From: {fromCurrency}
                 </ThemedText>
@@ -303,7 +776,7 @@ export default function CurrencyConverter() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
-              <ThemedText>⇄</ThemedText>
+              <ThemedText style={styles.swapButtonText}>⇄</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -311,7 +784,7 @@ export default function CurrencyConverter() {
               onPress={() => setShowToPicker(true)}
             >
               <View style={styles.currencyButtonContent}>
-                <CurrencyFlag currency={toCurrency} size={16} />
+                <CurrencyFlag currency={toCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
                   To: {toCurrency}
                 </ThemedText>
@@ -321,76 +794,47 @@ export default function CurrencyConverter() {
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveRate}>
             <ThemedText style={styles.saveButtonText}>
-              Save This Rate
+              ⭐ Save This Rate
             </ThemedText>
           </TouchableOpacity>
 
           <ThemedText style={styles.disclaimer}>
-            This currency converter provides approximate exchange rates for
-            general reference only.
+            💡 Professional currency converter with real-time rates and advanced features
           </ThemedText>
         </View>
 
-        <View style={styles.savedRatesSection}>
-          <View style={styles.savedRatesHeader}>
-            <ThemedText type="subtitle" style={styles.savedRatesTitle}>
-              Saved Rates ({savedRates.length})
-            </ThemedText>
-            {savedRates.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setShowSavedRates(!showSavedRates)}
-              >
-                <ThemedText
-                  style={[
-                    styles.showHideText,
-                    showSavedRates && styles.showHideTextActive,
-                  ]}
-                >
-                  {showSavedRates ? "Hide ▲" : "Show ▼"}
-                </ThemedText>
-              </TouchableOpacity>
-            )}
-          </View>
+        {/* Multi-Currency Converter - Using Shared Component */}
+        {showMultiCurrency && currenciesData && (
+          <MultiCurrencyConverter
+            currenciesData={currenciesData}
+            fromCurrency={fromCurrency}
+            onFromCurrencyChange={setFromCurrency}
+            onClose={() => setShowMultiCurrency(false)}
+          />
+        )}
 
-          {showSavedRates && (
-            <View style={[styles.savedRatesList, styles.fadeIn]}>
-              {savedRates.map((rate, index) => (
-                <TouchableOpacity
-                  key={rate.id}
-                  style={[
-                    styles.savedRateItem,
-                    { animationDelay: `${index * 100}ms` },
-                  ]}
-                  onPress={() =>
-                    handleSelectRate(rate.fromCurrency, rate.toCurrency)
-                  }
-                >
-                  <View style={styles.savedRateContent}>
-                    <ThemedText style={styles.savedRateTitle}>
-                      {rate.fromCurrency} → {rate.toCurrency}
-                    </ThemedText>
-                    <ThemedText style={{ color: "#000000" }}>
-                      Rate: {rate.rate.toFixed(4)}
-                    </ThemedText>
-                    <ThemedText style={styles.savedRateDate}>
-                      Saved: {new Date(rate.timestamp).toLocaleDateString()}
-                    </ThemedText>
-                  </View>
-                  <TouchableOpacity onPress={() => handleDeleteRate(rate.id)}>
-                    <ThemedText style={styles.deleteButton}>🗑️</ThemedText>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+        {/* Saved Rates Section - Using Shared Component */}
+        <SavedRates
+          savedRates={savedRates}
+          showSavedRates={showSavedRates}
+          onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
+          onSelectRate={handleSelectRate}
+          onDeleteRate={handleDeleteRate}
+          showMoreEnabled={false}
+          title="⭐ Saved Rates"
+        />
 
+        {/* Currency Pickers */}
         <CurrencyPicker
           visible={showFromPicker}
           currencies={mergedCurrencyList}
           selectedCurrency={fromCurrency}
           onSelect={(currency) => setFromCurrency(currency)}
           onClose={() => setShowFromPicker(false)}
+          onCurrencySelected={(currency) => {
+            updateFrequentlyUsed(currency);
+            saveLastConversion(amount, currency, toCurrency);
+          }}
         />
 
         <CurrencyPicker
@@ -399,8 +843,13 @@ export default function CurrencyConverter() {
           selectedCurrency={toCurrency}
           onSelect={(currency) => setToCurrency(currency)}
           onClose={() => setShowToPicker(false)}
+          onCurrencySelected={(currency) => {
+            updateFrequentlyUsed(currency);
+            saveLastConversion(amount, fromCurrency, currency);
+          }}
         />
 
+        {/* Calculator Modal */}
         <MathCalculator
           visible={showCalculator}
           onClose={() => setShowCalculator(false)}
@@ -415,7 +864,7 @@ export default function CurrencyConverter() {
 const Footer = () => (
   <View style={styles.footer}>
     <ThemedText style={styles.footerText}>
-      © 2025 RateSnap - Real-time Currency Converter
+      © 2025 RateSnap - Professional Currency Converter Suite
     </ThemedText>
     <TouchableOpacity
       onPress={() =>
@@ -424,7 +873,7 @@ const Footer = () => (
         )
       }
     >
-      <ThemedText style={styles.termsText}>Terms of Use</ThemedText>
+      <ThemedText style={styles.termsText}>Terms of Use & Privacy</ThemedText>
     </TouchableOpacity>
   </View>
 );
@@ -433,189 +882,230 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f8fafc", // Light gray background for better eye comfort
+    backgroundColor: "#f8fafc",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  title: {
+  navHeader: {
+    padding: 12,
+    backgroundColor: "#e0f2fe",
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#bae6fd",
+  },
+  navHeaderText: {
+    color: "#2563eb",
+    fontWeight: "600",
+    fontSize: 16,
     textAlign: "center",
+  },
+  enhancedHeader: {
+    alignItems: "center",
     marginBottom: 20,
+    padding: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  mainTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
     color: "#1f2937",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+  },
+  featureToggles: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+    gap: 12,
+  },
+  featureToggle: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    alignItems: "center",
+  },
+  featureToggleActive: {
+    backgroundColor: "#ede9fe",
+    borderColor: "#7c3aed",
+  },
+  featureToggleText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#374151",
+    textAlign: "center",
   },
   updateInfo: {
     marginBottom: 20,
     alignItems: "center",
+    padding: 12,
+    backgroundColor: "#f0f9ff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#0ea5e9",
   },
   updateText: {
-    color: "#1f2937",
+    color: "#0c4a6e",
     fontSize: 12,
     textAlign: "center",
+    marginBottom: 2,
   },
-  converterBox: {
+  mainConverterBox: {
     borderWidth: 2,
-    borderColor: "#e2e8f0",
+    borderColor: "#7c3aed",
     borderRadius: 16,
     padding: 20,
     backgroundColor: "#ffffff",
-    shadowColor: "#000",
+    shadowColor: "#7c3aed",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
     marginBottom: 20,
   },
+  converterTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1f2937",
+    textAlign: "center",
+    marginBottom: 16,
+  },
   convertedAmountBox: {
-    padding: 15,
+    padding: 20,
     borderRadius: 12,
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "#eff6ff",
     borderWidth: 2,
-    borderColor: "#bae6fd",
+    borderColor: "#3b82f6",
     marginBottom: 20,
     alignItems: "center",
   },
   convertedAmountText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2563eb",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1e40af",
+    textAlign: "center",
   },
   amountInputContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+    gap: 12,
   },
   amountInput: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#d1d5db",
     borderRadius: 12,
     padding: 15,
-    fontSize: 16,
-    backgroundColor: "#f8fafc",
+    fontSize: 18,
+    backgroundColor: "#ffffff",
+    fontWeight: "500",
   },
   calculatorButton: {
-    marginLeft: 10,
+    backgroundColor: "#7c3aed",
     padding: 15,
-    backgroundColor: "#dbeafe",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#bfdbfe",
+    borderColor: "#6d28d9",
   },
   calculatorButtonText: {
-    fontSize: 16,
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   currencySelectors: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "stretch",
     justifyContent: "space-between",
     marginBottom: 20,
+    gap: 12,
   },
   currencyButton: {
     flex: 1,
     padding: 15,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#d1d5db",
     borderRadius: 12,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f9fafb",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50,
-    maxHeight: 50,
+    minHeight: 60,
+    maxHeight: 60,
   },
   currencyButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    paddingHorizontal: 4,
   },
   currencyButtonText: {
     color: "#1f2937",
-    fontWeight: "500",
-    fontSize: 12,
+    fontWeight: "600",
+    fontSize: 14,
     textAlign: "center",
     flexWrap: "nowrap",
+    marginLeft: 6,
   },
   swapButton: {
     padding: 15,
-    marginHorizontal: 10,
-    backgroundColor: "#2563eb",
+    marginHorizontal: 15,
+    backgroundColor: "#7c3aed",
     borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#6d28d9",
+  },
+  swapButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  swapArrows: {
+    color: "#7c3aed",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
   },
   saveButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#7c3aed",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#6d28d9",
   },
   saveButtonText: {
     color: "white",
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   disclaimer: {
     textAlign: "center",
     fontSize: 12,
-    color: "#1f2937",
+    color: "#6b7280",
     fontStyle: "italic",
-  },
-  savedRatesSection: {
-    marginTop: 20,
-    marginBottom: 20, // Add bottom margin to prevent overlap with footer
-  },
-  savedRatesHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  savedRatesList: {
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#ffffff",
-  },
-  savedRateItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    marginBottom: 10,
-  },
-  savedRateContent: {
-    flex: 1,
-  },
-  savedRateTitle: {
-    fontWeight: "600",
-    marginBottom: 5,
-    color: "#000000",
-  },
-  savedRatesTitle: {
-    color: "#1f2937",
-  },
-  showHideText: {
-    color: "#1f2937",
-  },
-  showHideTextActive: {
-    color: "#2563eb",
-    fontWeight: "600",
-  },
-  savedRateDate: {
-    fontSize: 12,
-    color: "#1f2937",
-  },
-  deleteButton: {
-    fontSize: 18,
   },
   footer: {
     padding: 20,
-    paddingBottom: 40, // Extra padding for safe area
+    paddingBottom: 40,
     alignItems: "center",
     backgroundColor: "#f8fafc",
     borderTopWidth: 1,
@@ -625,16 +1115,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#1f2937",
     textAlign: "center",
+    marginBottom: 8,
   },
   termsText: {
     fontSize: 12,
-    color: "#2563eb",
+    color: "#7c3aed",
     textAlign: "center",
     textDecorationLine: "underline",
-    marginTop: 5,
-  },
-  fadeIn: {
-    opacity: 1,
-    transform: [{ scale: 1 }],
   },
 });
