@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, Dimensions, useWindowDimensions, ScrollView } from "react-native";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 
@@ -7,38 +7,76 @@ interface MathCalculatorProps {
   visible: boolean;
   onClose: () => void;
   onResult?: (result: number) => void;
+  onAddToConverter?: (result: number) => void;
 }
 
 export default function MathCalculator({
   visible,
   onClose,
   onResult,
+  onAddToConverter,
 }: MathCalculatorProps) {
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
+  const [equation, setEquation] = useState<string>("");
+  const [calculationComplete, setCalculationComplete] = useState(false);
+  
+  // Memory and advanced features state
+  const [memory, setMemory] = useState<number>(0);
+  const [calculationHistory, setCalculationHistory] = useState<string[]>([]);
+  const [roundingDecimalPlaces, setRoundingDecimalPlaces] = useState<number>(2);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showRoundingOptions, setShowRoundingOptions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const { width, height } = useWindowDimensions();
+  const isSmallScreen = height < 700;
+  const isMediumScreen = height >= 700 && height < 800;
+
+  const getResponsiveValue = (small: number, medium: number, large: number) => {
+    if (isSmallScreen) return small;
+    if (isMediumScreen) return medium;
+    return large;
+  };
 
   const inputNumber = (num: string) => {
-    if (waitingForOperand) {
+    if (calculationComplete) {
       setDisplay(num);
+      setEquation(num);
+      setCalculationComplete(false);
+      setPreviousValue(null);
+      setOperation(null);
+      setWaitingForOperand(false);
+    } else if (waitingForOperand) {
+      setDisplay(num);
+      setEquation(prev => prev + num);
       setWaitingForOperand(false);
     } else {
       setDisplay(display === "0" ? num : display + num);
+      setEquation(prev => prev === "0" ? num : prev + num);
     }
   };
 
   const inputOperation = (nextOperation: string) => {
     const inputValue = parseFloat(display);
+    const operationSymbol = nextOperation === "/" ? "÷" : nextOperation === "*" ? "×" : nextOperation;
 
-    if (previousValue === null) {
+    if (calculationComplete) {
+      setEquation(display + " " + operationSymbol);
+      setCalculationComplete(false);
       setPreviousValue(inputValue);
+    } else if (previousValue === null) {
+      setPreviousValue(inputValue);
+      setEquation(prev => prev + " " + operationSymbol);
     } else if (operation) {
       const currentValue = previousValue || 0;
       const newValue = calculate(currentValue, inputValue, operation);
 
-      setDisplay(`${parseFloat(newValue.toFixed(7))}`);
+      setDisplay(`${parseFloat(newValue.toFixed(roundingDecimalPlaces))}`);
       setPreviousValue(newValue);
+      setEquation(prev => prev + " " + operationSymbol);
     }
 
     setWaitingForOperand(true);
@@ -59,6 +97,8 @@ export default function MathCalculator({
         return firstValue * secondValue;
       case "/":
         return firstValue / secondValue;
+      case "%":
+        return (firstValue * secondValue) / 100;
       case "=":
         return secondValue;
       default:
@@ -71,112 +111,564 @@ export default function MathCalculator({
 
     if (previousValue !== null && operation) {
       const newValue = calculate(previousValue, inputValue, operation);
-      const result = parseFloat(newValue.toFixed(7));
+      const result = parseFloat(newValue.toFixed(roundingDecimalPlaces));
 
+      const fullEquation = `${equation} = ${result}`;
+      setEquation(fullEquation);
       setDisplay(`${result}`);
       setPreviousValue(null);
       setOperation(null);
       setWaitingForOperand(true);
+      setCalculationComplete(true);
+
+      // Add to history
+      addToHistory(fullEquation);
 
       // Pass result to parent if callback provided
       if (onResult) {
         onResult(result);
       }
+
+      // Automatically add to converter after calculation
+      if (onAddToConverter) {
+        onAddToConverter(result);
+      }
+      
+      // Close calculator after adding to converter
+      onClose();
+      // Reset calculator state
+      clear();
     }
+  };
+
+  // Memory functions
+  const memoryAdd = () => {
+    const currentValue = parseFloat(display);
+    setMemory(prev => prev + currentValue);
+    setEquation(`M+ (${currentValue})`);
+    setCalculationComplete(false);
+  };
+
+  const memorySubtract = () => {
+    const currentValue = parseFloat(display);
+    setMemory(prev => prev - currentValue);
+    setEquation(`M- (${currentValue})`);
+    setCalculationComplete(false);
+  };
+
+  const memoryRecall = () => {
+    setDisplay(memory.toString());
+    setEquation(`MR (${memory})`);
+    setCalculationComplete(false);
+  };
+
+  const memoryClear = () => {
+    setMemory(0);
+    setEquation("MC");
+    setCalculationComplete(false);
+  };
+
+  // Tax and tip calculations
+  const applyTip = (percentage: number) => {
+    const currentValue = parseFloat(display);
+    const tipAmount = (currentValue * percentage) / 100;
+    const totalWithTip = currentValue + tipAmount;
+    setDisplay(totalWithTip.toString());
+    setEquation(`${currentValue} + ${percentage}% tip`);
+    setCalculationComplete(false);
+    addToHistory(`${currentValue} + ${percentage}% tip = ${totalWithTip.toFixed(roundingDecimalPlaces)}`);
+  };
+
+  const applyDiscount = (percentage: number) => {
+    const currentValue = parseFloat(display);
+    const discountAmount = (currentValue * percentage) / 100;
+    const finalPrice = currentValue - discountAmount;
+    setDisplay(finalPrice.toString());
+    setEquation(`${currentValue} - ${percentage}%`);
+    setCalculationComplete(false);
+    addToHistory(`${currentValue} - ${percentage}% = ${finalPrice.toFixed(roundingDecimalPlaces)}`);
+  };
+
+  const applyTax = (percentage: number) => {
+    const currentValue = parseFloat(display);
+    const taxAmount = (currentValue * percentage) / 100;
+    const totalWithTax = currentValue + taxAmount;
+    setDisplay(totalWithTax.toString());
+    setEquation(`${currentValue} + ${percentage}% tax`);
+    setCalculationComplete(false);
+    addToHistory(`${currentValue} + ${percentage}% tax = ${totalWithTax.toFixed(roundingDecimalPlaces)}`);
+  };
+
+  // History functions
+  const addToHistory = (calculation: string) => {
+    setCalculationHistory(prev => [calculation, ...prev.slice(0, 9)]); // Keep last 10 calculations
   };
 
   const clear = () => {
     setDisplay("0");
+    setEquation("");
     setPreviousValue(null);
     setOperation(null);
     setWaitingForOperand(false);
+    setCalculationComplete(false);
+  };
+
+  const clearAll = () => {
+    setDisplay("0");
+    setEquation("");
+    setPreviousValue(null);
+    setOperation(null);
+    setWaitingForOperand(false);
+    setCalculationComplete(false);
+    setMemory(0);
+    setCalculationHistory([]);
   };
 
   const inputDecimal = () => {
-    if (waitingForOperand) {
+    if (calculationComplete) {
       setDisplay("0.");
+      setEquation("0.");
+      setCalculationComplete(false);
+    } else if (waitingForOperand) {
+      setDisplay("0.");
+      setEquation(prev => prev + "0.");
       setWaitingForOperand(false);
     } else if (display.indexOf(".") === -1) {
       setDisplay(display + ".");
+      setEquation(prev => prev + ".");
     }
+  };
+
+  const inputPercentage = () => {
+    if (calculationComplete) {
+      const percentageValue = parseFloat(display) / 100;
+      setDisplay(percentageValue.toString());
+      setEquation(percentageValue.toString());
+      setCalculationComplete(false);
+    } else if (waitingForOperand) {
+      const percentageValue = parseFloat(display) / 100;
+      setDisplay(percentageValue.toString());
+      setEquation(prev => prev + "%");
+      setWaitingForOperand(false);
+    } else {
+      const percentageValue = parseFloat(display) / 100;
+      setDisplay(percentageValue.toString());
+      setEquation(prev => prev + "%");
+    }
+  };
+
+  const toggleSign = () => {
+    const currentValue = parseFloat(display);
+    const toggledValue = -currentValue;
+    setDisplay(toggledValue.toString());
+    setEquation(toggledValue.toString());
   };
 
   const deleteLastDigit = () => {
+    if (calculationComplete) {
+      return; // Don't allow deletion after calculation is complete
+    }
+    
     if (display.length > 1) {
-      setDisplay(display.slice(0, -1));
+      const newDisplay = display.slice(0, -1);
+      const newEquation = equation.slice(0, -1);
+      setDisplay(newDisplay);
+      setEquation(newEquation);
     } else {
       setDisplay("0");
+      setEquation("0");
     }
   };
 
-  const renderButton = (text: string, onPress: () => void, style: any = {}) => {
-    let buttonTextStyle = styles.buttonText;
-    
-    if (style === styles.operationButton) {
-      buttonTextStyle = styles.operationButtonText;
-    } else if (style === styles.clearButton) {
-      buttonTextStyle = styles.clearButtonText;
-    } else if (style === styles.deleteButton) {
-      buttonTextStyle = styles.deleteButtonText;
-    } else if (style === styles.equalsButton) {
-      buttonTextStyle = styles.equalsButtonText;
+  const renderButton = (text: string, onPress: () => void, buttonType: string = "default", flex?: number) => {
+    let style = { ...styles.button, ...(flex && { flex }) };
+
+    switch (buttonType) {
+      case "operation":
+        style = { ...styles.button, ...styles.operationButton, ...(flex && { flex }) };
+        break;
+      case "clear":
+        style = { ...styles.button, ...styles.clearButton, ...(flex && { flex }) };
+        break;
+      case "delete":
+        style = { ...styles.button, ...styles.deleteButton, ...(flex && { flex }) };
+        break;
+      case "equals":
+        style = { ...styles.button, ...styles.equalsButton, ...(flex && { flex }) };
+        break;
+      case "memory":
+        style = { ...styles.button, ...styles.memoryButton, ...(flex && { flex }) };
+        break;
+      case "financial":
+        style = { ...styles.button, ...styles.financialButton, ...(flex && { flex }) };
+        break;
+      case "utility":
+        style = { ...styles.button, ...styles.utilityButton, ...(flex && { flex }) };
+        break;
+      case "history":
+        style = { ...styles.button, ...styles.historyButton, ...(flex && { flex }) };
+        break;
+      default:
+        if (flex) style.flex = flex;
+        break;
     }
-    
+
+    const renderButtonText = () => {
+      switch (buttonType) {
+        case "operation":
+          return <Text style={styles.operationButtonText}>{text}</Text>;
+        case "clear":
+          return <Text style={styles.clearButtonText}>{text}</Text>;
+        case "delete":
+          return <Text style={styles.deleteButtonText}>{text}</Text>;
+        case "equals":
+          return <Text style={styles.equalsButtonText}>Use</Text>;
+        case "memory":
+        case "financial":
+        case "utility":
+        case "history":
+          return <Text style={styles.specialButtonText}>{text}</Text>;
+        default:
+          return <Text style={styles.buttonText}>{text}</Text>;
+      }
+    };
+
     return (
-      <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
-        <Text style={buttonTextStyle}>{text}</Text>
+      <TouchableOpacity 
+        style={style}
+        onPress={onPress}
+        activeOpacity={0.8}
+        disabled={calculationComplete && !["equals", "clear", "utility", "history"].includes(buttonType)}
+      >
+        {renderButtonText()}
       </TouchableOpacity>
     );
   };
 
+  const getDisplayText = () => {
+    if (calculationComplete) {
+      return equation;
+    }
+    
+    // Show equation in real-time when building calculation
+    if (equation && (operation || waitingForOperand)) {
+      return equation;
+    }
+    
+    return display;
+  };
+
+  const getDisplayFontSize = () => {
+    const textLength = getDisplayText().length;
+    if (textLength > 15) return getResponsiveValue(16, 20, 24);
+    if (textLength > 10) return getResponsiveValue(20, 24, 28);
+    return getResponsiveValue(32, 40, 48);
+  };
+
+  const RoundingOptions = () => (
+    <View style={styles.optionsContainer}>
+      <Text style={styles.optionsTitle}>Rounding Options</Text>
+      <View style={styles.optionsRow}>
+        {[0, 1, 2, 3, 4].map(decimals => (
+          <TouchableOpacity
+            key={decimals}
+            style={[
+              styles.optionButton,
+              roundingDecimalPlaces === decimals && styles.optionButtonActive
+            ]}
+            onPress={() => setRoundingDecimalPlaces(decimals)}
+          >
+            <Text style={[
+              styles.optionButtonText,
+              roundingDecimalPlaces === decimals && styles.optionButtonTextActive
+            ]}>
+              {decimals}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const HistoryView = () => (
+    <View style={styles.historyContainer}>
+      <Text style={styles.historyTitle}>Calculation History</Text>
+      <ScrollView style={styles.historyList}>
+        {calculationHistory.length === 0 ? (
+          <Text style={styles.historyEmpty}>No calculations yet</Text>
+        ) : (
+          calculationHistory.map((calc, index) => (
+            <View key={index}>
+              <Text style={styles.historyItem}>{calc}</Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <ThemedView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <ThemedText style={styles.closeButton}>Close</ThemedText>
+        <View style={[
+          styles.header,
+          {
+            paddingTop: getResponsiveValue(20, 30, 40),
+            marginBottom: getResponsiveValue(16, 24, 32),
+          }
+        ]}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
-          <ThemedText type="title" style={styles.title}>
-            Calculator
-          </ThemedText>
+          <Text style={[
+            styles.title,
+            {
+              fontSize: getResponsiveValue(20, 24, 28),
+            }
+          ]}>Calculator</Text>
+          <View style={{ width: 60 }} />
         </View>
 
-        <View style={styles.display}>
-          <Text style={styles.displayText}>{display}</Text>
+        <View style={[
+          styles.displayContainer,
+          {
+            marginBottom: getResponsiveValue(16, 24, 32),
+          }
+        ]}>
+          <View style={[
+            styles.display,
+            {
+              minHeight: getResponsiveValue(100, 120, 140),
+              padding: getResponsiveValue(20, 26, 32),
+              borderRadius: getResponsiveValue(16, 20, 24),
+            }
+          ]}>
+            <Text style={[
+              styles.displayText,
+              {
+                fontSize: getDisplayFontSize(),
+                lineHeight: getDisplayFontSize() * 1.2,
+              }
+            ]}>{getDisplayText()}</Text>
+          </View>
         </View>
 
-        <View style={styles.buttonRow}>
-          {renderButton("C", clear, styles.clearButton)}
-          {renderButton("⌫", deleteLastDigit, styles.deleteButton)}
-          {renderButton("÷", () => inputOperation("/"), styles.operationButton)}
+        {/* Quick access toolbar */}
+        <View style={styles.toolbar}>
+          <TouchableOpacity 
+            style={styles.toolbarButton}
+            onPress={() => setShowAdvanced(!showAdvanced)}
+          >
+            <Text style={styles.toolbarButtonText}>{showAdvanced ? "Basic" : "Advanced"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.toolbarButton}
+            onPress={() => setShowHistory(!showHistory)}
+          >
+            <Text style={styles.toolbarButtonText}>History</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.toolbarButton}
+            onPress={() => setShowRoundingOptions(!showRoundingOptions)}
+          >
+            <Text style={styles.toolbarButtonText}>Rounding: {roundingDecimalPlaces}</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.buttonRow}>
-          {renderButton("7", () => inputNumber("7"))}
-          {renderButton("8", () => inputNumber("8"))}
-          {renderButton("9", () => inputNumber("9"))}
-          {renderButton("×", () => inputOperation("*"), styles.operationButton)}
-        </View>
+        {/* Conditional views */}
+        {showRoundingOptions && <RoundingOptions />}
+        {showHistory && <HistoryView />}
 
-        <View style={styles.buttonRow}>
-          {renderButton("4", () => inputNumber("4"))}
-          {renderButton("5", () => inputNumber("5"))}
-          {renderButton("6", () => inputNumber("6"))}
-          {renderButton("-", () => inputOperation("-"), styles.operationButton)}
-        </View>
+        <ScrollView
+          style={[
+            styles.buttonGrid,
+            {
+              paddingHorizontal: getResponsiveValue(12, 16, 20),
+              flex: showHistory || showRoundingOptions ? 0 : 1,
+            }
+          ]}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {!showAdvanced ? (
+            // Basic Calculator Layout
+            <>
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("C", clearAll, "clear")}
+                {renderButton("⌫", deleteLastDigit, "delete")}
+                {renderButton("%", inputPercentage)}
+                {renderButton("÷", () => inputOperation("/"), "operation")}
+              </View>
 
-        <View style={styles.buttonRow}>
-          {renderButton("1", () => inputNumber("1"))}
-          {renderButton("2", () => inputNumber("2"))}
-          {renderButton("3", () => inputNumber("3"))}
-          {renderButton("+", () => inputOperation("+"), styles.operationButton)}
-        </View>
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("7", () => inputNumber("7"))}
+                {renderButton("8", () => inputNumber("8"))}
+                {renderButton("9", () => inputNumber("9"))}
+                {renderButton("×", () => inputOperation("*"), "operation")}
+              </View>
 
-        <View style={styles.buttonRow}>
-          {renderButton("0", () => inputNumber("0"), styles.zeroButton)}
-          {renderButton(".", inputDecimal)}
-          {renderButton("=", performCalculation, styles.equalsButton)}
-        </View>
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("4", () => inputNumber("4"))}
+                {renderButton("5", () => inputNumber("5"))}
+                {renderButton("6", () => inputNumber("6"))}
+                {renderButton("-", () => inputOperation("-"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("1", () => inputNumber("1"))}
+                {renderButton("2", () => inputNumber("2"))}
+                {renderButton("3", () => inputNumber("3"))}
+                {renderButton("+", () => inputOperation("+"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("0", () => inputNumber("0"), "default", 2)}
+                {renderButton(".", inputDecimal)}
+                {renderButton("±", toggleSign, "utility")}
+                {renderButton("Use", performCalculation, "equals")}
+              </View>
+            </>
+          ) : (
+            // Advanced Calculator Layout
+            <>
+              {/* Memory Row */}
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("MC", memoryClear, "memory")}
+                {renderButton("MR", memoryRecall, "memory")}
+                {renderButton("M+", memoryAdd, "memory")}
+                {renderButton("M-", memorySubtract, "memory")}
+              </View>
+
+              {/* Financial Tools Row */}
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("10% Tip", () => applyTip(10), "financial")}
+                {renderButton("15% Tip", () => applyTip(15), "financial")}
+                {renderButton("20% Tax", () => applyTax(20), "financial")}
+                {renderButton("10% Disc", () => applyDiscount(10), "financial")}
+              </View>
+
+              {/* Additional Financial Tools Row */}
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("25% Disc", () => applyDiscount(25), "financial")}
+              </View>
+
+              {/* Quick Calculations Row */}
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("C", clearAll, "clear")}
+                {renderButton("⌫", deleteLastDigit, "delete")}
+                {renderButton("%", inputPercentage)}
+                {renderButton("÷", () => inputOperation("/"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("7", () => inputNumber("7"))}
+                {renderButton("8", () => inputNumber("8"))}
+                {renderButton("9", () => inputNumber("9"))}
+                {renderButton("×", () => inputOperation("*"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("4", () => inputNumber("4"))}
+                {renderButton("5", () => inputNumber("5"))}
+                {renderButton("6", () => inputNumber("6"))}
+                {renderButton("-", () => inputOperation("-"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("1", () => inputNumber("1"))}
+                {renderButton("2", () => inputNumber("2"))}
+                {renderButton("3", () => inputNumber("3"))}
+                {renderButton("+", () => inputOperation("+"), "operation")}
+              </View>
+
+              <View style={[
+                styles.buttonRow,
+                {
+                  marginBottom: getResponsiveValue(8, 12, 16),
+                  gap: getResponsiveValue(6, 8, 12),
+                }
+              ]}>
+                {renderButton("0", () => inputNumber("0"), "default", 2)}
+                {renderButton(".", inputDecimal)}
+                {renderButton("±", toggleSign, "utility")}
+                {renderButton("Use", performCalculation, "equals")}
+              </View>
+            </>
+          )}
+        </ScrollView>
       </ThemedView>
     </Modal>
   );
@@ -185,103 +677,236 @@ export default function MathCalculator({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    backgroundColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    backgroundColor: "#0a0a0a",
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 30,
+    paddingHorizontal: 8,
   },
   closeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  closeButtonText: {
+    color: "#8e8e93",
     fontSize: 16,
-    color: "#ffffff",
-    fontWeight: "600",
+    fontWeight: "400",
   },
   title: {
-    fontSize: 24,
     color: "#ffffff",
-    fontWeight: "bold",
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  displayContainer: {
+    paddingHorizontal: 8,
   },
   display: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    padding: 25,
-    marginBottom: 25,
-    borderWidth: 0,
-    minHeight: 100,
-    justifyContent: "center",
-    shadowColor: "#000",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
   displayText: {
-    fontSize: 36,
+    color: "#ffffff",
     fontWeight: "300",
     textAlign: "right",
-    color: "#1a1a1a",
+    letterSpacing: 1,
+    includeFontPadding: false,
+  },
+  toolbar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  toolbarButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  toolbarButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  optionsContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  optionsTitle: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  optionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  optionButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  optionButtonActive: {
+    backgroundColor: "rgba(52, 199, 89, 0.8)",
+    borderColor: "rgba(52, 199, 89, 1)",
+  },
+  optionButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  optionButtonTextActive: {
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  historyContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    maxHeight: 200,
+  },
+  historyTitle: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  historyList: {
+    maxHeight: 120,
+  },
+  historyEmpty: {
+    color: "#8e8e93",
+    fontSize: 14,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  historyItem: {
+    color: "#ffffff",
+    fontSize: 12,
+    paddingVertical: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+  },
+  buttonGrid: {
+    flex: 1,
   },
   buttonRow: {
     flexDirection: "row",
-    marginBottom: 12,
   },
   button: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 16,
-    padding: 20,
-    margin: 3,
-    borderWidth: 0,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+    minHeight: 50,
   },
   buttonText: {
-    fontSize: 22,
-    fontWeight: "500",
-    color: "#2d3748",
-  },
-  zeroButton: {
-    flex: 2,
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "400",
+    includeFontPadding: false,
   },
   operationButton: {
-    backgroundColor: "rgba(255, 193, 7, 0.9)",
+    backgroundColor: "rgba(255, 149, 0, 0.9)",
+    borderColor: "rgba(255, 149, 0, 0.6)",
   },
   operationButtonText: {
+    color: "#ffffff",
     fontSize: 22,
-    color: "#1a1a1a",
-    fontWeight: "500",
+    fontWeight: "600",
+    includeFontPadding: false,
   },
   clearButton: {
-    backgroundColor: "rgba(239, 68, 68, 0.9)",
+    backgroundColor: "rgba(255, 69, 58, 0.9)",
+    borderColor: "rgba(255, 69, 58, 0.6)",
   },
   clearButtonText: {
-    fontSize: 22,
     color: "#ffffff",
+    fontSize: 18,
     fontWeight: "500",
+    includeFontPadding: false,
   },
   deleteButton: {
-    backgroundColor: "rgba(251, 191, 36, 0.9)",
+    backgroundColor: "rgba(142, 142, 147, 0.8)",
+    borderColor: "rgba(142, 142, 147, 0.5)",
   },
   deleteButtonText: {
-    fontSize: 22,
-    color: "#1a1a1a",
+    color: "#ffffff",
+    fontSize: 18,
     fontWeight: "500",
+    includeFontPadding: false,
   },
   equalsButton: {
-    backgroundColor: "rgba(16, 185, 129, 0.9)",
+    backgroundColor: "rgba(52, 199, 89, 0.9)",
+    borderColor: "rgba(52, 199, 89, 0.6)",
   },
   equalsButtonText: {
-    fontSize: 22,
     color: "#ffffff",
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "600",
+    includeFontPadding: false,
+    textAlign: "center",
+  },
+  memoryButton: {
+    backgroundColor: "rgba(147, 112, 219, 0.9)",
+    borderColor: "rgba(147, 112, 219, 0.6)",
+  },
+  financialButton: {
+    backgroundColor: "rgba(30, 144, 255, 0.9)",
+    borderColor: "rgba(30, 144, 255, 0.6)",
+  },
+  utilityButton: {
+    backgroundColor: "rgba(255, 20, 147, 0.9)",
+    borderColor: "rgba(255, 20, 147, 0.6)",
+  },
+  historyButton: {
+    backgroundColor: "rgba(255, 215, 0, 0.9)",
+    borderColor: "rgba(255, 215, 0, 0.6)",
+  },
+  specialButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
+    includeFontPadding: false,
+    textAlign: "center",
   },
 });
