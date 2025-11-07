@@ -348,7 +348,7 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Multi-Currency
+                Multi Currency
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {showMultiCurrency
