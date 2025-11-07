@@ -5,14 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ratesnapmobile",
+    "scheme": "ratesnap",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.davidgyulinyan.ratesnapmobile",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "ratesnap",
+            "CFBundleURLSchemes": ["ratesnap"]
+          }
+        ]
       }
     },
     "android": {
@@ -22,6 +28,20 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "ratesnap",
+              "host": "*",
+              "pathPattern": "auth/callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.davidgyulinyan.ratesnapmobile"
@@ -49,10 +69,20 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
+
+    "expo": {
+      "name": "RateSnap",
+      "slug": "ratesnap-mobile",
+      "scheme": "ratesnap",
+      "extra": {
+        "router": {},
+        "supabaseUrl": "https://jprafkemftjqrzsrtuui.supabase.co",
+        "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E",
+        "apiUrl": "https://api.currencyfreaks.com/latest",
+        "apiKey": "870b638bf16a4be185dff4dac89e557a",
+        "eas": {
+          "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
+        }
       }
     }
   }

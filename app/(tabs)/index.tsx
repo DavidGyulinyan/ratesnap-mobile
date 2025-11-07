@@ -7,6 +7,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
@@ -16,7 +17,10 @@ import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import SavedRates from "@/components/SavedRates";
+import AuthPromptModal from "@/components/AuthPromptModal";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getAsyncStorage } from "@/lib/storage";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -46,6 +50,8 @@ const POPULAR_CURRENCIES = [
 
 export default function HomeScreen() {
   const { t } = useLanguage();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
@@ -54,6 +60,7 @@ export default function HomeScreen() {
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR"); // Default to EUR, will be updated by location detection
   const [multiAmount, setMultiAmount] = useState("1");
@@ -105,7 +112,8 @@ export default function HomeScreen() {
   const loadExchangeRates = async () => {
     try {
       setMultiCurrencyLoading(true);
-      const cachedData = await AsyncStorage.getItem("cachedExchangeRates");
+      const storage = getAsyncStorage();
+      const cachedData = await storage.getItem("cachedExchangeRates");
       if (cachedData) {
         const data = JSON.parse(cachedData);
         setCurrenciesData(data);
@@ -126,7 +134,8 @@ export default function HomeScreen() {
 
   const loadSavedRates = async () => {
     try {
-      const savedRatesData = await AsyncStorage.getItem("savedRates");
+      const storage = getAsyncStorage();
+      const savedRatesData = await storage.getItem("savedRates");
       if (savedRatesData) {
         setSavedRates(JSON.parse(savedRatesData));
       }
@@ -137,7 +146,8 @@ export default function HomeScreen() {
 
   const loadRateAlerts = async () => {
     try {
-      const alertsData = await AsyncStorage.getItem("rateAlerts");
+      const storage = getAsyncStorage();
+      const alertsData = await storage.getItem("rateAlerts");
       if (alertsData) {
         setRateAlerts(JSON.parse(alertsData));
       }
@@ -164,7 +174,8 @@ export default function HomeScreen() {
 
     const updatedAlerts = [newRateAlert, ...rateAlerts];
     setRateAlerts(updatedAlerts);
-    await AsyncStorage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
+    const storage = getAsyncStorage();
+    await storage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
 
     setNewAlert({
       fromCurrency: "USD",
@@ -174,6 +185,15 @@ export default function HomeScreen() {
     });
 
     alert(t('success.alertCreated'));
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Alert.alert('Success', 'You have been signed out successfully.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    }
   };
 
   const deleteAlert = async (alertId: string) => {
@@ -241,10 +261,8 @@ export default function HomeScreen() {
           onPress: async () => {
             const updatedRates = savedRates.filter((_, i) => i !== index);
             setSavedRates(updatedRates);
-            await AsyncStorage.setItem(
-              "savedRates",
-              JSON.stringify(updatedRates)
-            );
+            const storage = getAsyncStorage();
+            await storage.setItem("savedRates", JSON.stringify(updatedRates));
           },
         },
       ]
@@ -267,7 +285,8 @@ export default function HomeScreen() {
           style: "destructive",
           onPress: async () => {
             setSavedRates([]);
-            await AsyncStorage.setItem("savedRates", JSON.stringify([]));
+            const storage = getAsyncStorage();
+            await storage.setItem("savedRates", JSON.stringify([]));
           },
         },
       ]
@@ -308,14 +327,49 @@ export default function HomeScreen() {
             {t('app.title')} Dashboard
           </ThemedText>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.converterButton}
-              onPress={() => setCurrentView("converter")}
-            >
-              <ThemedText style={styles.converterButtonText}>
-                💱 {t('converter.title')}
-              </ThemedText>
-            </TouchableOpacity>
+            {/* Show sign-in/sign-up for non-authenticated users */}
+            {!user ? (
+              <>
+                <TouchableOpacity
+                  style={styles.authButton}
+                  onPress={() => router.push('/signin')}
+                >
+                  <ThemedText style={styles.authButtonText}>
+                    {t('auth.signin')}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.authButton, styles.authButtonPrimary]}
+                  onPress={() => router.push('/signup')}
+                >
+                  <ThemedText style={styles.authButtonPrimaryText}>
+                    {t('auth.signup')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.converterButton}
+                  onPress={() => setCurrentView("converter")}
+                >
+                  <ThemedText style={styles.converterButtonText}>
+                    💱 {t('converter.title')}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.userInfo}
+                  onPress={handleSignOut}
+                >
+                  <ThemedText style={styles.userInfoText}>
+                    {t('auth.welcome')}, {user.email?.split('@')[0]}
+                  </ThemedText>
+                  <ThemedText style={styles.signOutText}>
+                    {t('auth.signout')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
@@ -699,6 +753,15 @@ export default function HomeScreen() {
         onSelect={handleToCurrencySelect}
         onClose={() => setShowToCurrencyPicker(false)}
       />
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        title="Create account to sync and enable alerts"
+        message="Sign up to save your data and enable premium features"
+        feature="general"
+      />
     </>
   );
 }
@@ -734,6 +797,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   converterButton: {
     backgroundColor: "#2563eb",
@@ -752,6 +816,41 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 12,
     textAlign: "center",
+  },
+  authButton: {
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  authButtonText: {
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  authButtonPrimary: {
+    backgroundColor: "#2563eb",
+    borderColor: "#2563eb",
+  },
+  authButtonPrimaryText: {
+    color: "white",
+  },
+  userInfo: {
+    alignItems: "flex-end",
+  },
+  userInfoText: {
+    color: "#6b7280",
+    fontSize: 10,
+    textAlign: "right",
+  },
+  signOutText: {
+    color: "#dc2626",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "right",
   },
   dashboardScrollView: {
     flex: 1,
