@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, View, StyleSheet, Text } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LogoProps {
   size?: number;
@@ -11,6 +12,7 @@ interface LogoProps {
 
 export default function Logo({ size = 24, showText = true, textSize = 18 }: LogoProps) {
   const colorScheme = useColorScheme();
+  const { t } = useLanguage();
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
@@ -31,12 +33,12 @@ export default function Logo({ size = 24, showText = true, textSize = 18 }: Logo
           style={[
             styles.logoText,
             {
-              color: colors.text,
+              color: '#11181C', // Always use dark color for better visibility
               fontSize: textSize,
             },
           ]}
         >
-          RateSnap
+          {t('app.title')}
         </Text>
       )}
     </View>
@@ -47,15 +49,19 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     paddingVertical: 2,
+    maxWidth: '60%', // Prevent logo from taking too much space
   },
   logoImage: {
     borderRadius: 2,
+    flexShrink: 0,
   },
   logoText: {
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 16, // Slightly smaller base size
     marginLeft: 2,
+    flexWrap: 'wrap',
+    flexShrink: 1, // Allow text to shrink if needed
   },
 });

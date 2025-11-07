@@ -19,6 +19,7 @@ import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import SavedRates from "./SavedRates";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SavedRate {
   id: string;
@@ -47,6 +48,7 @@ interface Data {
 }
 
 export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyConverterProps) {
+  const { t, tWithParams } = useLanguage();
   const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
@@ -680,7 +682,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ThemedText>Loading...</ThemedText>
+        <ThemedText>{t('common.loading')}</ThemedText>
       </ThemedView>
     );
   }
@@ -691,7 +693,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         {/* Navigation Header */}
         {onNavigateToDashboard && (
           <TouchableOpacity style={styles.navHeader} onPress={onNavigateToDashboard}>
-            <ThemedText style={styles.navHeaderText}>← Back to Dashboard</ThemedText>
+            <ThemedText style={styles.navHeaderText}>{t('converter.backToDashboard')}</ThemedText>
           </TouchableOpacity>
         )}
 
@@ -701,10 +703,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             <Logo size={32} showText={true} textSize={20} />
           </View>
           <ThemedText type="title" style={styles.mainTitle}>
-            Full Currency Converter
+            {t('converter.subtitle')}
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            Complete currency conversion suite with advanced features
+            {t('dashboard.features.description')}
           </ThemedText>
         </View>
 
@@ -715,7 +717,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             onPress={() => setShowMultiCurrency(!showMultiCurrency)}
           >
             <ThemedText style={styles.featureToggleText}>
-              📊 Multi-Currency
+              📊 {t('dashboard.multiCurrency')}
             </ThemedText>
           </TouchableOpacity>
           
@@ -724,38 +726,48 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             onPress={() => setShowSavedRates(!showSavedRates)}
           >
             <ThemedText style={styles.featureToggleText}>
-              💾 Saved Rates ({savedRates.length})
+              💾 {t('dashboard.savedRates')} ({savedRates.length})
             </ThemedText>
           </TouchableOpacity>
         </View>
 
         <View style={styles.updateInfo}>
           <ThemedText style={styles.updateText}>
-            Last update: {currenciesData?.time_last_update_utc}
+            {t('time.lastUpdate')}: {currenciesData?.time_last_update_utc}
           </ThemedText>
           <ThemedText style={styles.updateText}>
-            Next update: {currenciesData?.time_next_update_utc}
+            {t('time.nextUpdate')}: {currenciesData?.time_next_update_utc}
           </ThemedText>
         </View>
 
         {/* Main Converter Box - Enhanced */}
         <View style={styles.mainConverterBox}>
-          <ThemedText style={styles.converterTitle}>💱 Standard Conversion</ThemedText>
+          <ThemedText style={styles.converterTitle}>💱 {t('converter.standard')}</ThemedText>
           
           <View style={styles.convertedAmountBox}>
             <ThemedText style={styles.convertedAmountText}>
               {amount && parseFloat(amount) > 0 && convertedAmount
-                ? `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`
+                ? tWithParams('converter.conversionResult', {
+                    amount,
+                    fromCurrency,
+                    convertedAmount,
+                    toCurrency
+                  })
                 : fromCurrency && toCurrency && currenciesData
-                  ? `Exchange Rate: 1 ${fromCurrency} = ${getExchangeRate().toFixed(4)} ${toCurrency}`
-                  : `Select currencies to see conversion`}
+                  ? tWithParams('converter.exchangeRateResult', {
+                      rateLabel: t('converter.exchangeRate'),
+                      fromCurrency,
+                      rate: getExchangeRate().toFixed(4),
+                      toCurrency
+                    })
+                  : t('converter.selectCurrencies')}
             </ThemedText>
           </View>
 
           <View style={styles.amountInputContainer}>
             <TextInput
               style={styles.amountInput}
-              placeholder="Enter amount to convert"
+              placeholder={t('converter.enterAmount')}
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
@@ -764,7 +776,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               style={styles.calculatorButton}
               onPress={() => setShowCalculator(true)}
             >
-              <ThemedText style={styles.calculatorButtonText}>🧮 Calculator</ThemedText>
+              <ThemedText style={styles.calculatorButtonText}>🧮 {t('converter.calculator')}</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -776,7 +788,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyButtonContent}>
                 <CurrencyFlag currency={fromCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
-                  From: {fromCurrency}
+                  {t('converter.from')}: {fromCurrency}
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -792,7 +804,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyButtonContent}>
                 <CurrencyFlag currency={toCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
-                  To: {toCurrency}
+                  {t('converter.to')}: {toCurrency}
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -800,12 +812,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveRate}>
             <ThemedText style={styles.saveButtonText}>
-              ⭐ Save This Rate
+              ⭐ {t('converter.saveRate')}
             </ThemedText>
           </TouchableOpacity>
 
           <ThemedText style={styles.disclaimer}>
-            💡 Professional currency converter with real-time rates and advanced features
+            💡 {t('converter.professional')}
           </ThemedText>
         </View>
 
@@ -827,7 +839,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onSelectRate={handleSelectRate}
           onDeleteRate={handleDeleteRate}
           showMoreEnabled={false}
-          title="⭐ Saved Rates"
+          title={`⭐ ${t('saved.title')}`}
         />
 
         {/* Currency Pickers */}
@@ -862,15 +874,18 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onResult={handleCalculatorResult}
         />
       </ScrollView>
-      <Footer />
+      <Footer t={t} tWithParams={tWithParams} />
     </SafeAreaView>
   );
 }
 
-const Footer = () => (
+const Footer = ({ t, tWithParams }: { t: (key: string) => string; tWithParams: (key: string, params: { [key: string]: string | number }) => string }) => (
   <View style={styles.footer}>
     <ThemedText style={styles.footerText}>
-      © 2025 RateSnap - Professional Currency Converter Suite
+      {tWithParams('footer.copyright', {
+        appTitle: t('app.title'),
+        suiteName: t('footer.suiteName')
+      })}
     </ThemedText>
     <TouchableOpacity
       onPress={() =>
@@ -879,7 +894,7 @@ const Footer = () => (
         )
       }
     >
-      <ThemedText style={styles.termsText}>Terms of Use & Privacy</ThemedText>
+      <ThemedText style={styles.termsText}>{t('footer.terms')}</ThemedText>
     </TouchableOpacity>
   </View>
 );

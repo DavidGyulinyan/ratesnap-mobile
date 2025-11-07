@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CurrencyPickerProps {
   visible: boolean;
@@ -171,6 +172,7 @@ export default function CurrencyPicker({
   onClose,
   onCurrencySelected,
 }: CurrencyPickerProps) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [frequentlyUsedCurrencies, setFrequentlyUsedCurrencies] = useState<{[key: string]: number}>({});
 
@@ -276,25 +278,25 @@ export default function CurrencyPicker({
       <ThemedView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose}>
-            <ThemedText style={styles.closeButton}>Close</ThemedText>
+            <ThemedText style={styles.closeButton}>{t('picker.close')}</ThemedText>
           </TouchableOpacity>
           <ThemedText type="title" style={styles.title}>
-            Select Currency
+            {t('picker.selectCurrency')}
           </ThemedText>
         </View>
         
         {/* Search Input */}
         <TextInput
           style={styles.searchInput}
-          placeholder="Search currencies"
+          placeholder={t('picker.searchCurrencies')}
           value={search}
           onChangeText={setSearch}
         />
-        
+
         {/* Frequently Used Section */}
         {Object.keys(frequentlyUsedCurrencies).length > 0 && !search.trim() && (
           <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>⭐ Frequently Used</ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('picker.frequentlyUsed')}</ThemedText>
           </View>
         )}
         

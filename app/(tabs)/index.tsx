@@ -16,6 +16,7 @@ import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import SavedRates from "@/components/SavedRates";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -44,6 +45,7 @@ const POPULAR_CURRENCIES = [
 ];
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
@@ -146,7 +148,7 @@ export default function HomeScreen() {
 
   const createRateAlert = async () => {
     if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
-      alert("Please enter a valid target rate");
+      alert(t('error.invalidAmount'));
       return;
     }
 
@@ -171,20 +173,20 @@ export default function HomeScreen() {
       condition: "below",
     });
 
-    alert("Rate alert created successfully!");
+    alert(t('success.alertCreated'));
   };
 
   const deleteAlert = async (alertId: string) => {
     Alert.alert(
-      "Delete Alert",
-      "Are you sure you want to delete this rate alert?",
+      t('common.delete'),
+      t('alerts.deleteConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             const updatedAlerts = rateAlerts.filter(
@@ -205,15 +207,15 @@ export default function HomeScreen() {
     if (rateAlerts.length === 0) return;
 
     Alert.alert(
-      "Delete All Alerts",
-      `Are you sure you want to delete all ${rateAlerts.length} rate alerts? This action cannot be undone.`,
+      t('alerts.deleteAll'),
+      t('alerts.deleteAllConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete All",
+          text: t('alerts.deleteAll'),
           style: "destructive",
           onPress: async () => {
             setRateAlerts([]);
@@ -226,15 +228,15 @@ export default function HomeScreen() {
 
   const deleteSavedRate = async (index: number) => {
     Alert.alert(
-      "Delete Saved Rate",
-      "Are you sure you want to delete this saved rate?",
+      t('common.delete'),
+      t('saved.deleteConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             const updatedRates = savedRates.filter((_, i) => i !== index);
@@ -253,15 +255,15 @@ export default function HomeScreen() {
     if (savedRates.length === 0) return;
 
     Alert.alert(
-      "Delete All Saved Rates",
-      `Are you sure you want to delete all ${savedRates.length} saved rates? This action cannot be undone.`,
+      t('saved.deleteAll'),
+      t('saved.deleteAllConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete All",
+          text: t('saved.deleteAll'),
           style: "destructive",
           onPress: async () => {
             setSavedRates([]);
@@ -303,7 +305,7 @@ export default function HomeScreen() {
         {/* Dashboard Header - Fixed at top */}
         <View style={styles.dashboardHeader}>
           <ThemedText type="title" style={styles.dashboardTitle}>
-            RateSnap Dashboard
+            {t('app.title')} Dashboard
           </ThemedText>
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -311,7 +313,7 @@ export default function HomeScreen() {
               onPress={() => setCurrentView("converter")}
             >
               <ThemedText style={styles.converterButtonText}>
-                💱 Converter
+                💱 {t('converter.title')}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -332,10 +334,10 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>💱</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Currency Converter
+                {t('quick.action.converter')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                Professional converter with all features
+                {t('quick.action.converter.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -348,12 +350,12 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Multi Currency
+                {t('quick.action.multiCurrency')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {showMultiCurrency
-                  ? "Hide conversion tool"
-                  : "Quick conversions to 20 currencies"}
+                  ? t('quick.action.multiCurrency.hide')
+                  : t('quick.action.multiCurrency.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -366,11 +368,11 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Rate Alerts
+                {t('quick.action.rateAlerts')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {rateAlerts.length} active alerts -{" "}
-                {showRateAlerts ? "Hide alerts" : "Set target rates"}
+                {rateAlerts.length} {rateAlerts.length === 1 ? 'active alert' : 'active alerts'} -{" "}
+                {showRateAlerts ? t('quick.action.rateAlerts.hide') : t('quick.action.rateAlerts.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -383,13 +385,13 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📋</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Saved Rates
+                {t('quick.action.savedRates')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {savedRates.length} saved rates -{" "}
+                {savedRates.length} {savedRates.length === 1 ? 'saved rate' : 'saved rates'} -{" "}
                 {showSavedRates
-                  ? "Hide saved rates"
-                  : "Quick access to favorites"}
+                  ? t('quick.action.savedRates.hide')
+                  : t('quick.action.savedRates.desc')}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -400,19 +402,19 @@ export default function HomeScreen() {
               <View style={styles.multiCurrencyCard}>
                 <View style={styles.multiCurrencyHeader}>
                   <ThemedText style={styles.multiCurrencyTitle}>
-                    📊 Multi-Currency Converter
+                    📊 {t('converter.multiCurrency.section')}
                   </ThemedText>
                 </View>
 
                 {!currenciesData ? (
                   <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>Loading exchange rates...</ThemedText>
+                    <ThemedText style={styles.emptyStateText}>{t('converter.loadingRates')}</ThemedText>
                     <TouchableOpacity
                       style={styles.refreshButton}
                       onPress={loadExchangeRates}
                     >
                       <ThemedText style={styles.refreshButtonText}>
-                        🔄 Refresh Data
+                        🔄 {t('converter.refreshData')}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -436,7 +438,7 @@ export default function HomeScreen() {
               <View style={styles.rateAlertsCard}>
                 <View style={styles.rateAlertsHeader}>
                   <ThemedText style={styles.rateAlertsTitle}>
-                    🔔 Rate Alerts
+                    🔔 {t('alerts.title')}
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
@@ -449,15 +451,15 @@ export default function HomeScreen() {
                 {/* Existing Alerts */}
                 <View style={styles.existingAlerts}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    Your Active Alerts:
+                    {t('alerts.active')}
                   </ThemedText>
                   {rateAlerts.length === 0 ? (
                     <View style={styles.emptyState}>
                       <ThemedText style={styles.emptyStateText}>
-                        No rate alerts set yet
+                        {t('alerts.none')}
                       </ThemedText>
                       <ThemedText style={styles.emptyStateSubtext}>
-                        Create your first alert below
+                        {t('alerts.createFirst')}
                       </ThemedText>
                     </View>
                   ) : (
@@ -494,7 +496,7 @@ export default function HomeScreen() {
                           onPress={() => setCurrentView("converter")}
                         >
                           <ThemedText style={styles.showMoreAlertsText}>
-                            View {rateAlerts.length - 3} more alerts →
+                            {t('alerts.viewMore').replace('alerts', `${rateAlerts.length - 3} more alerts`)}
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -504,7 +506,7 @@ export default function HomeScreen() {
                           onPress={deleteAllAlerts}
                         >
                           <ThemedText style={styles.deleteAllInlineText}>
-                            🗑️ Delete All ({rateAlerts.length})
+                            🗑️ {t('alerts.deleteAll')} ({rateAlerts.length})
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -515,7 +517,7 @@ export default function HomeScreen() {
                 {/* Create New Alert */}
                 <View style={styles.createAlertSection}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    Create New Alert:
+                    {t('alerts.createNew')}
                   </ThemedText>
                   <View style={styles.alertForm}>
                     <View style={styles.alertFormRow}>
@@ -528,7 +530,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          From: {newAlert.fromCurrency}
+                          {t('converter.from')}: {newAlert.fromCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -540,7 +542,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          To: {newAlert.toCurrency}
+                          {t('converter.to')}: {newAlert.toCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -551,7 +553,7 @@ export default function HomeScreen() {
                         onChangeText={(text) =>
                           setNewAlert({ ...newAlert, targetRate: text })
                         }
-                        placeholder="Target rate"
+                        placeholder={t('alerts.targetRate')}
                         keyboardType="numeric"
                       />
                       <TouchableOpacity
@@ -568,8 +570,8 @@ export default function HomeScreen() {
                       >
                         <ThemedText style={styles.conditionButtonText}>
                           {newAlert.condition === "below"
-                            ? "↓ Below"
-                            : "↑ Above"}
+                            ? `↓ ${t('alerts.condition.below')}`
+                            : `↑ ${t('alerts.condition.above')}`}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -578,7 +580,7 @@ export default function HomeScreen() {
                       onPress={createRateAlert}
                     >
                       <ThemedText style={styles.createAlertButtonText}>
-                        Create Alert
+                        {t('alerts.create')}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -598,24 +600,24 @@ export default function HomeScreen() {
             showMoreEnabled={true}
             onShowMore={() => setCurrentView("converter")}
             maxVisibleItems={4}
-            title="📋 Saved Rates"
+            title={`📋 ${t('saved.title')}`}
             containerStyle={{ marginBottom: 24 }}
           />
 
           {/* Features Preview */}
           <View style={styles.featuresSection}>
             <ThemedText style={styles.sectionTitle}>
-              ✨ Dashboard Features
+              ✨ {t('dashboard.features')}
             </ThemedText>
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Multi-Currency Converter
+                    {t('feature.multiCurrency.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Convert to multiple currencies instantly with live rates
+                    {t('feature.multiCurrency.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -624,10 +626,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Calculator Integration
+                    {t('feature.calculator.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Built-in calculator for amount calculations
+                    {t('feature.calculator.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -636,10 +638,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Offline Mode
+                    {t('feature.offline.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Works without internet using cached rates
+                    {t('feature.offline.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -648,10 +650,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Auto-Detect Location
+                    {t('feature.location.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Automatically detects your country and sets default currency
+                    {t('feature.location.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -660,10 +662,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Smart Caching
+                    {t('feature.caching.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Intelligent rate caching with offline fallbacks
+                    {t('feature.caching.desc')}
                   </ThemedText>
                 </View>
               </View>
