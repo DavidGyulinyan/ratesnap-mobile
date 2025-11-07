@@ -3,6 +3,7 @@ import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import Logo from '@/components/Logo';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -14,11 +15,7 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: true,
-        headerTitle: 'RateSnap',
-        headerTitleStyle: {
-          fontSize: 20,
-          fontWeight: 'bold',
-        },
+        headerTitle: () => <Logo size={28} showText={true} textSize={18} />,
         tabBarButton: HapticTab,
         tabBarStyle: { display: 'none' }, // Hide the tab bar
       }}>

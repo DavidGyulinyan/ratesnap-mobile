@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
+import Logo from "./Logo";
 import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
@@ -49,8 +50,8 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
-  const [fromCurrency, setFromCurrency] = useState<string>("");
-  const [toCurrency, setToCurrency] = useState<string>("");
+  const [fromCurrency, setFromCurrency] = useState<string>("USD");
+  const [toCurrency, setToCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState<boolean>(true);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<SavedRate[]>([]);
@@ -343,9 +344,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           setLoading(false);
           console.log('⚠️ Loading timeout reached, setting default currencies');
           // Set defaults if something goes wrong
-          setFromCurrency('USD');
-          setToCurrency('AMD');
-        }, 10000); // 10 second timeout
+            setFromCurrency('USD');
+            setToCurrency('AMD');
+            clearTimeout(loadingTimeout);
+            setLoading(false);
+          }, 10000); // 10 second timeout
 
         const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
         const cacheTimestamp = await AsyncStorage.getItem('cachedRatesTimestamp');
@@ -694,8 +697,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
         {/* Enhanced Header with Features */}
         <View style={styles.enhancedHeader}>
+          <View style={styles.headerLogoContainer}>
+            <Logo size={32} showText={true} textSize={20} />
+          </View>
           <ThemedText type="title" style={styles.mainTitle}>
-            🏦 Full Currency Converter
+            Full Currency Converter
           </ThemedText>
           <ThemedText style={styles.subtitle}>
             Complete currency conversion suite with advanced features
@@ -912,8 +918,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
+  headerLogoContainer: {
+    marginBottom: 12,
+  },
   mainTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 8,

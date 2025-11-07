@@ -59,6 +59,7 @@ export default function HomeScreen() {
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [rateAlerts, setRateAlerts] = useState<any[]>([]);
+  const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
 
   // Rate alert form state
   const [newAlert, setNewAlert] = useState({
@@ -101,16 +102,23 @@ export default function HomeScreen() {
 
   const loadExchangeRates = async () => {
     try {
+      setMultiCurrencyLoading(true);
       const cachedData = await AsyncStorage.getItem("cachedExchangeRates");
       if (cachedData) {
         const data = JSON.parse(cachedData);
         setCurrenciesData(data);
         setCurrencyList(Object.keys(data.conversion_rates || {}));
+        console.log('📦 Loaded cached exchange rates for multi-currency');
+      } else {
+        // Set default currencies if no cached data
+        setCurrencyList(POPULAR_CURRENCIES);
+        console.log('💡 No cached data available for multi-currency');
       }
     } catch (error) {
       console.error("Error loading cached rates:", error);
-      // Fallback to POPULAR_CURRENCIES if no cached data
       setCurrencyList(POPULAR_CURRENCIES);
+    } finally {
+      setMultiCurrencyLoading(false);
     }
   };
 
@@ -387,15 +395,39 @@ export default function HomeScreen() {
           </View>
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
-          {showMultiCurrency && currenciesData && (
-            <MultiCurrencyConverter
-              key="multiCurrencyConverter-main"
-              currenciesData={currenciesData}
-              fromCurrency="USD"
-              onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
-              onClose={() => setShowMultiCurrency(false)}
-              style={{ marginBottom: 24 }}
-            />
+          {showMultiCurrency && (
+            <View style={styles.multiCurrencySection}>
+              <View style={styles.multiCurrencyCard}>
+                <View style={styles.multiCurrencyHeader}>
+                  <ThemedText style={styles.multiCurrencyTitle}>
+                    📊 Multi-Currency Converter
+                  </ThemedText>
+                </View>
+
+                {!currenciesData ? (
+                  <View style={styles.emptyState}>
+                    <ThemedText style={styles.emptyStateText}>Loading exchange rates...</ThemedText>
+                    <TouchableOpacity
+                      style={styles.refreshButton}
+                      onPress={loadExchangeRates}
+                    >
+                      <ThemedText style={styles.refreshButtonText}>
+                        🔄 Refresh Data
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <MultiCurrencyConverter
+                    key="multiCurrencyConverter-main"
+                    currenciesData={currenciesData}
+                    fromCurrency="USD"
+                    onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
+                    onClose={() => setShowMultiCurrency(false)}
+                    style={{ marginBottom: 24 }}
+                  />
+                )}
+              </View>
+            </View>
           )}
 
           {/* Inline Rate Alerts */}
@@ -1167,6 +1199,19 @@ const styles = StyleSheet.create({
   },
   manageCurrenciesText: {
     color: "#374151",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  // Multi-Currency Loading and Refresh
+  refreshButton: {
+    backgroundColor: "#2563eb",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  refreshButtonText: {
+    color: "white",
     fontSize: 14,
     fontWeight: "600",
   },
