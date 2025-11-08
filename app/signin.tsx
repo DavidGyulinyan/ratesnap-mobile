@@ -15,10 +15,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from '@/components/Logo';
-import * as WebBrowser from 'expo-web-browser';
+import { signInWithGoogle } from '../hooks/useGoogleAuth';
 import { Ionicons } from '@expo/vector-icons';
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -53,12 +51,9 @@ export default function SignInScreen() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        Alert.alert('Google Sign In Error', error.message);
-      }
+      await signInWithGoogle();
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred with Google sign in');
+      Alert.alert('Google Sign In Error', error instanceof Error ? error.message : 'An unexpected error occurred with Google sign in');
     }
   };
 

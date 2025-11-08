@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ratesnap-mobile",
+    "name": "RateSnap",
     "slug": "ratesnap-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ratesnap",
+    "scheme": "ratesnap-mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -16,7 +16,9 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "ratesnap",
-            "CFBundleURLSchemes": ["ratesnap"]
+            "CFBundleURLSchemes": [
+              "ratesnap-mobile"
+            ]
           }
         ]
       }
@@ -34,12 +36,15 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "ratesnap",
+              "scheme": "ratesnap-mobile",
               "host": "*",
               "pathPattern": "auth/callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "edgeToEdgeEnabled": true,
@@ -69,20 +74,12 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-
-    "expo": {
-      "name": "RateSnap",
-      "slug": "ratesnap-mobile",
-      "scheme": "ratesnap",
-      "extra": {
-        "router": {},
-        "supabaseUrl": "https://jprafkemftjqrzsrtuui.supabase.co",
-        "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E",
-        "apiUrl": "https://api.currencyfreaks.com/latest",
-        "apiKey": "870b638bf16a4be185dff4dac89e557a",
-        "eas": {
-          "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
-        }
+    "extra": {
+      "supabaseUrl": "https://jprafkemftjqrzsrtuui.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E",
+      "router": {},
+      "eas": {
+        "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
       }
     }
   }
