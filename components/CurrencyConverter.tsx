@@ -11,13 +11,19 @@ import {
   FlatList,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from 'expo-constants';
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
+import Logo from "./Logo";
 import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import SavedRates from "./SavedRates";
+import AuthPromptModal from "./AuthPromptModal";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCloudSync, SavedRatesSync } from "@/lib/cloudSync";
 
 interface SavedRate {
   id: string;
@@ -46,11 +52,12 @@ interface Data {
 }
 
 export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyConverterProps) {
+  const { t, tWithParams } = useLanguage();
   const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
-  const [fromCurrency, setFromCurrency] = useState<string>("");
-  const [toCurrency, setToCurrency] = useState<string>("");
+  const [fromCurrency, setFromCurrency] = useState<string>("USD");
+  const [toCurrency, setToCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState<boolean>(true);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<SavedRate[]>([]);
@@ -60,9 +67,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
+  const [isCloudSyncEnabled, setIsCloudSyncEnabled] = useState<boolean>(false);
 
-  const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
-  const CURRENCYFREAKS_API_KEY = "870b638bf16a4be185dff4dac89e557a";
+  const { user } = useAuth();
+  const { syncSavedRates } = useCloudSync();
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
@@ -343,9 +352,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           setLoading(false);
           console.log('⚠️ Loading timeout reached, setting default currencies');
           // Set defaults if something goes wrong
-          setFromCurrency('USD');
-          setToCurrency('AMD');
-        }, 10000); // 10 second timeout
+            setFromCurrency('USD');
+            setToCurrency('AMD');
+            clearTimeout(loadingTimeout);
+            setLoading(false);
+          }, 10000); // 10 second timeout
 
         const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
         const cacheTimestamp = await AsyncStorage.getItem('cachedRatesTimestamp');
@@ -366,8 +377,18 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         }
 
         console.log('🌐 Fetching fresh exchange rates...');
+        const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+        const apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY;
+        
+        console.log('API Configuration:', {
+          hasApiUrl: !!apiUrl,
+          hasApiKey: !!apiKey,
+          apiUrl,
+          useConstants: !!Constants.expoConfig?.extra
+        });
+        
         const response = await fetch(
-          `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
+          `${apiUrl}?apikey=${apiKey}`
         );
         
         if (!response.ok) {
@@ -431,13 +452,41 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
   useEffect(() => {
     const loadSavedRates = async () => {
-      const stored = await AsyncStorage.getItem("savedRates");
-      if (stored) {
-        setSavedRates(JSON.parse(stored));
+      // If user is logged in, try to download from cloud first
+      if (user) {
+        const result = await SavedRatesSync.downloadCloudToLocal(user.id);
+        if (result.success) {
+          console.log('✅ Downloaded saved rates from cloud');
+          // Load from local storage (which now has cloud data)
+          const stored = await AsyncStorage.getItem("saved_rates");
+          if (stored) {
+            const localRates = JSON.parse(stored).map((rate: any) => ({
+              id: rate.id,
+              fromCurrency: rate.fromCurrency,
+              toCurrency: rate.toCurrency,
+              rate: rate.rate,
+              timestamp: rate.timestamp,
+            }));
+            setSavedRates(localRates);
+          }
+        } else {
+          console.log('❌ Failed to download from cloud, using local data');
+          // Fall back to local storage
+          const stored = await AsyncStorage.getItem("savedRates");
+          if (stored) {
+            setSavedRates(JSON.parse(stored));
+          }
+        }
+      } else {
+        // User not logged in, use local storage
+        const stored = await AsyncStorage.getItem("savedRates");
+        if (stored) {
+          setSavedRates(JSON.parse(stored));
+        }
       }
     };
     loadSavedRates();
-  }, []);
+  }, [user]);
 
   const handleSaveRate = async (): Promise<void> => {
     if (!fromCurrency || !toCurrency || !currenciesData) return;
@@ -456,13 +505,55 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
     const updatedRates = [newRate, ...savedRates].slice(0, 10);
     setSavedRates(updatedRates);
+
+    // Save to local storage using both keys for compatibility
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+
+    // If user is logged in and cloud sync is enabled, upload to cloud
+    if (user && isCloudSyncEnabled) {
+      try {
+        // Convert to local format and save
+        const localRate = {
+          fromCurrency: newRate.fromCurrency,
+          toCurrency: newRate.toCurrency,
+          rate: newRate.rate,
+        };
+        await SavedRatesSync.saveLocalRate(localRate);
+        
+        // Upload to cloud
+        const result = await syncSavedRates('upload');
+        if (result) {
+          console.log('✅ Rate saved to cloud successfully');
+          Alert.alert('Success', 'Rate saved to cloud and synced across devices!');
+        } else {
+          console.log('⚠️ Failed to save to cloud, but saved locally');
+          Alert.alert('Success', 'Rate saved locally. Cloud sync will be attempted when connected.');
+        }
+      } catch (error) {
+        console.log('⚠️ Cloud sync failed, rate saved locally only');
+        Alert.alert('Success', 'Rate saved locally. Cloud sync will be attempted when connected.');
+      }
+    } else {
+      // User not logged in, just save locally
+      Alert.alert('Success', 'Rate saved locally. Sign in to sync across devices!');
+    }
   };
 
   const handleDeleteRate = async (id: string | number): Promise<void> => {
     const updatedRates = savedRates.filter((rate) => rate.id !== id);
     setSavedRates(updatedRates);
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+
+    // If user is logged in and cloud sync is enabled, update cloud
+    if (user && isCloudSyncEnabled) {
+      try {
+        await SavedRatesSync.deleteLocalRate(id.toString());
+        await syncSavedRates('upload');
+        console.log('✅ Rate deleted from cloud successfully');
+      } catch (error) {
+        console.log('⚠️ Failed to delete from cloud:', error);
+      }
+    }
   };
 
   const handleSelectRate = (from: string, to: string): void => {
@@ -674,10 +765,51 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   }, [currencyList]);
 
+  // Handle cloud sync when user logs in
+  useEffect(() => {
+    if (user) {
+      // When user logs in, try to sync from cloud
+      const handleUserLogin = async () => {
+        try {
+          const result = await syncSavedRates('download');
+          if (result) {
+            console.log('✅ Synced saved rates after login');
+            setIsCloudSyncEnabled(true);
+            
+            // Reload saved rates from local storage (which now has cloud data)
+            const stored = await AsyncStorage.getItem("saved_rates");
+            if (stored) {
+              const localRates = JSON.parse(stored).map((rate: any) => ({
+                id: rate.id,
+                fromCurrency: rate.fromCurrency,
+                toCurrency: rate.toCurrency,
+                rate: rate.rate,
+                timestamp: rate.timestamp,
+              }));
+              setSavedRates(localRates);
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ Failed to sync after login:', error);
+        }
+      };
+      handleUserLogin();
+    }
+  }, [user, syncSavedRates]);
+
+  const handleEnableCloudSync = () => {
+    if (user) {
+      setIsCloudSyncEnabled(true);
+      Alert.alert('Cloud Sync Enabled', 'Your saved rates will now be synced across all devices.');
+    } else {
+      setShowAuthPrompt(true);
+    }
+  };
+
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ThemedText>Loading...</ThemedText>
+        <ThemedText>{t('common.loading')}</ThemedText>
       </ThemedView>
     );
   }
@@ -688,17 +820,20 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         {/* Navigation Header */}
         {onNavigateToDashboard && (
           <TouchableOpacity style={styles.navHeader} onPress={onNavigateToDashboard}>
-            <ThemedText style={styles.navHeaderText}>← Back to Dashboard</ThemedText>
+            <ThemedText style={styles.navHeaderText}>{t('converter.backToDashboard')}</ThemedText>
           </TouchableOpacity>
         )}
 
         {/* Enhanced Header with Features */}
         <View style={styles.enhancedHeader}>
+          <View style={styles.headerLogoContainer}>
+            <Logo size={32} showText={true} textSize={20} />
+          </View>
           <ThemedText type="title" style={styles.mainTitle}>
-            🏦 Full Currency Converter
+            {t('converter.subtitle')}
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            Complete currency conversion suite with advanced features
+            {t('dashboard.features.description')}
           </ThemedText>
         </View>
 
@@ -709,7 +844,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             onPress={() => setShowMultiCurrency(!showMultiCurrency)}
           >
             <ThemedText style={styles.featureToggleText}>
-              📊 Multi-Currency
+              📊 {t('dashboard.multiCurrency')}
             </ThemedText>
           </TouchableOpacity>
           
@@ -718,38 +853,58 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             onPress={() => setShowSavedRates(!showSavedRates)}
           >
             <ThemedText style={styles.featureToggleText}>
-              💾 Saved Rates ({savedRates.length})
+              💾 {t('dashboard.savedRates')} ({savedRates.length})
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Cloud Sync Toggle */}
+          <TouchableOpacity
+            style={[styles.featureToggle, isCloudSyncEnabled && styles.featureToggleActive]}
+            onPress={handleEnableCloudSync}
+          >
+            <ThemedText style={styles.featureToggleText}>
+              ☁️ {user ? 'Cloud Sync ON' : 'Enable Cloud Sync'}
             </ThemedText>
           </TouchableOpacity>
         </View>
 
         <View style={styles.updateInfo}>
           <ThemedText style={styles.updateText}>
-            Last update: {currenciesData?.time_last_update_utc}
+            {t('time.lastUpdate')}: {currenciesData?.time_last_update_utc}
           </ThemedText>
           <ThemedText style={styles.updateText}>
-            Next update: {currenciesData?.time_next_update_utc}
+            {t('time.nextUpdate')}: {currenciesData?.time_next_update_utc}
           </ThemedText>
         </View>
 
         {/* Main Converter Box - Enhanced */}
         <View style={styles.mainConverterBox}>
-          <ThemedText style={styles.converterTitle}>💱 Standard Conversion</ThemedText>
+          <ThemedText style={styles.converterTitle}>💱 {t('converter.standard')}</ThemedText>
           
           <View style={styles.convertedAmountBox}>
             <ThemedText style={styles.convertedAmountText}>
               {amount && parseFloat(amount) > 0 && convertedAmount
-                ? `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`
+                ? tWithParams('converter.conversionResult', {
+                    amount,
+                    fromCurrency,
+                    convertedAmount,
+                    toCurrency
+                  })
                 : fromCurrency && toCurrency && currenciesData
-                  ? `Exchange Rate: 1 ${fromCurrency} = ${getExchangeRate().toFixed(4)} ${toCurrency}`
-                  : `Select currencies to see conversion`}
+                  ? tWithParams('converter.exchangeRateResult', {
+                      rateLabel: t('converter.exchangeRate'),
+                      fromCurrency,
+                      rate: getExchangeRate().toFixed(4),
+                      toCurrency
+                    })
+                  : t('converter.selectCurrencies')}
             </ThemedText>
           </View>
 
           <View style={styles.amountInputContainer}>
             <TextInput
               style={styles.amountInput}
-              placeholder="Enter amount to convert"
+              placeholder={t('converter.enterAmount')}
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
@@ -758,7 +913,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               style={styles.calculatorButton}
               onPress={() => setShowCalculator(true)}
             >
-              <ThemedText style={styles.calculatorButtonText}>🧮 Calculator</ThemedText>
+              <ThemedText style={styles.calculatorButtonText}>🧮 {t('converter.calculator')}</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -770,7 +925,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyButtonContent}>
                 <CurrencyFlag currency={fromCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
-                  From: {fromCurrency}
+                  {t('converter.from')}: {fromCurrency}
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -786,7 +941,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyButtonContent}>
                 <CurrencyFlag currency={toCurrency} size={20} />
                 <ThemedText style={styles.currencyButtonText}>
-                  To: {toCurrency}
+                  {t('converter.to')}: {toCurrency}
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -794,12 +949,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveRate}>
             <ThemedText style={styles.saveButtonText}>
-              ⭐ Save This Rate
+              ⭐ {t('converter.saveRate')}
             </ThemedText>
           </TouchableOpacity>
 
           <ThemedText style={styles.disclaimer}>
-            💡 Professional currency converter with real-time rates and advanced features
+            💡 {t('converter.professional')}
           </ThemedText>
         </View>
 
@@ -821,7 +976,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onSelectRate={handleSelectRate}
           onDeleteRate={handleDeleteRate}
           showMoreEnabled={false}
-          title="⭐ Saved Rates"
+          title={`⭐ ${t('saved.title')}`}
         />
 
         {/* Currency Pickers */}
@@ -855,16 +1010,28 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onClose={() => setShowCalculator(false)}
           onResult={handleCalculatorResult}
         />
+
+        {/* Auth Prompt Modal */}
+        <AuthPromptModal
+          visible={showAuthPrompt}
+          onClose={() => setShowAuthPrompt(false)}
+          title="Create account to sync and enable alerts"
+          message="Sign up to save your data and enable premium features"
+          feature="sync"
+        />
       </ScrollView>
-      <Footer />
+      <Footer t={t} tWithParams={tWithParams} />
     </SafeAreaView>
   );
 }
 
-const Footer = () => (
+const Footer = ({ t, tWithParams }: { t: (key: string) => string; tWithParams: (key: string, params: { [key: string]: string | number }) => string }) => (
   <View style={styles.footer}>
     <ThemedText style={styles.footerText}>
-      © 2025 RateSnap - Professional Currency Converter Suite
+      {tWithParams('footer.copyright', {
+        appTitle: t('app.title'),
+        suiteName: t('footer.suiteName')
+      })}
     </ThemedText>
     <TouchableOpacity
       onPress={() =>
@@ -873,7 +1040,7 @@ const Footer = () => (
         )
       }
     >
-      <ThemedText style={styles.termsText}>Terms of Use & Privacy</ThemedText>
+      <ThemedText style={styles.termsText}>{t('footer.terms')}</ThemedText>
     </TouchableOpacity>
   </View>
 );
@@ -912,8 +1079,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
+  headerLogoContainer: {
+    marginBottom: 12,
+  },
   mainTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 8,

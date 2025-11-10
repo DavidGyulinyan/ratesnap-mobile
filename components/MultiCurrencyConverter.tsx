@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MultiCurrencyConverterProps {
   currenciesData: any;
@@ -41,6 +42,8 @@ export default function MultiCurrencyConverter({
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [showTargetCurrencyPicker, setShowTargetCurrencyPicker] = useState(false);
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+
+  const { t } = useLanguage();
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";
@@ -369,9 +372,9 @@ export default function MultiCurrencyConverter({
     const isDuplicate = conversionTargets.some(target => target.currency === currency);
     if (isDuplicate) {
       Alert.alert(
-        "Duplicate Currency",
-        `${currency} is already in your conversion list. Please select a different currency.`,
-        [{ text: "OK", style: "default" }]
+        t('error.duplicateCurrency'),
+        `${currency} ${t('multi.alreadyInList')}`,
+        [{ text: t('common.ok'), style: "default" }]
       );
       setShowTargetCurrencyPicker(false);
       setEditingTargetId(null);
@@ -443,7 +446,7 @@ export default function MultiCurrencyConverter({
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"
-            placeholder="Enter amount to convert"
+            placeholder={t('converter.enterAmount')}
             placeholderTextColor="#9ca3af"
           />
         </View>
@@ -488,7 +491,7 @@ export default function MultiCurrencyConverter({
           {conversionTargets.length === 0 ? (
             <View style={styles.emptyState}>
               <ThemedText style={styles.emptyStateText}>
-                Click "Add Currency" to select currencies for conversion
+                {t('multi.emptyState')}
               </ThemedText>
             </View>
           ) : (

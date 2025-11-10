@@ -7,6 +7,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
@@ -16,6 +17,10 @@ import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import SavedRates from "@/components/SavedRates";
+import AuthPromptModal from "@/components/AuthPromptModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getAsyncStorage } from "@/lib/storage";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -44,6 +49,9 @@ const POPULAR_CURRENCIES = [
 ];
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
@@ -52,6 +60,7 @@ export default function HomeScreen() {
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("EUR"); // Default to EUR, will be updated by location detection
   const [multiAmount, setMultiAmount] = useState("1");
@@ -59,6 +68,7 @@ export default function HomeScreen() {
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [rateAlerts, setRateAlerts] = useState<any[]>([]);
+  const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
 
   // Rate alert form state
   const [newAlert, setNewAlert] = useState({
@@ -101,22 +111,31 @@ export default function HomeScreen() {
 
   const loadExchangeRates = async () => {
     try {
-      const cachedData = await AsyncStorage.getItem("cachedExchangeRates");
+      setMultiCurrencyLoading(true);
+      const storage = getAsyncStorage();
+      const cachedData = await storage.getItem("cachedExchangeRates");
       if (cachedData) {
         const data = JSON.parse(cachedData);
         setCurrenciesData(data);
         setCurrencyList(Object.keys(data.conversion_rates || {}));
+        console.log('📦 Loaded cached exchange rates for multi-currency');
+      } else {
+        // Set default currencies if no cached data
+        setCurrencyList(POPULAR_CURRENCIES);
+        console.log('💡 No cached data available for multi-currency');
       }
     } catch (error) {
       console.error("Error loading cached rates:", error);
-      // Fallback to POPULAR_CURRENCIES if no cached data
       setCurrencyList(POPULAR_CURRENCIES);
+    } finally {
+      setMultiCurrencyLoading(false);
     }
   };
 
   const loadSavedRates = async () => {
     try {
-      const savedRatesData = await AsyncStorage.getItem("savedRates");
+      const storage = getAsyncStorage();
+      const savedRatesData = await storage.getItem("savedRates");
       if (savedRatesData) {
         setSavedRates(JSON.parse(savedRatesData));
       }
@@ -127,7 +146,8 @@ export default function HomeScreen() {
 
   const loadRateAlerts = async () => {
     try {
-      const alertsData = await AsyncStorage.getItem("rateAlerts");
+      const storage = getAsyncStorage();
+      const alertsData = await storage.getItem("rateAlerts");
       if (alertsData) {
         setRateAlerts(JSON.parse(alertsData));
       }
@@ -138,7 +158,7 @@ export default function HomeScreen() {
 
   const createRateAlert = async () => {
     if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
-      alert("Please enter a valid target rate");
+      alert(t('error.invalidAmount'));
       return;
     }
 
@@ -154,7 +174,8 @@ export default function HomeScreen() {
 
     const updatedAlerts = [newRateAlert, ...rateAlerts];
     setRateAlerts(updatedAlerts);
-    await AsyncStorage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
+    const storage = getAsyncStorage();
+    await storage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
 
     setNewAlert({
       fromCurrency: "USD",
@@ -163,20 +184,29 @@ export default function HomeScreen() {
       condition: "below",
     });
 
-    alert("Rate alert created successfully!");
+    alert(t('success.alertCreated'));
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Alert.alert('Success', 'You have been signed out successfully.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    }
   };
 
   const deleteAlert = async (alertId: string) => {
     Alert.alert(
-      "Delete Alert",
-      "Are you sure you want to delete this rate alert?",
+      t('common.delete'),
+      t('alerts.deleteConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             const updatedAlerts = rateAlerts.filter(
@@ -197,15 +227,15 @@ export default function HomeScreen() {
     if (rateAlerts.length === 0) return;
 
     Alert.alert(
-      "Delete All Alerts",
-      `Are you sure you want to delete all ${rateAlerts.length} rate alerts? This action cannot be undone.`,
+      t('alerts.deleteAll'),
+      t('alerts.deleteAllConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete All",
+          text: t('alerts.deleteAll'),
           style: "destructive",
           onPress: async () => {
             setRateAlerts([]);
@@ -218,23 +248,21 @@ export default function HomeScreen() {
 
   const deleteSavedRate = async (index: number) => {
     Alert.alert(
-      "Delete Saved Rate",
-      "Are you sure you want to delete this saved rate?",
+      t('common.delete'),
+      t('saved.deleteConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             const updatedRates = savedRates.filter((_, i) => i !== index);
             setSavedRates(updatedRates);
-            await AsyncStorage.setItem(
-              "savedRates",
-              JSON.stringify(updatedRates)
-            );
+            const storage = getAsyncStorage();
+            await storage.setItem("savedRates", JSON.stringify(updatedRates));
           },
         },
       ]
@@ -245,19 +273,20 @@ export default function HomeScreen() {
     if (savedRates.length === 0) return;
 
     Alert.alert(
-      "Delete All Saved Rates",
-      `Are you sure you want to delete all ${savedRates.length} saved rates? This action cannot be undone.`,
+      t('saved.deleteAll'),
+      t('saved.deleteAllConfirm'),
       [
         {
-          text: "Cancel",
+          text: t('common.cancel'),
           style: "cancel",
         },
         {
-          text: "Delete All",
+          text: t('saved.deleteAll'),
           style: "destructive",
           onPress: async () => {
             setSavedRates([]);
-            await AsyncStorage.setItem("savedRates", JSON.stringify([]));
+            const storage = getAsyncStorage();
+            await storage.setItem("savedRates", JSON.stringify([]));
           },
         },
       ]
@@ -295,17 +324,52 @@ export default function HomeScreen() {
         {/* Dashboard Header - Fixed at top */}
         <View style={styles.dashboardHeader}>
           <ThemedText type="title" style={styles.dashboardTitle}>
-            RateSnap Dashboard
+            {t('app.title')} Dashboard
           </ThemedText>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.converterButton}
-              onPress={() => setCurrentView("converter")}
-            >
-              <ThemedText style={styles.converterButtonText}>
-                💱 Converter
-              </ThemedText>
-            </TouchableOpacity>
+            {/* Show sign-in/sign-up for non-authenticated users */}
+            {!user ? (
+              <>
+                <TouchableOpacity
+                  style={styles.authButton}
+                  onPress={() => router.push('/signin')}
+                >
+                  <ThemedText style={styles.authButtonText}>
+                    {t('auth.signin')}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.authButton, styles.authButtonPrimary]}
+                  onPress={() => router.push('/signup')}
+                >
+                  <ThemedText style={styles.authButtonPrimaryText}>
+                    {t('auth.signup')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.converterButton}
+                  onPress={() => setCurrentView("converter")}
+                >
+                  <ThemedText style={styles.converterButtonText}>
+                    💱 {t('converter.title')}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.userInfo}
+                  onPress={handleSignOut}
+                >
+                  <ThemedText style={styles.userInfoText}>
+                    {t('auth.welcome')}, {user.email?.split('@')[0]}
+                  </ThemedText>
+                  <ThemedText style={styles.signOutText}>
+                    {t('auth.signout')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
@@ -324,10 +388,10 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>💱</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Currency Converter
+                {t('quick.action.converter')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                Professional converter with all features
+                {t('quick.action.converter.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -340,12 +404,12 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Multi-Currency
+                {t('quick.action.multiCurrency')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {showMultiCurrency
-                  ? "Hide conversion tool"
-                  : "Quick conversions to 20 currencies"}
+                  ? t('quick.action.multiCurrency.hide')
+                  : t('quick.action.multiCurrency.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -358,11 +422,11 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Rate Alerts
+                {t('quick.action.rateAlerts')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {rateAlerts.length} active alerts -{" "}
-                {showRateAlerts ? "Hide alerts" : "Set target rates"}
+                {rateAlerts.length} {rateAlerts.length === 1 ? 'active alert' : 'active alerts'} -{" "}
+                {showRateAlerts ? t('quick.action.rateAlerts.hide') : t('quick.action.rateAlerts.desc')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -375,27 +439,51 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📋</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Saved Rates
+                {t('quick.action.savedRates')}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {savedRates.length} saved rates -{" "}
+                {savedRates.length} {savedRates.length === 1 ? 'saved rate' : 'saved rates'} -{" "}
                 {showSavedRates
-                  ? "Hide saved rates"
-                  : "Quick access to favorites"}
+                  ? t('quick.action.savedRates.hide')
+                  : t('quick.action.savedRates.desc')}
               </ThemedText>
             </TouchableOpacity>
           </View>
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
-          {showMultiCurrency && currenciesData && (
-            <MultiCurrencyConverter
-              key="multiCurrencyConverter-main"
-              currenciesData={currenciesData}
-              fromCurrency="USD"
-              onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
-              onClose={() => setShowMultiCurrency(false)}
-              style={{ marginBottom: 24 }}
-            />
+          {showMultiCurrency && (
+            <View style={styles.multiCurrencySection}>
+              <View style={styles.multiCurrencyCard}>
+                <View style={styles.multiCurrencyHeader}>
+                  <ThemedText style={styles.multiCurrencyTitle}>
+                    📊 {t('converter.multiCurrency.section')}
+                  </ThemedText>
+                </View>
+
+                {!currenciesData ? (
+                  <View style={styles.emptyState}>
+                    <ThemedText style={styles.emptyStateText}>{t('converter.loadingRates')}</ThemedText>
+                    <TouchableOpacity
+                      style={styles.refreshButton}
+                      onPress={loadExchangeRates}
+                    >
+                      <ThemedText style={styles.refreshButtonText}>
+                        🔄 {t('converter.refreshData')}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <MultiCurrencyConverter
+                    key="multiCurrencyConverter-main"
+                    currenciesData={currenciesData}
+                    fromCurrency="USD"
+                    onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
+                    onClose={() => setShowMultiCurrency(false)}
+                    style={{ marginBottom: 24 }}
+                  />
+                )}
+              </View>
+            </View>
           )}
 
           {/* Inline Rate Alerts */}
@@ -404,7 +492,7 @@ export default function HomeScreen() {
               <View style={styles.rateAlertsCard}>
                 <View style={styles.rateAlertsHeader}>
                   <ThemedText style={styles.rateAlertsTitle}>
-                    🔔 Rate Alerts
+                    🔔 {t('alerts.title')}
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
@@ -417,15 +505,15 @@ export default function HomeScreen() {
                 {/* Existing Alerts */}
                 <View style={styles.existingAlerts}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    Your Active Alerts:
+                    {t('alerts.active')}
                   </ThemedText>
                   {rateAlerts.length === 0 ? (
                     <View style={styles.emptyState}>
                       <ThemedText style={styles.emptyStateText}>
-                        No rate alerts set yet
+                        {t('alerts.none')}
                       </ThemedText>
                       <ThemedText style={styles.emptyStateSubtext}>
-                        Create your first alert below
+                        {t('alerts.createFirst')}
                       </ThemedText>
                     </View>
                   ) : (
@@ -462,7 +550,7 @@ export default function HomeScreen() {
                           onPress={() => setCurrentView("converter")}
                         >
                           <ThemedText style={styles.showMoreAlertsText}>
-                            View {rateAlerts.length - 3} more alerts →
+                            {t('alerts.viewMore').replace('alerts', `${rateAlerts.length - 3} more alerts`)}
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -472,7 +560,7 @@ export default function HomeScreen() {
                           onPress={deleteAllAlerts}
                         >
                           <ThemedText style={styles.deleteAllInlineText}>
-                            🗑️ Delete All ({rateAlerts.length})
+                            🗑️ {t('alerts.deleteAll')} ({rateAlerts.length})
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -483,7 +571,7 @@ export default function HomeScreen() {
                 {/* Create New Alert */}
                 <View style={styles.createAlertSection}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    Create New Alert:
+                    {t('alerts.createNew')}
                   </ThemedText>
                   <View style={styles.alertForm}>
                     <View style={styles.alertFormRow}>
@@ -496,7 +584,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          From: {newAlert.fromCurrency}
+                          {t('converter.from')}: {newAlert.fromCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -508,7 +596,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          To: {newAlert.toCurrency}
+                          {t('converter.to')}: {newAlert.toCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -519,7 +607,7 @@ export default function HomeScreen() {
                         onChangeText={(text) =>
                           setNewAlert({ ...newAlert, targetRate: text })
                         }
-                        placeholder="Target rate"
+                        placeholder={t('alerts.targetRate')}
                         keyboardType="numeric"
                       />
                       <TouchableOpacity
@@ -536,8 +624,8 @@ export default function HomeScreen() {
                       >
                         <ThemedText style={styles.conditionButtonText}>
                           {newAlert.condition === "below"
-                            ? "↓ Below"
-                            : "↑ Above"}
+                            ? `↓ ${t('alerts.condition.below')}`
+                            : `↑ ${t('alerts.condition.above')}`}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -546,7 +634,7 @@ export default function HomeScreen() {
                       onPress={createRateAlert}
                     >
                       <ThemedText style={styles.createAlertButtonText}>
-                        Create Alert
+                        {t('alerts.create')}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -566,24 +654,24 @@ export default function HomeScreen() {
             showMoreEnabled={true}
             onShowMore={() => setCurrentView("converter")}
             maxVisibleItems={4}
-            title="📋 Saved Rates"
+            title={`📋 ${t('saved.title')}`}
             containerStyle={{ marginBottom: 24 }}
           />
 
           {/* Features Preview */}
           <View style={styles.featuresSection}>
             <ThemedText style={styles.sectionTitle}>
-              ✨ Dashboard Features
+              ✨ {t('dashboard.features')}
             </ThemedText>
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Multi-Currency Converter
+                    {t('feature.multiCurrency.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Convert to multiple currencies instantly with live rates
+                    {t('feature.multiCurrency.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -592,10 +680,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Calculator Integration
+                    {t('feature.calculator.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Built-in calculator for amount calculations
+                    {t('feature.calculator.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -604,10 +692,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Offline Mode
+                    {t('feature.offline.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Works without internet using cached rates
+                    {t('feature.offline.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -616,10 +704,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Auto-Detect Location
+                    {t('feature.location.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Automatically detects your country and sets default currency
+                    {t('feature.location.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -628,10 +716,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    Smart Caching
+                    {t('feature.caching.title')}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    Intelligent rate caching with offline fallbacks
+                    {t('feature.caching.desc')}
                   </ThemedText>
                 </View>
               </View>
@@ -664,6 +752,15 @@ export default function HomeScreen() {
         selectedCurrency={newAlert.toCurrency}
         onSelect={handleToCurrencySelect}
         onClose={() => setShowToCurrencyPicker(false)}
+      />
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        title="Create account to sync and enable alerts"
+        message="Sign up to save your data and enable premium features"
+        feature="general"
       />
     </>
   );
@@ -700,6 +797,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   converterButton: {
     backgroundColor: "#2563eb",
@@ -718,6 +816,41 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 12,
     textAlign: "center",
+  },
+  authButton: {
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  authButtonText: {
+    color: "#374151",
+    fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  authButtonPrimary: {
+    backgroundColor: "#2563eb",
+    borderColor: "#2563eb",
+  },
+  authButtonPrimaryText: {
+    color: "white",
+  },
+  userInfo: {
+    alignItems: "flex-end",
+  },
+  userInfoText: {
+    color: "#6b7280",
+    fontSize: 10,
+    textAlign: "right",
+  },
+  signOutText: {
+    color: "#dc2626",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "right",
   },
   dashboardScrollView: {
     flex: 1,
@@ -1167,6 +1300,19 @@ const styles = StyleSheet.create({
   },
   manageCurrenciesText: {
     color: "#374151",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  // Multi-Currency Loading and Refresh
+  refreshButton: {
+    backgroundColor: "#2563eb",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  refreshButtonText: {
+    color: "white",
     fontSize: 14,
     fontWeight: "600",
   },

@@ -2,6 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SavedRate {
   id: string;
@@ -36,8 +37,12 @@ export default function SavedRates({
   onShowMore,
   maxVisibleItems = 10,
   containerStyle,
-  title = "⭐ Saved Rates",
+  title,
 }: SavedRatesProps) {
+  const { t } = useLanguage();
+  
+  const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
+  
   const renderSavedRateItem = (rate: SavedRate, index: number) => (
     <TouchableOpacity
       key={typeof rate.id === "string" ? rate.id : index}
@@ -54,11 +59,11 @@ export default function SavedRates({
           </ThemedText>
         </View>
         <ThemedText style={styles.rateValue}>
-          Rate: {rate.rate.toFixed(6)}
+          {t('converter.rate')}: {rate.rate.toFixed(6)}
         </ThemedText>
         {rate.timestamp && (
           <ThemedText style={styles.savedRateDate}>
-            Saved: {new Date(rate.timestamp).toLocaleDateString()} at{" "}
+            {t('saved.savedOn')}: {new Date(rate.timestamp).toLocaleDateString()} {t('saved.at')}{" "}
             {new Date(rate.timestamp).toLocaleTimeString()}
           </ThemedText>
         )}
@@ -81,7 +86,7 @@ export default function SavedRates({
     <View style={[styles.savedRatesSection, containerStyle]}>
       <View style={styles.savedRatesHeader}>
         <ThemedText type="subtitle" style={styles.savedRatesTitle}>
-          {title} ({savedRates.length})
+          {displayTitle} ({savedRates.length})
         </ThemedText>
         {savedRates.length > 0 && (
           <TouchableOpacity onPress={onToggleVisibility}>
@@ -91,7 +96,7 @@ export default function SavedRates({
                 showSavedRates && styles.showHideTextActive,
               ]}
             >
-              {showSavedRates ? "Hide ▲" : "Show ▼"}
+              {showSavedRates ? `▼ ${t('common.less')}` : `▶ ${t('common.more')}`}
             </ThemedText>
           </TouchableOpacity>
         )}
@@ -118,7 +123,7 @@ export default function SavedRates({
                   onPress={onShowMore}
                 >
                   <ThemedText style={styles.showMoreText}>
-                    View all {savedRates.length} saved rates →
+                    {t('common.showMore').replace('more', `all ${savedRates.length} saved rates`)} →
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -129,7 +134,7 @@ export default function SavedRates({
                   onPress={onDeleteAll}
                 >
                   <ThemedText style={styles.deleteAllText}>
-                    🗑️ Delete All ({savedRates.length})
+                    🗑️ {t('saved.deleteAll')} ({savedRates.length})
                   </ThemedText>
                 </TouchableOpacity>
               )}
