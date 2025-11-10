@@ -11,6 +11,7 @@ import {
   FlatList,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from 'expo-constants';
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import Logo from "./Logo";
@@ -19,7 +20,10 @@ import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import SavedRates from "./SavedRates";
+import AuthPromptModal from "./AuthPromptModal";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCloudSync, SavedRatesSync } from "@/lib/cloudSync";
 
 interface SavedRate {
   id: string;
@@ -63,9 +67,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
+  const [isCloudSyncEnabled, setIsCloudSyncEnabled] = useState<boolean>(false);
 
-  const CURRENCYFREAKS_API_URL = "https://api.currencyfreaks.com/latest";
-  const CURRENCYFREAKS_API_KEY = "870b638bf16a4be185dff4dac89e557a";
+  const { user } = useAuth();
+  const { syncSavedRates } = useCloudSync();
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
@@ -371,8 +377,18 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         }
 
         console.log('🌐 Fetching fresh exchange rates...');
+        const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+        const apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY;
+        
+        console.log('API Configuration:', {
+          hasApiUrl: !!apiUrl,
+          hasApiKey: !!apiKey,
+          apiUrl,
+          useConstants: !!Constants.expoConfig?.extra
+        });
+        
         const response = await fetch(
-          `${CURRENCYFREAKS_API_URL}?apikey=${CURRENCYFREAKS_API_KEY}`
+          `${apiUrl}?apikey=${apiKey}`
         );
         
         if (!response.ok) {
@@ -436,13 +452,41 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
   useEffect(() => {
     const loadSavedRates = async () => {
-      const stored = await AsyncStorage.getItem("savedRates");
-      if (stored) {
-        setSavedRates(JSON.parse(stored));
+      // If user is logged in, try to download from cloud first
+      if (user) {
+        const result = await SavedRatesSync.downloadCloudToLocal(user.id);
+        if (result.success) {
+          console.log('✅ Downloaded saved rates from cloud');
+          // Load from local storage (which now has cloud data)
+          const stored = await AsyncStorage.getItem("saved_rates");
+          if (stored) {
+            const localRates = JSON.parse(stored).map((rate: any) => ({
+              id: rate.id,
+              fromCurrency: rate.fromCurrency,
+              toCurrency: rate.toCurrency,
+              rate: rate.rate,
+              timestamp: rate.timestamp,
+            }));
+            setSavedRates(localRates);
+          }
+        } else {
+          console.log('❌ Failed to download from cloud, using local data');
+          // Fall back to local storage
+          const stored = await AsyncStorage.getItem("savedRates");
+          if (stored) {
+            setSavedRates(JSON.parse(stored));
+          }
+        }
+      } else {
+        // User not logged in, use local storage
+        const stored = await AsyncStorage.getItem("savedRates");
+        if (stored) {
+          setSavedRates(JSON.parse(stored));
+        }
       }
     };
     loadSavedRates();
-  }, []);
+  }, [user]);
 
   const handleSaveRate = async (): Promise<void> => {
     if (!fromCurrency || !toCurrency || !currenciesData) return;
@@ -461,13 +505,55 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
     const updatedRates = [newRate, ...savedRates].slice(0, 10);
     setSavedRates(updatedRates);
+
+    // Save to local storage using both keys for compatibility
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+
+    // If user is logged in and cloud sync is enabled, upload to cloud
+    if (user && isCloudSyncEnabled) {
+      try {
+        // Convert to local format and save
+        const localRate = {
+          fromCurrency: newRate.fromCurrency,
+          toCurrency: newRate.toCurrency,
+          rate: newRate.rate,
+        };
+        await SavedRatesSync.saveLocalRate(localRate);
+        
+        // Upload to cloud
+        const result = await syncSavedRates('upload');
+        if (result) {
+          console.log('✅ Rate saved to cloud successfully');
+          Alert.alert('Success', 'Rate saved to cloud and synced across devices!');
+        } else {
+          console.log('⚠️ Failed to save to cloud, but saved locally');
+          Alert.alert('Success', 'Rate saved locally. Cloud sync will be attempted when connected.');
+        }
+      } catch (error) {
+        console.log('⚠️ Cloud sync failed, rate saved locally only');
+        Alert.alert('Success', 'Rate saved locally. Cloud sync will be attempted when connected.');
+      }
+    } else {
+      // User not logged in, just save locally
+      Alert.alert('Success', 'Rate saved locally. Sign in to sync across devices!');
+    }
   };
 
   const handleDeleteRate = async (id: string | number): Promise<void> => {
     const updatedRates = savedRates.filter((rate) => rate.id !== id);
     setSavedRates(updatedRates);
     await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+
+    // If user is logged in and cloud sync is enabled, update cloud
+    if (user && isCloudSyncEnabled) {
+      try {
+        await SavedRatesSync.deleteLocalRate(id.toString());
+        await syncSavedRates('upload');
+        console.log('✅ Rate deleted from cloud successfully');
+      } catch (error) {
+        console.log('⚠️ Failed to delete from cloud:', error);
+      }
+    }
   };
 
   const handleSelectRate = (from: string, to: string): void => {
@@ -679,6 +765,47 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   }, [currencyList]);
 
+  // Handle cloud sync when user logs in
+  useEffect(() => {
+    if (user) {
+      // When user logs in, try to sync from cloud
+      const handleUserLogin = async () => {
+        try {
+          const result = await syncSavedRates('download');
+          if (result) {
+            console.log('✅ Synced saved rates after login');
+            setIsCloudSyncEnabled(true);
+            
+            // Reload saved rates from local storage (which now has cloud data)
+            const stored = await AsyncStorage.getItem("saved_rates");
+            if (stored) {
+              const localRates = JSON.parse(stored).map((rate: any) => ({
+                id: rate.id,
+                fromCurrency: rate.fromCurrency,
+                toCurrency: rate.toCurrency,
+                rate: rate.rate,
+                timestamp: rate.timestamp,
+              }));
+              setSavedRates(localRates);
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ Failed to sync after login:', error);
+        }
+      };
+      handleUserLogin();
+    }
+  }, [user, syncSavedRates]);
+
+  const handleEnableCloudSync = () => {
+    if (user) {
+      setIsCloudSyncEnabled(true);
+      Alert.alert('Cloud Sync Enabled', 'Your saved rates will now be synced across all devices.');
+    } else {
+      setShowAuthPrompt(true);
+    }
+  };
+
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
@@ -727,6 +854,16 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           >
             <ThemedText style={styles.featureToggleText}>
               💾 {t('dashboard.savedRates')} ({savedRates.length})
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Cloud Sync Toggle */}
+          <TouchableOpacity
+            style={[styles.featureToggle, isCloudSyncEnabled && styles.featureToggleActive]}
+            onPress={handleEnableCloudSync}
+          >
+            <ThemedText style={styles.featureToggleText}>
+              ☁️ {user ? 'Cloud Sync ON' : 'Enable Cloud Sync'}
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -872,6 +1009,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           visible={showCalculator}
           onClose={() => setShowCalculator(false)}
           onResult={handleCalculatorResult}
+        />
+
+        {/* Auth Prompt Modal */}
+        <AuthPromptModal
+          visible={showAuthPrompt}
+          onClose={() => setShowAuthPrompt(false)}
+          title="Create account to sync and enable alerts"
+          message="Sign up to save your data and enable premium features"
+          feature="sync"
         />
       </ScrollView>
       <Footer t={t} tWithParams={tWithParams} />

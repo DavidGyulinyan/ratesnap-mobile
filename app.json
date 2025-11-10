@@ -1,18 +1,26 @@
 {
   "expo": {
-    "name": "ratesnap-mobile",
+    "name": "RateSnap",
     "slug": "ratesnap-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ratesnapmobile",
+    "scheme": "ratesnap-mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.davidgyulinyan.ratesnapmobile",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "ratesnap",
+            "CFBundleURLSchemes": [
+              "ratesnap-mobile"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -22,6 +30,23 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "ratesnap-mobile",
+              "host": "*",
+              "pathPattern": "auth/callback"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.davidgyulinyan.ratesnapmobile"
@@ -50,6 +75,8 @@
       "reactCompiler": true
     },
     "extra": {
+      "supabaseUrl": "https://jprafkemftjqrzsrtuui.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E",
       "router": {},
       "eas": {
         "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
