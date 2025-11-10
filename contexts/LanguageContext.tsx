@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type Language = 'en' | 'hy' | 'ru' | 'es' | 'zh';
+export type Language = 'en' | 'hy' | 'ru' | 'es' | 'zh' | 'hi';
 
 interface LanguageContextType {
   language: Language;
@@ -201,6 +201,9 @@ const translations = {
     'error.ratesUnavailable': 'Exchange rates are currently unavailable',
     'error.duplicateCurrency': 'Duplicate Currency',
     'common.ok': 'OK',
+    'common.sponsored': 'Sponsored',
+    'common.learnMore': 'Learn More',
+    'common.adSupport': 'Support us with ads',
   },
   hy: {
     // Armenian
@@ -747,6 +750,142 @@ const translations = {
     'error.loading': '数据加载失败。请重试。',
     'success.rateSaved': '汇率保存成功！',
   },
+  hi: {
+    // Hindi
+    'app.title': 'RateSnap',
+    'app.subtitle': 'पेशेवर मुद्रा कन्वर्टर सूट',
+    
+    'dashboard.title': 'डैशबोर्ड',
+    'dashboard.converter': 'कन्वर्टर',
+    'dashboard.multiCurrency': 'मल्टी करेंसी',
+    'dashboard.rateAlerts': 'रेट अलर्ट्स',
+    'dashboard.savedRates': 'सेव्ड रेट्स',
+    'dashboard.features': 'डैशबोर्ड फीचर्स',
+    'dashboard.features.description': 'उन्नत सुविधाओं के साथ पूर्ण मुद्रा रूपांतरण सूट',
+    
+    'quick.action.converter': 'मुद्रा कन्वर्टर',
+    'quick.action.converter.desc': 'सभी सुविधाओं के साथ पेशेवर कन्वर्टर',
+    'quick.action.multiCurrency': 'मल्टी करेंसी',
+    'quick.action.multiCurrency.desc': '20 मुद्राओं में त्वरित रूपांतरण',
+    'quick.action.multiCurrency.hide': 'रूपांतरण टूल छुपाएं',
+    'quick.action.rateAlerts': 'रेट अलर्ट्स',
+    'quick.action.rateAlerts.desc': 'मुद्रा निगरानी के लिए लक्ष्य दरें निर्धारित करें',
+    'quick.action.rateAlerts.hide': 'अलर्ट्स छुपाएं',
+    'quick.action.savedRates': 'सेव्ड रेट्स',
+    'quick.action.savedRates.desc': 'पसंदीदा तक त्वरित पहुंच',
+    'quick.action.savedRates.hide': 'सेव्ड रेट्स छुपाएं',
+    
+    'converter.title': 'मुद्रा कन्वर्टर',
+    'converter.subtitle': 'उन्नत सुविधाओं के साथ पूर्ण मुद्रा रूपांतरण सूट',
+    'converter.standard': 'मानक रूपांतरण',
+    'converter.multiCurrency.section': 'मल्टी-करेंसी कन्वर्टर',
+    'converter.calculator': 'कैलकुलेटर',
+    'converter.saveRate': 'इस दर को सेव करें',
+    'converter.disclaimer': 'रियल-टाइम दरों और उन्नत सुविधाओं के साथ पेशेवर मुद्रा कन्वर्टर',
+    'converter.loadingRates': 'एक्सचेंज रेट लोड हो रहे हैं...',
+    'converter.refreshData': 'डेटा रिफ्रेश करें',
+    'converter.enterAmount': 'रूपांतरण के लिए राशि दर्ज करें',
+    'converter.exchangeRate': 'एक्सचेंज रेट',
+    'converter.rate': 'दर',
+    'converter.to': 'को',
+    'converter.from': 'से',
+    'converter.selectCurrencies': 'रूपांतरण देखने के लिए मुद्राएं चुनें',
+    'converter.professional': 'रियल-टाइम दरों और उन्नत सुविधाओं के साथ पेशेवर मुद्रा कन्वर्टर',
+    'converter.conversionResult': '{amount} {fromCurrency} = {convertedAmount} {toCurrency}',
+    'converter.exchangeRateResult': '{rateLabel}: 1 {fromCurrency} = {rate} {toCurrency}',
+    'converter.backToDashboard': '← डैशबोर्ड पर वापस जाएं',
+    
+    'settings.language': 'भाषा',
+    'common.loading': 'लोड हो रहा है...',
+    'common.error': 'एरर',
+    'common.retry': 'पुनः प्रयास करें',
+    'common.close': 'बंद करें',
+    'common.save': 'सेव करें',
+    'common.cancel': 'रद्द करें',
+    'common.delete': 'डिलीट करें',
+    'common.more': 'और',
+    'common.less': 'कम',
+    'common.ok': 'OK',
+
+    // Multi-Currency
+    'multi.title': 'मल्टी-करेंसी कन्वर्टर',
+    'multi.subtitle': 'लाइव दरों के साथ तुरंत कई मुद्राओं में रूपांतरण',
+    'multi.from': 'से',
+    'multi.to': 'को',
+    'multi.amount': 'राशि',
+    'multi.rates': 'एक्सचेंज रेट्स',
+    'multi.manage': 'मुद्राएं मैनेज करें',
+    'multi.emptyState': 'रूपांतरण के लिए मुद्राएं चुनने के लिए "करेंसी जोड़ें" पर क्लिक करें',
+    'multi.alreadyInList': 'पहले से ही आपकी रूपांतरण सूची में है। कृपया एक अलग मुद्रा चुनें।',
+    'multi.selectCurrency': 'मुद्रा चुनें',
+    'multi.addCurrency': '+ करेंसी जोड़ें',
+    'multi.convertTo': 'में बदलें',
+    'multi.titleComponent': '🔄 मल्टी-करेंसी कन्वर्टर',
+
+    // Currency Picker & Dynamic
+    'picker.selectCurrency': 'मुद्रा चुनें',
+    'picker.searchCurrencies': 'मुद्राएं खोजें',
+    'picker.frequentlyUsed': '⭐ अक्सर उपयोग की जाने वाली',
+    'picker.close': 'बंद करें',
+
+    // Dynamic Content
+    'dynamic.savedCount': '({count})',
+
+    // Saved Rates
+    'saved.title': 'सेव्ड रेट्स',
+    'saved.titles': 'सेव्ड रेट्स', // Alias for compatibility
+    'saved.shortTitle': 'सेव्ड', // Short version for constrained layouts
+    'saved.noRates': 'अभी तक कोई सेव्ड रेट्स नहीं। मुद्राएं बदलें और कुछ जोड़ने के लिए "इस दर को सेव करें" पर क्लिक करें!',
+    'saved.savedOn': 'सेव किया गया',
+    'saved.at': 'पर',
+
+    // Errors & Messages
+    'error.duplicateCurrency': 'डुप्लिकेट करेंसी',
+    
+    'feature.multiCurrency.title': 'मल्टी-करेंसी कन्वर्टर',
+    'feature.multiCurrency.desc': 'लाइव दरों के साथ तुरंत कई मुद्राओं में रूपांतरण',
+    'feature.calculator.title': 'कैलकुलेटर इंटीग्रेशन',
+    'feature.calculator.desc': 'राशि गणनाओं के लिए बिल्ट-इन कैलकुलेटर',
+    'feature.offline.title': 'ऑफ़लाइन मोड',
+    'feature.offline.desc': 'कैश्ड दरों का उपयोग करके बिना इंटरनेट के काम करता है',
+    'feature.location.title': 'ऑटो-लोकेशन डिटेक्शन',
+    'feature.location.desc': 'स्वचालित रूप से आपका देश पहचानता है और डिफ़ॉल्ट करेंसी सेट करता है',
+    'feature.caching.title': 'स्मार्ट कैशिंग',
+    'feature.caching.desc': 'ऑफ़लाइन बैकअप के साथ स्मार्ट रेट कैशिंग',
+    
+    'footer.copyright': '© 2025 {appTitle} - {suiteName}',
+    'footer.suiteName': 'पेशेवर मुद्रा कन्वर्टर सूट',
+    'footer.terms': 'उपयोग की शर्तें और गोपनीयता',
+    
+    // Date/Time
+    'time.lastUpdate': 'अंतिम अपडेट',
+    'time.nextUpdate': 'अगला अपडेट',
+    
+    // Authentication
+    'auth.signin': 'साइन इन',
+    'auth.signup': 'साइन अप',
+    'auth.welcome': 'स्वागत है',
+    'auth.signout': 'साइन आउट',
+    'auth.continueWithEmail': 'ईमेल के साथ जारी रखें',
+    'auth.continueWithGoogle': 'Google के साथ जारी रखें',
+    'auth.continueWithApple': 'Apple के साथ जारी रखें',
+    'auth.alreadyHaveAccount': 'क्या आपके पास पहले से खाता है?',
+    'auth.dontHaveAccount': "खाता नहीं है?",
+    'auth.signIn': 'साइन इन',
+    'auth.signUp': 'साइन अप',
+    'auth.email': 'ईमेल',
+    'auth.password': 'पासवर्ड',
+    'auth.confirmPassword': 'पासवर्ड की पुष्टि करें',
+    'auth.username': 'यूजरनेम',
+    'auth.createAccount': 'खाता बनाएं',
+    'auth.creatingAccount': 'खाता बनाया जा रहा है...',
+    'auth.signingIn': 'साइन इन हो रहा है...',
+    'auth.signingOut': 'साइन आउट हो रहा है...',
+    
+    'error.network': 'नेटवर्क एरर। कृपया अपना कनेक्शन चेक करें।',
+    'error.loading': 'डेटा लोड करने में असफल। कृपया पुनः प्रयास करें।',
+    'success.rateSaved': 'रेट सफलतापूर्वक सेव किया गया!',
+  },
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -759,7 +898,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const loadLanguage = async () => {
     try {
       const savedLanguage = await AsyncStorage.getItem('appLanguage');
-      if (savedLanguage && ['en', 'hy', 'ru', 'es', 'zh'].includes(savedLanguage)) {
+      if (savedLanguage && ['en', 'hy', 'ru', 'es', 'zh', 'hi'].includes(savedLanguage)) {
         setLanguageState(savedLanguage as Language);
       }
     } catch (error) {

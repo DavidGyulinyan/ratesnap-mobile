@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import CurrencyFlag from "@/components/CurrencyFlag";
+import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import { detectUserLocation } from "@/components/LocationDetection";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
@@ -21,6 +22,7 @@ import AuthPromptModal from "@/components/AuthPromptModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getAsyncStorage } from "@/lib/storage";
+import LanguageDropdown from "@/components/LanguageDropdown";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -323,10 +325,21 @@ export default function HomeScreen() {
       <ThemedView style={styles.dashboardContainer}>
         {/* Dashboard Header - Fixed at top */}
         <View style={styles.dashboardHeader}>
-          <ThemedText type="title" style={styles.dashboardTitle}>
-            {t('app.title')} Dashboard
-          </ThemedText>
+          <View style={styles.titleContainer}>
+            <View style={styles.logoIcon}>
+              <ThemedText style={styles.logoEmoji}>💱</ThemedText>
+            </View>
+            <ThemedText type="title" style={styles.dashboardTitle}>
+              {t('app.title')} Dashboard
+            </ThemedText>
+          </View>
           <View style={styles.headerActions}>
+            {/* Language Switcher - Always visible */}
+            <LanguageDropdown
+              compact={true}
+              style={styles.languageSwitcher}
+            />
+            
             {/* Show sign-in/sign-up for non-authenticated users */}
             {!user ? (
               <>
@@ -658,6 +671,15 @@ export default function HomeScreen() {
             containerStyle={{ marginBottom: 24 }}
           />
 
+          {/* Google Ads Banner */}
+          <View style={styles.adsContainer}>
+            <GoogleAdsBanner
+              type="banner"
+              size="medium"
+              style={styles.adsBanner}
+            />
+          </View>
+
           {/* Features Preview */}
           <View style={styles.featuresSection}>
             <ThemedText style={styles.sectionTitle}>
@@ -769,47 +791,58 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   dashboardContainer: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f6f7f9",
   },
   dashboardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexDirection: "column",
+    alignItems: "flex-end",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dashboardTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#1f2937",
-    flex: 1,
-    marginRight: 12,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#4f46e5",
+    marginBottom: 4,
+    textAlign: "right",
+    flexWrap: "wrap",
+    maxWidth: "100%",
   },
   headerActions: {
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    marginTop: 8,
+  },
+  languageSwitcher: {
+    marginRight: 4,
   },
   converterButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#4f46e5",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 1 },
+    borderRadius: 6,
+    shadowColor: "#4f46e5",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-    maxWidth: 140,
+    shadowRadius: 4,
+    elevation: 3,
+    maxWidth: 120,
   },
   converterButtonText: {
     color: "white",
@@ -818,46 +851,87 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   authButton: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "#e2e8f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   authButtonText: {
     color: "#374151",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
     textAlign: "center",
   },
   authButtonPrimary: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
+    backgroundColor: "#4f46e5",
+    borderColor: "#4f46e5",
+    shadowColor: "#4f46e5",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   authButtonPrimaryText: {
     color: "white",
+    fontWeight: "600",
   },
   userInfo: {
     alignItems: "flex-end",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   userInfoText: {
     color: "#6b7280",
     fontSize: 10,
     textAlign: "right",
+    fontWeight: "500",
   },
   signOutText: {
-    color: "#dc2626",
-    fontSize: 12,
+    color: "#ef4444",
+    fontSize: 10,
     fontWeight: "600",
     textAlign: "right",
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    width: "100%",
+  },
+  logoIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#4f46e5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+    shadowColor: "#4f46e5",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  logoEmoji: {
+    fontSize: 12,
   },
   dashboardScrollView: {
     flex: 1,
   },
   scrollContentContainer: {
     padding: 20,
-    paddingBottom: 40, // Extra padding at bottom for better scrolling
+    paddingBottom: 40,
   },
   quickActions: {
     flexDirection: "row",
@@ -868,8 +942,8 @@ const styles = StyleSheet.create({
   quickActionCard: {
     width: "48%",
     backgroundColor: "#ffffff",
-    padding: 24,
-    paddingTop: 32,
+    padding: 20,
+    paddingTop: 24,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
@@ -881,28 +955,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    minHeight: 160,
+    minHeight: 140,
   },
   quickActionIcon: {
-    fontSize: 36,
-    height: 56,
-    marginBottom: 20,
-    lineHeight: 56,
+    fontSize: 32,
+    height: 48,
+    marginBottom: 16,
+    lineHeight: 48,
     textAlign: "center",
   },
   quickActionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
     marginBottom: 8,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   quickActionDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#6b7280",
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 16,
     paddingHorizontal: 4,
   },
   featuresSection: {
@@ -927,7 +1001,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   featureIcon: {
-    fontSize: 20,
+    fontSize: 18,
     marginRight: 12,
     marginTop: 2,
   },
@@ -946,7 +1020,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   bottomSpacer: {
-    height: 20, // Extra space at the bottom for comfortable scrolling
+    height: 20,
   },
   // Multi-Currency Styles
   multiCurrencySection: {
@@ -966,7 +1040,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   multiCurrencyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1f2937",
   },
@@ -974,110 +1048,43 @@ const styles = StyleSheet.create({
     padding: 4,
     backgroundColor: "#fee2e2",
     borderRadius: 16,
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#dc2626",
     fontWeight: "bold",
   },
-  inputSection: {
-    marginBottom: 16,
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 20,
   },
-  amountInputContainer: {
-    marginBottom: 12,
-  },
-  currencyInputContainer: {
-    marginBottom: 12,
-  },
-  inputLabel: {
+  emptyStateText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#f9fafb",
-  },
-  currencyInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-  },
-  currencyInputText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-  },
-  resultsSection: {
-    marginTop: 16,
-  },
-  resultsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 12,
-  },
-  conversionsGrid: {
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  conversionItem: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 8,
-    backgroundColor: "#f8fafc",
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  conversionInfo: {
-    marginLeft: 8,
-    flex: 1,
-  },
-  conversionCurrency: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  conversionAmount: {
-    fontSize: 11,
     color: "#6b7280",
+    marginBottom: 4,
+    textAlign: "center",
   },
-  showMoreButton: {
-    backgroundColor: "#dbeafe",
+  emptyStateSubtext: {
+    fontSize: 12,
+    color: "#9ca3af",
+    textAlign: "center",
+  },
+  refreshButton: {
+    backgroundColor: "#2563eb",
     padding: 10,
     borderRadius: 6,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 8,
   },
-  showMoreButtonText: {
-    color: "#2563eb",
-    fontSize: 14,
+  refreshButtonText: {
+    color: "white",
+    fontSize: 12,
     fontWeight: "600",
-  },
-  quickActionCardActive: {
-    borderColor: "#2563eb",
-    borderWidth: 2,
-    backgroundColor: "#eff6ff",
   },
   // Rate Alerts Styles
   rateAlertsSection: {
@@ -1087,7 +1094,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#8b5cf6",
+    borderColor: "#e2e8f0",
     padding: 16,
   },
   rateAlertsHeader: {
@@ -1097,7 +1104,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   rateAlertsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1f2937",
   },
@@ -1138,15 +1145,15 @@ const styles = StyleSheet.create({
   alertInput: {
     borderWidth: 1,
     borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 6,
+    padding: 8,
     fontSize: 14,
     backgroundColor: "#f9fafb",
   },
   conditionButton: {
     backgroundColor: "#8b5cf6",
-    padding: 10,
-    borderRadius: 8,
+    padding: 8,
+    borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
     minWidth: 80,
@@ -1158,8 +1165,8 @@ const styles = StyleSheet.create({
   },
   createAlertButton: {
     backgroundColor: "#059669",
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     alignItems: "center",
   },
   createAlertButtonText: {
@@ -1181,22 +1188,6 @@ const styles = StyleSheet.create({
     color: "#374151",
     marginBottom: 12,
   },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 20,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6b7280",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  emptyStateSubtext: {
-    fontSize: 12,
-    color: "#9ca3af",
-    textAlign: "center",
-  },
   // Alert-specific styles
   alertContent: {
     flex: 1,
@@ -1204,116 +1195,53 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   alertDeleteButton: {
-    padding: 8,
+    padding: 6,
     backgroundColor: "#fee2e2",
-    borderRadius: 6,
+    borderRadius: 4,
     marginLeft: 8,
   },
   alertDeleteText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   deleteAllInlineButton: {
     backgroundColor: "#dc2626",
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     alignItems: "center",
     marginTop: 12,
   },
   deleteAllInlineText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: 14,
   },
   // Currency picker button styles
   currencyPickerButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 12,
+    padding: 10,
     backgroundColor: "#f8fafc",
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: "#d1d5db",
     gap: 8,
   },
   currencyPickerButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#1f2937",
   },
-  // Primary conversion styles for user's currency
-  primaryConversion: {
-    backgroundColor: "#e0f2fe",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+  quickActionCardActive: {
+    borderColor: "#2563eb",
     borderWidth: 2,
-    borderColor: "#0284c7",
+    backgroundColor: "#eff6ff",
   },
-  primaryConversionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0c4a6e",
-    textAlign: "center",
-    marginBottom: 8,
+  // Google Ads Styles
+  adsContainer: {
+    marginBottom: 24,
   },
-  primaryConversionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    color: "red",
-    justifyContent: "center",
-  },
-  primaryConversionAmount: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0369a1",
-    marginLeft: 8,
-  },
-  // Currency Management Styles
-  conversionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  removeCurrencyButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#fee2e2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-  removeCurrencyText: {
-    color: "#dc2626",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  manageCurrenciesButton: {
-    backgroundColor: "#f3f4f6",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
-  manageCurrenciesText: {
-    color: "#374151",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  // Multi-Currency Loading and Refresh
-  refreshButton: {
-    backgroundColor: "#2563eb",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  refreshButtonText: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
+  adsBanner: {
+    marginBottom: 0,
   },
 });

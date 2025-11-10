@@ -17,6 +17,7 @@ const languageData = {
   ru: { name: 'Русский', fullName: 'Russian', code: 'RU', flag: '🇷🇺' },
   es: { name: 'Español', fullName: 'Spanish', code: 'ES', flag: '🇪🇸' },
   zh: { name: '中文', fullName: 'Chinese', code: 'ZH', flag: '🇨🇳' },
+  hi: { name: 'हिंदी', fullName: 'Hindi', code: 'HI', flag: '🇮🇳' },
 };
 
 export default function LanguageDropdown({ 
