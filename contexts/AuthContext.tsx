@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase-safe';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       console.error('Supabase client not available');
       setLoading(false);
@@ -67,6 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const signUp = async (email: string, password: string, username?: string) => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return { error: { message: 'Authentication service not available' } as AuthError };
     }
@@ -101,6 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return { error: { message: 'Authentication service not available' } as AuthError };
     }
@@ -130,6 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       console.error('Authentication service not available for sign out');
       return;
@@ -150,6 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signInWithGoogle = async () => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return { error: { message: 'Authentication service not available' } as AuthError };
     }
@@ -158,10 +164,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       console.log('Starting Google sign in');
       
+      // Use the correct redirect URI format
+      const redirectTo = AuthSession.makeRedirectUri({
+        scheme: "ratesnap-mobile",
+        path: "auth/callback"
+      });
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'exp://localhost:19000',
+          redirectTo,
         },
       });
 
@@ -181,6 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signInWithApple = async () => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return { error: { message: 'Authentication service not available' } as AuthError };
     }
@@ -189,10 +202,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       console.log('Starting Apple sign in');
       
+      // Use the correct redirect URI format
+      const redirectTo = AuthSession.makeRedirectUri({
+        scheme: "ratesnap-mobile",
+        path: "auth/callback"
+      });
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: 'exp://localhost:19000',
+          redirectTo,
         },
       });
 
@@ -212,6 +231,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const resetPassword = async (email: string) => {
+    const supabase = getSupabaseClient();
     if (!supabase) {
       return { error: { message: 'Authentication service not available' } as AuthError };
     }

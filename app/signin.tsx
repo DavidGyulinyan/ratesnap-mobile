@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from '@/components/Logo';
-import { signInWithGoogle } from '../hooks/useGoogleAuth';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignInScreen() {

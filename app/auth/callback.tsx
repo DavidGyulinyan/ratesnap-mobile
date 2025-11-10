@@ -19,7 +19,8 @@ export default function AuthCallbackScreen() {
           throw new Error('Supabase client not available');
         }
 
-        // Handle the OAuth callback
+        // In React Native, the session should be available through getSession
+        // since the OAuth flow automatically handles the redirect
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -35,8 +36,17 @@ export default function AuthCallbackScreen() {
           router.replace({ pathname: '/' });
         } else {
           console.log('⚠️ No session found after callback');
-          setError('No authentication session found');
-          Alert.alert('Error', 'No authentication session found');
+          // Try to force refresh the session in case it's still processing
+          setTimeout(async () => {
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData.session) {
+              console.log('✅ Session found after delay');
+              router.replace({ pathname: '/' });
+            } else {
+              setError('No authentication session found');
+              Alert.alert('Error', 'No authentication session found');
+            }
+          }, 2000);
         }
       } catch (err) {
         console.error('🔴 OAuth callback processing error:', err);
@@ -63,6 +73,7 @@ export default function AuthCallbackScreen() {
           throw new Error('Supabase client not available');
         }
 
+        // Check for session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {

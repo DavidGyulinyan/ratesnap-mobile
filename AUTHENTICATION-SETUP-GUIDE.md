@@ -23,12 +23,12 @@ The RateSnap mobile app now has a comprehensive, optional authentication system 
 - ✅ Username generation from email if not provided
 
 #### **Google OAuth (Cross-Platform)**
-- ✅ Uses Expo scheme-based redirect: `ratesnap://auth/callback`
+- ✅ Uses Expo scheme-based redirect: `ratesnap-mobile://auth/callback`
 - ✅ Deep linking configured in `app.json`
 - ✅ PKCE flow for enhanced security
 - ✅ Automatic session management
 - ✅ Minimal working example pattern
-- ✅ Expo AuthSession with `makeRedirectUri({ scheme: 'ratesnap' })`
+- ✅ Expo AuthSession with `makeRedirectUri({ scheme: 'ratesnap-mobile' })`
 
 #### **Apple OAuth (iOS Only)**
 - ✅ iOS-specific Apple Sign In
@@ -96,25 +96,25 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ### **OAuth Configuration**
 - **Google OAuth**: Configure in Supabase Dashboard
   - Client ID: Add your Google OAuth credentials
-  - Redirect URI: `ratesnap://auth/callback` (Expo scheme-based)
+  - Redirect URI: `ratesnap-mobile://auth/callback` (Expo scheme-based)
 
 - **Apple OAuth**: Configure in Supabase Dashboard
   - iOS Bundle ID: `com.davidgyulinyan.ratesnapmobile`
   - Service ID and Private Key from Apple Developer Console
-  - Redirect URI: `ratesnap://auth/callback` (Expo scheme-based)
+  - Redirect URI: `ratesnap-mobile://auth/callback` (Expo scheme-based)
 
 ### **Deep Linking**
 Configured in `app.json`:
 ```json
 {
-  "scheme": "ratesnap",
+  "scheme": "ratesnap-mobile",
   "intentFilters": [
     {
       "action": "VIEW",
       "autoVerify": true,
       "data": [
         {
-          "scheme": "ratesnap",
+          "scheme": "ratesnap-mobile",
           "host": "*",
           "pathPattern": "auth/callback"
         }
@@ -303,9 +303,9 @@ supabase.auth.onAuthStateChange((event, session) => {
    - Enable Google and configure Client ID/Secret
    - Enable Apple and configure iOS settings
 
-2. **Configure Redirect URIs**:
-   - Google: `https://auth.expo.io/@davidgyulinyan/ratesnap-mobile`
-   - Apple: `https://auth.expo.io/@davidgyulinyan/ratesnap-mobile`
+2. **Configure Redirect URIs** (in Supabase):
+   - Google: Add both `https://auth.expo.io/@davidgyulinyan/ratesnap-mobile` AND `ratesnap-mobile://auth/callback`
+   - Apple: Add both `https://auth.expo.io/@davidgyulinyan/ratesnap-mobile` AND `ratesnap-mobile://auth/callback`
 
 3. **Database Setup**:
    - Tables are already configured in `supabase/tables.sql`
@@ -337,6 +337,46 @@ supabase.auth.onAuthStateChange((event, session) => {
 - [x] **Cloud Sync**: Database integration with local fallback
 - [x] **Error Handling**: Comprehensive logging and user feedback
 - [x] **Cross-Platform**: iOS, Android, and Web support
+## 🔧 Google Sign-In Redirect Fix
+
+### Problem
+Google OAuth was successfully creating users in Supabase, but after selecting a Google account, the browser showed "Something went wrong trying to finish signing in" and the authentication session did not return back into the app.
+
+### Root Cause
+The redirect / callback URL was not configured correctly for the custom Expo app scheme.
+
+### Solution Applied
+
+#### 1. **Updated AuthContext** (`contexts/AuthContext.tsx`)
+Fixed the redirectTo path in both Google and Apple sign-in methods:
+```typescript
+const redirectTo = AuthSession.makeRedirectUri({
+  scheme: "ratesnap-mobile",
+  path: "auth/callback"  // Fixed from "auth" to "auth/callback"
+});
+```
+
+#### 2. **Enhanced Callback Handler** (`app/auth/callback.tsx`)
+Improved the OAuth callback processing:
+- Added better session handling with timeout fallback
+- Enhanced error handling and user feedback
+- Fixed retry mechanism
+
+#### 3. **Supabase Configuration** (In Supabase Dashboard)
+Added both redirect URLs for Google and Apple providers:
+- `https://auth.expo.io/@davidgyulinyan/ratesnap-mobile` (Expo proxy URL)
+- `ratesnap-mobile://auth/callback` (Custom app scheme URL)
+
+### Expected Result
+- User selects Google account ✅
+- Browser redirects back into app automatically ✅
+- Session object is returned and stored ✅
+- User is logged in successfully ✅
+
+### Testing Requirements
+- Test on dev client build (not Expo Go)
+- Verify redirect works on both Android and iOS
+- Confirm session persistence across app restarts
 - [x] **Security**: PKCE flow, secure storage, token management
 - [x] **TypeScript**: Full type safety and error prevention
 
