@@ -4,12 +4,17 @@ import React from 'react';
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import * as Linking from "expo-linking";
+import * as AuthSession from 'expo-auth-session';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-console.log(Linking.createURL("/auth/callback"));
+  // Debug redirect URI
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: "ratesnap-mobile",
+    path: "auth"
+  });
+  console.log("Tab Layout Redirect URI:", redirectUri);
 
   return (
     <Tabs
