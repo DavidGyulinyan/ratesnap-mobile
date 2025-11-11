@@ -418,7 +418,7 @@ export default function MathCalculator({
           }
         ]}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>x</Text>
           </TouchableOpacity>
           <Text style={[
             styles.title,
@@ -687,13 +687,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    width: 32,
+    height: 32,
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
-    color: "#8e8e93",
     fontSize: 16,
-    fontWeight: "400",
+    color: '#6b7280',
+    fontWeight: '500',
   },
   title: {
     color: "#ffffff",

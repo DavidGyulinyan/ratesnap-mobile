@@ -99,8 +99,11 @@ export default function AuthPromptModal({
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color="#6b7280" />
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+          >
+            <Text style={styles.closeButtonText}>×</Text>
           </TouchableOpacity>
 
           <View style={styles.iconContainer}>
@@ -172,10 +175,20 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   closeButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'absolute',
     top: 16,
     right: 16,
-    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   iconContainer: {
     marginTop: 20,
