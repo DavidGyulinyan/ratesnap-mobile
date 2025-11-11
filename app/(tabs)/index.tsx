@@ -609,7 +609,7 @@ export default function HomeScreen() {
                           onPress={deleteAllAlerts}
                         >
                           <ThemedText style={styles.deleteAllInlineText}>
-                            🗑️ {t("alerts.deleteAll")} ({rateAlerts.length})
+                            {t("alerts.deleteAll")} ({rateAlerts.length})
                           </ThemedText>
                         </TouchableOpacity>
                       )}

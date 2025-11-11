@@ -134,7 +134,7 @@ export default function SavedRates({
                   onPress={onDeleteAll}
                 >
                   <ThemedText style={styles.deleteAllText}>
-                    🗑️ {t('saved.deleteAll')} ({savedRates.length})
+                   {t('saved.deleteAll')} ({savedRates.length})
                   </ThemedText>
                 </TouchableOpacity>
               )}
