@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -10,7 +9,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 
-WebBrowser.maybeCompleteAuthSession(); // MUST run before Navigation
+WebBrowser.maybeCompleteAuthSession();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -23,22 +22,20 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            {user ? (
-              <>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </>
-            ) : (
-              <>
-                <Stack.Screen name="signin" options={{ presentation: 'modal', title: 'Sign In' }} />
-                <Stack.Screen name="signup" options={{ presentation: 'modal', title: 'Sign Up' }} />
-              </>
-            )}
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          {user ? (
+            <>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
+            </>
+          )}
+        </Stack>
+        <StatusBar style="auto" />
       </AuthProvider>
     </LanguageProvider>
   );
