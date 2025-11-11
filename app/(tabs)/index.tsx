@@ -1,11 +1,9 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import CurrencyFlag from "@/components/CurrencyFlag";
-import CurrencyPicker from "@/components/CurrencyPicker";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import LanguageDropdown from "@/components/LanguageDropdown";
-import { detectUserLocation } from "@/components/LocationDetection";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import { ThemedText } from "@/components/themed-text";
@@ -20,7 +18,6 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -60,57 +57,16 @@ export default function HomeScreen() {
     "dashboard"
   );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
-  const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
-  const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
-  const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("EUR");
-  const [multiAmount, setMultiAmount] = useState("1");
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [savedRates, setSavedRates] = useState<any[]>([]);
-  const [rateAlerts, setRateAlerts] = useState<any[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
 
-  // Rate alert form state
-  const [newAlert, setNewAlert] = useState({
-    fromCurrency: "USD",
-    toCurrency: "EUR",
-    targetRate: "",
-    condition: "below" as "above" | "below",
-  });
-
   useEffect(() => {
-    // Use imported location detection utility
-    const initApp = async () => {
-      try {
-        const detectedCurrency = await detectUserLocation();
-        if (detectedCurrency && detectedCurrency !== "USD") {
-          // Set USD as fromCurrency and detected currency as toCurrency
-          // This creates an initial conversion: USD → user's currency
-          setFromCurrency("USD");
-          setToCurrency(detectedCurrency);
-
-          // Update new alert defaults to use user's currency as well
-          setNewAlert((prev) => ({
-            ...prev,
-            toCurrency: detectedCurrency,
-          }));
-        }
-      } catch (error) {
-        console.warn(
-          "Location detection failed, using default currency:",
-          error
-        );
-      }
-    };
-
-    initApp();
     loadExchangeRates();
     loadSavedRates();
-    loadRateAlerts();
   }, []);
 
   const loadExchangeRates = async () => {
@@ -148,49 +104,6 @@ export default function HomeScreen() {
     }
   };
 
-  const loadRateAlerts = async () => {
-    try {
-      const storage = getAsyncStorage();
-      const alertsData = await storage.getItem("rateAlerts");
-      if (alertsData) {
-        setRateAlerts(JSON.parse(alertsData));
-      }
-    } catch (error) {
-      console.error("Error loading rate alerts:", error);
-    }
-  };
-
-  const createRateAlert = async () => {
-    if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
-      alert(t("error.invalidAmount"));
-      return;
-    }
-
-    const newRateAlert = {
-      id: `alert-${Date.now()}`,
-      fromCurrency: newAlert.fromCurrency,
-      toCurrency: newAlert.toCurrency,
-      targetRate: parseFloat(newAlert.targetRate),
-      condition: newAlert.condition,
-      isActive: true,
-      createdAt: Date.now(),
-    };
-
-    const updatedAlerts = [newRateAlert, ...rateAlerts];
-    setRateAlerts(updatedAlerts);
-    const storage = getAsyncStorage();
-    await storage.setItem("rateAlerts", JSON.stringify(updatedAlerts));
-
-    setNewAlert({
-      fromCurrency: "USD",
-      toCurrency: "EUR",
-      targetRate: "",
-      condition: "below",
-    });
-
-    alert(t("success.alertCreated"));
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -198,48 +111,6 @@ export default function HomeScreen() {
     } catch (error) {
       Alert.alert("Error", "Failed to sign out. Please try again.");
     }
-  };
-
-  const deleteAlert = async (alertId: string) => {
-    Alert.alert(t("common.delete"), t("alerts.deleteConfirm"), [
-      {
-        text: t("common.cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: async () => {
-          const updatedAlerts = rateAlerts.filter(
-            (alert) => alert.id !== alertId
-          );
-          setRateAlerts(updatedAlerts);
-          await AsyncStorage.setItem(
-            "rateAlerts",
-            JSON.stringify(updatedAlerts)
-          );
-        },
-      },
-    ]);
-  };
-
-  const deleteAllAlerts = async () => {
-    if (rateAlerts.length === 0) return;
-
-    Alert.alert(t("alerts.deleteAll"), t("alerts.deleteAllConfirm"), [
-      {
-        text: t("common.cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("alerts.deleteAll"),
-        style: "destructive",
-        onPress: async () => {
-          setRateAlerts([]);
-          await AsyncStorage.setItem("rateAlerts", JSON.stringify([]));
-        },
-      },
-    ]);
   };
 
   const deleteSavedRate = async (index: number) => {
@@ -279,22 +150,6 @@ export default function HomeScreen() {
         },
       },
     ]);
-  };
-
-  const handleFromCurrencySelect = (currency: string) => {
-    setNewAlert({
-      ...newAlert,
-      fromCurrency: currency,
-    });
-    setShowFromCurrencyPicker(false);
-  };
-
-  const handleToCurrencySelect = (currency: string) => {
-    setNewAlert({
-      ...newAlert,
-      toCurrency: currency,
-    });
-    setShowToCurrencyPicker(false);
   };
 
   const getAuthText = (key: string) => {
@@ -442,26 +297,6 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
-                showRateAlerts && styles.quickActionCardActive,
-              ]}
-              onPress={() => setShowRateAlerts(!showRateAlerts)}
-            >
-              <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.rateAlerts")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {rateAlerts.length}{" "}
-                {rateAlerts.length === 1 ? "active alert" : "active alerts"} -{" "}
-                {showRateAlerts
-                  ? t("quick.action.rateAlerts.hide")
-                  : t("quick.action.rateAlerts.desc")}
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
                 showSavedRates && styles.quickActionCardActive,
               ]}
               onPress={() => setShowSavedRates(!showSavedRates)}
@@ -472,7 +307,11 @@ export default function HomeScreen() {
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {savedRates.length}{" "}
-                {savedRates.length === 1 ? "saved rate" : "saved rates"} -{" "}
+                {savedRates.length === 1 ? "saved rate" : "saved rates"}
+                {savedRates.filter(rate => rate.hasAlert).length > 0 && (
+                  <> • {savedRates.filter(rate => rate.hasAlert).length} alerts</>
+                )}
+                {" "}-{" "}
                 {showSavedRates
                   ? t("quick.action.savedRates.hide")
                   : t("quick.action.savedRates.desc")}
@@ -533,180 +372,27 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Inline Rate Alerts */}
-          {showRateAlerts && (
-            <View style={styles.rateAlertsSection}>
-              <View style={styles.rateAlertsCard}>
-                <View style={styles.rateAlertsHeader}>
-                  <ThemedText style={styles.rateAlertsTitle}>
-                    🔔 {t("alerts.title")}
-                  </ThemedText>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowRateAlerts(false)}
-                  >
-                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Existing Alerts */}
-                <View style={styles.existingAlerts}>
-                  <ThemedText style={styles.sectionSubtitle}>
-                    {t("alerts.active")}
-                  </ThemedText>
-                  {rateAlerts.length === 0 ? (
-                    <View style={styles.emptyState}>
-                      <ThemedText style={styles.emptyStateText}>
-                        {t("alerts.none")}
-                      </ThemedText>
-                      <ThemedText style={styles.emptyStateSubtext}>
-                        {t("alerts.createFirst")}
-                      </ThemedText>
-                    </View>
-                  ) : (
-                    <View style={styles.alertsList}>
-                      {rateAlerts.slice(0, 3).map((alert, index) => (
-                        <View key={index} style={styles.alertItem}>
-                          <View style={styles.alertContent}>
-                            <CurrencyFlag
-                              currency={alert.fromCurrency}
-                              size={16}
-                            />
-                            <ThemedText style={styles.alertArrow}>→</ThemedText>
-                            <CurrencyFlag
-                              currency={alert.toCurrency}
-                              size={16}
-                            />
-                            <ThemedText style={styles.alertText}>
-                              {alert.condition === "below" ? "↓" : "↑"}{" "}
-                              {alert.targetRate}
-                            </ThemedText>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.alertDeleteButton}
-                            onPress={() => deleteAlert(alert.id)}
-                          >
-                            <ThemedText style={styles.alertDeleteText}>
-                              🗑️
-                            </ThemedText>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                      {rateAlerts.length > 3 && (
-                        <TouchableOpacity
-                          onPress={() => setCurrentView("converter")}
-                        >
-                          <ThemedText style={styles.showMoreAlertsText}>
-                            {t("alerts.viewMore").replace(
-                              "alerts",
-                              `${rateAlerts.length - 3} more alerts`
-                            )}
-                          </ThemedText>
-                        </TouchableOpacity>
-                      )}
-                      {rateAlerts.length > 1 && (
-                        <TouchableOpacity
-                          style={styles.deleteAllInlineButton}
-                          onPress={deleteAllAlerts}
-                        >
-                          <ThemedText style={styles.deleteAllInlineText}>
-                            {t("alerts.deleteAll")} ({rateAlerts.length})
-                          </ThemedText>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-                </View>
-
-                {/* Create New Alert */}
-                <View style={styles.createAlertSection}>
-                  <ThemedText style={styles.sectionSubtitle}>
-                    {t("alerts.createNew")}
-                  </ThemedText>
-                  <View style={styles.alertForm}>
-                    <View style={styles.alertFormRow}>
-                      <TouchableOpacity
-                        style={[styles.currencyPickerButton, { flex: 1 }]}
-                        onPress={() => setShowFromCurrencyPicker(true)}
-                      >
-                        <CurrencyFlag
-                          currency={newAlert.fromCurrency}
-                          size={20}
-                        />
-                        <ThemedText style={styles.currencyPickerButtonText}>
-                          {t("converter.from")}: {newAlert.fromCurrency}
-                        </ThemedText>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.currencyPickerButton, { flex: 1 }]}
-                        onPress={() => setShowToCurrencyPicker(true)}
-                      >
-                        <CurrencyFlag
-                          currency={newAlert.toCurrency}
-                          size={20}
-                        />
-                        <ThemedText style={styles.currencyPickerButtonText}>
-                          {t("converter.to")}: {newAlert.toCurrency}
-                        </ThemedText>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.alertFormRow}>
-                      <TextInput
-                        style={[styles.alertInput, { flex: 1 }]}
-                        value={newAlert.targetRate}
-                        onChangeText={(text) =>
-                          setNewAlert({ ...newAlert, targetRate: text })
-                        }
-                        placeholder={t("alerts.targetRate")}
-                        keyboardType="numeric"
-                      />
-                      <TouchableOpacity
-                        style={styles.conditionButton}
-                        onPress={() =>
-                          setNewAlert({
-                            ...newAlert,
-                            condition:
-                              newAlert.condition === "below"
-                                ? "above"
-                                : "below",
-                          })
-                        }
-                      >
-                        <ThemedText style={styles.conditionButtonText}>
-                          {newAlert.condition === "below"
-                            ? `↓ ${t("alerts.condition.below")}`
-                            : `↑ ${t("alerts.condition.above")}`}
-                        </ThemedText>
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.createAlertButton}
-                      onPress={createRateAlert}
-                    >
-                      <ThemedText style={styles.createAlertButtonText}>
-                        {t("alerts.create")}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </View>
+          {/* Unified Saved Rates and Alerts Section */}
+          {showSavedRates && (
+            <SavedRates
+              savedRates={savedRates}
+              showSavedRates={showSavedRates}
+              onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
+              onSelectRate={() => setCurrentView("converter")}
+              onDeleteRate={(id) => deleteSavedRate(Number(id))}
+              onDeleteAll={deleteAllSavedRates}
+              showMoreEnabled={true}
+              onShowMore={() => setCurrentView("converter")}
+              maxVisibleItems={4}
+              title={`📋 ${t("saved.title")}`}
+              containerStyle={{ marginBottom: 24 }}
+              currenciesData={currenciesData}
+              onRatesUpdate={() => {
+                // Reload saved rates after any changes
+                loadSavedRates();
+              }}
+            />
           )}
-
-          {/* Inline Saved Rates - Using Shared Component */}
-          <SavedRates
-            savedRates={savedRates}
-            showSavedRates={showSavedRates}
-            onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
-            onSelectRate={() => setCurrentView("converter")}
-            onDeleteRate={(id) => deleteSavedRate(Number(id))}
-            onDeleteAll={deleteAllSavedRates}
-            showMoreEnabled={true}
-            onShowMore={() => setCurrentView("converter")}
-            maxVisibleItems={4}
-            title={`📋 ${t("saved.title")}`}
-            containerStyle={{ marginBottom: 24 }}
-          />
 
           {/* Google Ads Banner */}
           <View style={styles.adsContainer}>
@@ -802,23 +488,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f7f9" }}>
       {renderMainContent()}
-
-      {/* Currency Pickers for Rate Alerts */}
-      <CurrencyPicker
-        visible={showFromCurrencyPicker}
-        currencies={currencyList}
-        selectedCurrency={newAlert.fromCurrency}
-        onSelect={handleFromCurrencySelect}
-        onClose={() => setShowFromCurrencyPicker(false)}
-      />
-
-      <CurrencyPicker
-        visible={showToCurrencyPicker}
-        currencies={currencyList}
-        selectedCurrency={newAlert.toCurrency}
-        onSelect={handleToCurrencySelect}
-        onClose={() => setShowToCurrencyPicker(false)}
-      />
 
       {/* Auth Prompt Modal */}
       <AuthPromptModal
