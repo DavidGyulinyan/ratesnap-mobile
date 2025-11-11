@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -158,6 +159,10 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -168,7 +173,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 40, // Reduced top padding since SafeAreaView handles safe area
     paddingBottom: 40,
     alignItems: 'center',
   },
@@ -213,8 +218,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     marginBottom: 12,
+    flexWrap: 'wrap',
   },
   primaryButton: {
     backgroundColor: '#3b82f6',
@@ -223,6 +229,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    includeFontPadding: false,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -234,18 +243,26 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: '#374151',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    includeFontPadding: false,
+    flex: 1,
+    textAlign: 'center',
   },
   appleButton: {
     backgroundColor: '#000',
   },
   appleButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    includeFontPadding: false,
+    flex: 1,
+    textAlign: 'center',
   },
   divider: {
     flexDirection: 'row',

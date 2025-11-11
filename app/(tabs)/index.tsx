@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
@@ -756,7 +757,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f7f9" }}>
       {renderMainContent()}
 
       {/* Currency Pickers for Rate Alerts */}
@@ -784,7 +785,7 @@ export default function HomeScreen() {
         message="Sign up to save your data and enable premium features"
         feature="general"
       />
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -796,8 +797,8 @@ const styles = StyleSheet.create({
   dashboardHeader: {
     flexDirection: "column",
     alignItems: "flex-end",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#e2e8f0",
@@ -820,7 +821,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     backgroundColor: "#f8fafc",
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -828,13 +829,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
     marginTop: 8,
+    maxWidth: "100%",
+    flexWrap: "wrap",
   },
   languageSwitcher: {
     marginRight: 4,
   },
   converterButton: {
     backgroundColor: "#4f46e5",
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
     shadowColor: "#4f46e5",
@@ -842,17 +845,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
-    maxWidth: 120,
+    maxWidth: 140,
+    flex: 0,
+    minWidth: 0,
   },
   converterButtonText: {
     color: "white",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
     textAlign: "center",
+    flexWrap: "wrap",
+    includeFontPadding: false,
   },
   authButton: {
     backgroundColor: "#ffffff",
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
@@ -862,12 +869,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    flex: 0,
+    minWidth: 0,
+    maxWidth: 80,
   },
   authButtonText: {
     color: "#374151",
     fontWeight: "600",
-    fontSize: 11,
+    fontSize: 10,
     textAlign: "center",
+    flexWrap: "wrap",
+    includeFontPadding: false,
   },
   authButtonPrimary: {
     backgroundColor: "#4f46e5",
@@ -877,10 +889,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 2,
+    flex: 0,
+    minWidth: 0,
+    maxWidth: 100,
+    paddingHorizontal: 8,
   },
   authButtonPrimaryText: {
     color: "white",
     fontWeight: "600",
+    fontSize: 10,
+    textAlign: "center",
+    flexWrap: "wrap",
+    includeFontPadding: false,
   },
   userInfo: {
     alignItems: "flex-end",
@@ -890,18 +910,25 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: "#e2e8f0",
+    flex: 0,
+    minWidth: 0,
+    maxWidth: 100,
   },
   userInfoText: {
     color: "#6b7280",
-    fontSize: 10,
+    fontSize: 9,
     textAlign: "right",
     fontWeight: "500",
+    flexWrap: "wrap",
+    includeFontPadding: false,
   },
   signOutText: {
     color: "#ef4444",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "600",
     textAlign: "right",
+    flexWrap: "wrap",
+    includeFontPadding: false,
   },
   titleContainer: {
     flexDirection: "row",
@@ -931,7 +958,7 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 60, // Increased bottom padding for safe area
   },
   quickActions: {
     flexDirection: "row",
@@ -1020,7 +1047,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   bottomSpacer: {
-    height: 20,
+    height: 40, // Increased bottom spacer
   },
   // Multi-Currency Styles
   multiCurrencySection: {

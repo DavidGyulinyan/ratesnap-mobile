@@ -2,6 +2,8 @@ import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -21,22 +23,35 @@ export default function RootLayout() {
 
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {user ? (
-            <>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
-            </>
-          )}
-        </Stack>
-        <StatusBar style="auto" />
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: 'transparent',
+                paddingTop: 0,
+                paddingBottom: 0,
+                paddingLeft: 0,
+                paddingRight: 0
+              }
+            }}>
+              {user ? (
+                <>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                </>
+              ) : (
+                <>
+                  <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
+                </>
+              )}
+            </Stack>
+            <StatusBar style="auto" />
+          </View>
+        </AuthProvider>
+      </SafeAreaProvider>
     </LanguageProvider>
   );
 }

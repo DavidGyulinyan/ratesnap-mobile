@@ -158,32 +158,39 @@ export default function LanguageDropdown({
 
 const styles = StyleSheet.create({
   dropdownButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    minWidth: 60,
+    minWidth: 0,
+    flex: 0,
+    maxWidth: 70,
     alignItems: 'center',
     flexDirection: 'row',
   },
   dropdownButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    flex: 0,
   },
   buttonFlag: {
-    fontSize: 14,
+    fontSize: 12,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
+    flexWrap: 'wrap',
+    includeFontPadding: false,
   },
   compactText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    flexWrap: 'wrap',
+    includeFontPadding: false,
   },
   dropdownArrow: {
-    fontSize: 10,
+    fontSize: 9,
     marginLeft: 2,
   },
   modalOverlay: {
