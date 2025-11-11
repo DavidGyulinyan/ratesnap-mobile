@@ -2,6 +2,7 @@ import AuthPromptModal from "@/components/AuthPromptModal";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import CurrencyFlag from "@/components/CurrencyFlag";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import { detectUserLocation } from "@/components/LocationDetection";
@@ -827,6 +828,7 @@ export default function HomeScreen() {
         message="Sign up to save your data and enable premium features"
         feature="general"
       />
+      <Footer />
     </SafeAreaView>
   );
 }

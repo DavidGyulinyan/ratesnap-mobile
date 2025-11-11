@@ -1020,30 +1020,9 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           feature="sync"
         />
       </ScrollView>
-      <Footer t={t} tWithParams={tWithParams} />
     </SafeAreaView>
   );
 }
-
-const Footer = ({ t, tWithParams }: { t: (key: string) => string; tWithParams: (key: string, params: { [key: string]: string | number }) => string }) => (
-  <View style={styles.footer}>
-    <ThemedText style={styles.footerText}>
-      {tWithParams('footer.copyright', {
-        appTitle: t('app.title'),
-        suiteName: t('footer.suiteName')
-      })}
-    </ThemedText>
-    <TouchableOpacity
-      onPress={() =>
-        Linking.openURL(
-          "https://docs.google.com/document/d/e/2PACX-1vSqgDzlbEnxw-KoCS6ecj_tGzjSlkxDc7bUBMwzor65LKNLTEqzxm4q2iVvStCkmzo4N6dnVlcRGRuo/pub"
-        )
-      }
-    >
-      <ThemedText style={styles.termsText}>{t('footer.terms')}</ThemedText>
-    </TouchableOpacity>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -1272,25 +1251,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     fontStyle: "italic",
-  },
-  footer: {
-    padding: 20,
-    paddingBottom: 40,
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
-  },
-  footerText: {
-    fontSize: 12,
-    color: "#1f2937",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  termsText: {
-    fontSize: 12,
-    color: "#7c3aed",
-    textAlign: "center",
-    textDecorationLine: "underline",
   },
 });
