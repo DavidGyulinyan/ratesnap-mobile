@@ -20,7 +20,9 @@
               "ratesnap-mobile"
             ]
           }
-        ]
+        ],
+        "NSUserNotificationsUsageDescription": "RateSnap needs notification access to send you alerts when your saved exchange rates reach your target values.",
+        "UNUserNotificationCenterDelegate": true
       }
     },
     "android": {
@@ -43,6 +45,11 @@
           ]
         }
       ],
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ],
       "package": "com.davidgyulinyan.ratesnapmobile"
     },
     "web": {
@@ -51,6 +58,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {
@@ -71,6 +79,11 @@
       "eas": {
         "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
       }
+    },
+    "notifications": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#ffffff",
+      "iosDisplayInForeground": true
     }
   }
 }

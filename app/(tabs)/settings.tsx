@@ -792,7 +792,7 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
               onPress={() => Alert.alert('Info', 'Notification settings feature coming soon')}
             >
               <ThemedText style={styles.settingItemText}>
-                🔔 {t('settings.notifications')}
+                {t('settings.notifications')}
               </ThemedText>
               <ThemedText style={styles.arrowText}>›</ThemedText>
             </TouchableOpacity>
