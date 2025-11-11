@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import React from 'react';
 
 import { Colors } from '@/constants/theme';
@@ -9,18 +9,16 @@ export default function TabLayout() {
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
         headerShown: false,
-        tabBarStyle: { display: 'none' },
       }}>
-      <Tabs.Screen
+      <Stack.Screen
         name="index"
         options={{
           title: 'RateSnap Dashboard',
         }}
       />
-    </Tabs>
+    </Stack>
   );
 }

@@ -27,7 +27,7 @@ The RateSnap mobile app now has a comprehensive, optional authentication system 
 - ✅ Deep linking configured in `app.json`
 - ✅ PKCE flow for enhanced security
 - ✅ Automatic session management
-- ✅ Minimal working example pattern
+- ✅ Unified implementation through AuthContext only
 - ✅ Expo AuthSession with `makeRedirectUri({ scheme: 'ratesnap-mobile' })`
 
 #### **Apple OAuth (iOS Only)**
@@ -379,5 +379,52 @@ Added both redirect URLs for Google and Apple providers:
 - Confirm session persistence across app restarts
 - [x] **Security**: PKCE flow, secure storage, token management
 - [x] **TypeScript**: Full type safety and error prevention
+
+## 🔧 Recent Fixes for Build Issues
+
+### **Problem**: Android build failing with Google sign-in
+- Build error: `Gradle build failed with unknown error`
+- Root cause: Conflicting authentication implementations and unused dependencies
+
+### **Solution Applied**
+
+#### 1. **Removed Unused Dependencies**
+- Removed `@react-native-google-signin/google-signin` from package.json
+- This dependency was not being used but caused Android build conflicts
+
+#### 2. **Consolidated Authentication Implementation**
+- Removed duplicate files: `auth/googleAuth.js` and `hooks/useGoogleAuth.ts`
+- Unified all Google sign-in through `contexts/AuthContext.tsx` only
+- This eliminates conflicts between different OAuth implementations
+
+#### 3. **Cleaned up Configuration**
+- AuthContext now handles all OAuth flows consistently
+- All sign-in methods (Google, Apple) use the same redirect URI pattern
+- Removed debugging code that was causing production issues
+
+### **Build Configuration Updates**
+```json
+// eas.json - kept simple for Android builds
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}
+```
+
+### **Result**
+- ✅ Android builds now complete successfully
+- ✅ Google sign-in works properly with single implementation
+- ✅ No more dependency conflicts
+- ✅ Clean, maintainable codebase
 
 The authentication system is **production-ready** and provides a seamless, professional user experience with comprehensive error handling and logging for development and debugging.

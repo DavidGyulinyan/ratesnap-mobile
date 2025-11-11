@@ -1,18 +1,16 @@
 import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
-
-WebBrowser.maybeCompleteAuthSession(); // MUST run before Navigation
-
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
-
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
+
+WebBrowser.maybeCompleteAuthSession(); // MUST run before Navigation
 
 export const unstable_settings = {
   anchor: '(tabs)',
