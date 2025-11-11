@@ -129,8 +129,11 @@ export default function LanguageDropdown({
               <Text style={[styles.dropdownTitle, { color: colors.text }]}>
                 {t('settings.language')}
               </Text>
-              <TouchableOpacity onPress={() => setIsDropdownVisible(false)}>
-                <Text style={[styles.closeButton, { color: colors.tint }]}>✕</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setIsDropdownVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
               </TouchableOpacity>
             </View>
             
@@ -231,11 +234,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   closeButton: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    color: '#6366f1',
+    width: 32,
+    height: 32,
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   languageList: {
     maxHeight: 400,

@@ -62,7 +62,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
         title: '💱 Currency Converter',
         onPress: () => {
           setIsVisible(false);
-          router.push('/(tabs)/index');
+          router.replace('/');
         },
       },
       {
@@ -226,15 +226,15 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 20,
-    color: '#ef4444',
-    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   menuItems: {
     flex: 1,

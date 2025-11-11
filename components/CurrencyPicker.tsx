@@ -277,12 +277,15 @@ export default function CurrencyPicker({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <ThemedView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <ThemedText style={styles.closeButton}>{t('picker.close')}</ThemedText>
-          </TouchableOpacity>
           <ThemedText type="title" style={styles.title}>
             {t('picker.selectCurrency')}
           </ThemedText>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
         </View>
         
         {/* Search Input */}
@@ -368,19 +371,28 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-  closeButton: {
-    fontSize: 16,
-    color: "#059669",
-    fontWeight: "500",
-  },
   title: {
+    flex: 1,
     fontSize: 20,
     color: "#374151",
+    paddingRight: 16,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#6b7280',
+    fontWeight: '500',
   },
   searchInput: {
     borderWidth: 1,

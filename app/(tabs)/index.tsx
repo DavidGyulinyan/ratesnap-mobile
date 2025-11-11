@@ -1,29 +1,29 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  Alert,
-} from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
-import CurrencyFlag from "@/components/CurrencyFlag";
-import GoogleAdsBanner from "@/components/GoogleAdsBanner";
-import { detectUserLocation } from "@/components/LocationDetection";
-import CurrencyConverter from "@/components/CurrencyConverter";
-import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
-import CurrencyPicker from "@/components/CurrencyPicker";
-import SavedRates from "@/components/SavedRates";
 import AuthPromptModal from "@/components/AuthPromptModal";
+import CurrencyConverter from "@/components/CurrencyConverter";
+import CurrencyFlag from "@/components/CurrencyFlag";
+import CurrencyPicker from "@/components/CurrencyPicker";
+import GoogleAdsBanner from "@/components/GoogleAdsBanner";
+import LanguageDropdown from "@/components/LanguageDropdown";
+import { detectUserLocation } from "@/components/LocationDetection";
+import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
+import SavedRates from "@/components/SavedRates";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getAsyncStorage } from "@/lib/storage";
-import LanguageDropdown from "@/components/LanguageDropdown";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -1133,9 +1133,8 @@ const styles = StyleSheet.create({
     color: "#1e293b",
   },
   closeButton: {
-    padding: 6,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    borderRadius: 20,
+    backgroundColor: "#f3f4f6",
+    borderRadius: '50%',
     width: 32,
     height: 32,
     alignItems: "center",
@@ -1143,7 +1142,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 16,
-    color: "#ef4444",
+    color: "#6b7280",
     fontWeight: "bold",
   },
 
