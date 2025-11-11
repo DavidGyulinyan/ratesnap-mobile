@@ -55,9 +55,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
-    "dashboard"
-  );
+  const [currentView, setCurrentView] = useState<"dashboard" | "converter">("dashboard");
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
@@ -65,7 +63,7 @@ export default function HomeScreen() {
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("EUR"); // Default to EUR, will be updated by location detection
+  const [toCurrency, setToCurrency] = useState("EUR");
   const [multiAmount, setMultiAmount] = useState("1");
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
@@ -312,6 +310,16 @@ export default function HomeScreen() {
     setShowToCurrencyPicker(false);
   };
 
+  const getAuthText = (key: string) => {
+    // For Russian, use compact versions to prevent header overflow
+    const compactKey = key + '.compact';
+    const compactText = t(compactKey);
+    if (compactText !== compactKey) {
+      return compactText;
+    }
+    return t(key);
+  };
+
   const renderMainContent = () => {
     if (currentView === "converter") {
       return (
@@ -348,16 +356,16 @@ export default function HomeScreen() {
                   style={styles.authButton}
                   onPress={() => router.push('/signin')}
                 >
-                  <ThemedText style={styles.authButtonText}>
-                    {t('auth.signin')}
+                  <ThemedText style={styles.authButtonText} numberOfLines={1} ellipsizeMode="tail">
+                    {getAuthText('auth.signin')}
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.authButton, styles.authButtonPrimary]}
                   onPress={() => router.push('/signup')}
                 >
-                  <ThemedText style={styles.authButtonPrimaryText}>
-                    {t('auth.signup')}
+                  <ThemedText style={styles.authButtonPrimaryText} numberOfLines={1} ellipsizeMode="tail">
+                    {getAuthText('auth.signup')}
                   </ThemedText>
                 </TouchableOpacity>
               </>
@@ -367,19 +375,19 @@ export default function HomeScreen() {
                   style={styles.converterButton}
                   onPress={() => setCurrentView("converter")}
                 >
-                  <ThemedText style={styles.converterButtonText}>
-                    💱 {t('converter.title')}
+                  <ThemedText style={styles.converterButtonText} numberOfLines={1} ellipsizeMode="tail">
+                    {getAuthText('converter.title')}
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.userInfo}
                   onPress={handleSignOut}
                 >
-                  <ThemedText style={styles.userInfoText}>
-                    {t('auth.welcome')}, {user.email?.split('@')[0]}
+                  <ThemedText style={styles.userInfoText} numberOfLines={1} ellipsizeMode="tail">
+                    {getAuthText('auth.welcome')}, {user.email?.split('@')[0]}
                   </ThemedText>
-                  <ThemedText style={styles.signOutText}>
-                    {t('auth.signout')}
+                  <ThemedText style={styles.signOutText} numberOfLines={1} ellipsizeMode="tail">
+                    {getAuthText('auth.signout')}
                   </ThemedText>
                 </TouchableOpacity>
               </>
@@ -790,64 +798,88 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Main containers
   dashboardContainer: {
     flex: 1,
-    backgroundColor: "#f6f7f9",
+    backgroundColor: "transparent",
   },
+  
+  // Header styles
   dashboardHeader: {
-    flexDirection: "column",
-    alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "transparent",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  dashboardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#4f46e5",
-    marginBottom: 4,
-    textAlign: "right",
-    flexWrap: "wrap",
-    maxWidth: "100%",
-  },
-  headerActions: {
-    flexShrink: 0,
+  titleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#f8fafc",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    marginTop: 8,
-    maxWidth: "100%",
+    justifyContent: "flex-end",
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  logoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#6366f1",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  logoEmoji: {
+    fontSize: 18,
+  },
+  dashboardTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#6366f1",
+    textAlign: "right",
+    letterSpacing: 0.5,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
     flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    backdropFilter: "blur(8px)",
   },
   languageSwitcher: {
-    marginRight: 4,
+    marginRight: 2,
   },
+  
+  // Action buttons
   converterButton: {
-    backgroundColor: "#4f46e5",
-    paddingHorizontal: 10,
+    backgroundColor: "#6366f1",
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
-    shadowColor: "#4f46e5",
+    borderRadius: 10,
+    shadowColor: "#6366f1",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
-    maxWidth: 140,
-    flex: 0,
-    minWidth: 0,
   },
   converterButtonText: {
     color: "white",
@@ -855,44 +887,38 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
     flexWrap: "wrap",
-    includeFontPadding: false,
   },
   authButton: {
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(226, 232, 240, 0.8)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 2,
-    flex: 0,
-    minWidth: 0,
-    maxWidth: 80,
+    elevation: 1,
+    maxWidth: 70,
   },
   authButtonText: {
-    color: "#374151",
+    color: "#64748b",
     fontWeight: "600",
     fontSize: 10,
     textAlign: "center",
     flexWrap: "wrap",
-    includeFontPadding: false,
   },
   authButtonPrimary: {
-    backgroundColor: "#4f46e5",
-    borderColor: "#4f46e5",
-    shadowColor: "#4f46e5",
+    backgroundColor: "#6366f1",
+    borderColor: "#6366f1",
+    shadowColor: "#6366f1",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 2,
-    flex: 0,
-    minWidth: 0,
-    maxWidth: 100,
-    paddingHorizontal: 8,
+    maxWidth: 75,
+    paddingHorizontal: 10,
   },
   authButtonPrimaryText: {
     color: "white",
@@ -900,27 +926,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
     flexWrap: "wrap",
-    includeFontPadding: false,
   },
   userInfo: {
     alignItems: "flex-end",
-    backgroundColor: "#ffffff",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    flex: 0,
-    minWidth: 0,
-    maxWidth: 100,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    maxWidth: 85,
   },
   userInfoText: {
-    color: "#6b7280",
+    color: "#64748b",
     fontSize: 9,
     textAlign: "right",
     fontWeight: "500",
     flexWrap: "wrap",
-    includeFontPadding: false,
   },
   signOutText: {
     color: "#ef4444",
@@ -928,137 +950,139 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "right",
     flexWrap: "wrap",
-    includeFontPadding: false,
   },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    width: "100%",
-  },
-  logoIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#4f46e5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 6,
-    shadowColor: "#4f46e5",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  logoEmoji: {
-    fontSize: 12,
-  },
+  
+  // Scroll content
   dashboardScrollView: {
     flex: 1,
   },
   scrollContentContainer: {
     padding: 20,
-    paddingBottom: 60, // Increased bottom padding for safe area
+    paddingBottom: 80,
   },
+  
+  // Quick actions grid
   quickActions: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 32,
+    gap: 8,
   },
   quickActionCard: {
     width: "48%",
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     padding: 20,
-    paddingTop: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(226, 232, 240, 0.6)",
     alignItems: "center",
     justifyContent: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
-    minHeight: 140,
+    minHeight: 160,
   },
   quickActionIcon: {
-    fontSize: 32,
-    height: 48,
+    fontSize: 36,
+    height: 56,
     marginBottom: 16,
-    lineHeight: 48,
+    lineHeight: 56,
     textAlign: "center",
   },
   quickActionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1e293b",
     marginBottom: 8,
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 20,
   },
   quickActionDescription: {
-    fontSize: 11,
-    color: "#6b7280",
+    fontSize: 12,
+    color: "#64748b",
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: 18,
     paddingHorizontal: 4,
   },
+  quickActionCardActive: {
+    borderColor: "#6366f1",
+    borderWidth: 2,
+    backgroundColor: "rgba(99, 102, 241, 0.05)",
+    shadowOpacity: 0.12,
+  },
+  
+  // Features section
   featuresSection: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    marginBottom: 24,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 20,
+    letterSpacing: 0.3,
   },
   featuresList: {
-    gap: 12,
+    gap: 16,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "flex-start",
+    paddingVertical: 4,
   },
   featureIcon: {
-    fontSize: 18,
-    marginRight: 12,
+    fontSize: 20,
+    marginRight: 16,
     marginTop: 2,
   },
   featureContent: {
     flex: 1,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 4,
+    color: "#1e293b",
+    marginBottom: 6,
+    lineHeight: 20,
   },
   featureDescription: {
-    fontSize: 12,
-    color: "#6b7280",
-    lineHeight: 16,
+    fontSize: 13,
+    color: "#64748b",
+    lineHeight: 18,
   },
   bottomSpacer: {
-    height: 40, // Increased bottom spacer
+    height: 60,
   },
-  // Multi-Currency Styles
+  
+  // Modern card sections
   multiCurrencySection: {
     marginBottom: 24,
   },
   multiCurrencyCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 16,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   multiCurrencyHeader: {
     flexDirection: "row",
@@ -1067,62 +1091,75 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   multiCurrencyTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
   },
   closeButton: {
-    padding: 4,
-    backgroundColor: "#fee2e2",
-    borderRadius: 16,
-    width: 24,
-    height: 24,
+    padding: 6,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 20,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
-    fontSize: 14,
-    color: "#dc2626",
+    fontSize: 16,
+    color: "#ef4444",
     fontWeight: "bold",
   },
+  
+  // State styles
   emptyState: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 32,
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#6b7280",
-    marginBottom: 4,
+    color: "#64748b",
+    marginBottom: 8,
     textAlign: "center",
   },
   emptyStateSubtext: {
-    fontSize: 12,
-    color: "#9ca3af",
+    fontSize: 14,
+    color: "#94a3b8",
     textAlign: "center",
   },
   refreshButton: {
-    backgroundColor: "#2563eb",
-    padding: 10,
-    borderRadius: 6,
+    backgroundColor: "#6366f1",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 16,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   refreshButtonText: {
     color: "white",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
   },
-  // Rate Alerts Styles
+  
+  // Rate alerts styles
   rateAlertsSection: {
     marginBottom: 24,
   },
   rateAlertsCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 16,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   rateAlertsHeader: {
     flexDirection: "row",
@@ -1131,59 +1168,67 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   rateAlertsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
   },
   existingAlerts: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   alertsList: {
-    gap: 8,
+    gap: 12,
   },
   alertItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 8,
-    backgroundColor: "#f8fafc",
-    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.6)",
   },
   alertArrow: {
-    marginHorizontal: 8,
-    fontSize: 12,
-    color: "#6b7280",
+    marginHorizontal: 10,
+    fontSize: 14,
+    color: "#64748b",
   },
   alertText: {
     marginLeft: 8,
     fontSize: 14,
     fontWeight: "600",
-    color: "#8b5cf6",
+    color: "#6366f1",
   },
   createAlertSection: {
-    marginTop: 16,
+    marginTop: 20,
   },
   alertForm: {
-    gap: 12,
+    gap: 16,
   },
   alertFormRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   alertInput: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 6,
-    padding: 8,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    borderRadius: 10,
+    padding: 12,
     fontSize: 14,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    color: "#1e293b",
   },
   conditionButton: {
-    backgroundColor: "#8b5cf6",
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: "#6366f1",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     minWidth: 80,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   conditionButtonText: {
     color: "white",
@@ -1191,82 +1236,86 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   createAlertButton: {
-    backgroundColor: "#059669",
-    padding: 10,
-    borderRadius: 6,
+    backgroundColor: "#10b981",
+    padding: 14,
+    borderRadius: 10,
     alignItems: "center",
+    shadowColor: "#10b981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createAlertButtonText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
   },
   showMoreAlertsText: {
-    color: "#8b5cf6",
-    fontSize: 12,
+    color: "#6366f1",
+    fontSize: 13,
     fontWeight: "600",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 12,
   },
-  // Additional styles
   sectionSubtitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  // Alert-specific styles
   alertContent: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
   },
   alertDeleteButton: {
-    padding: 6,
-    backgroundColor: "#fee2e2",
-    borderRadius: 4,
-    marginLeft: 8,
+    padding: 8,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 6,
+    marginLeft: 12,
   },
   alertDeleteText: {
     fontSize: 14,
   },
   deleteAllInlineButton: {
-    backgroundColor: "#dc2626",
-    padding: 10,
-    borderRadius: 6,
+    backgroundColor: "#ef4444",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 16,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   deleteAllInlineText: {
     color: "white",
-    fontWeight: "bold",
+    fontWeight: "600",
     fontSize: 14,
   },
-  // Currency picker button styles
   currencyPickerButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 10,
-    backgroundColor: "#f8fafc",
-    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(226, 232, 240, 0.6)",
     gap: 8,
   },
   currencyPickerButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#1f2937",
+    color: "#1e293b",
   },
-  quickActionCardActive: {
-    borderColor: "#2563eb",
-    borderWidth: 2,
-    backgroundColor: "#eff6ff",
-  },
-  // Google Ads Styles
+  
+  // Ads
   adsContainer: {
-    marginBottom: 24,
+    marginBottom: 32,
+    alignItems: "center",
   },
   adsBanner: {
     marginBottom: 0,

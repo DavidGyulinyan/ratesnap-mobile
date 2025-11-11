@@ -355,6 +355,13 @@ const translations = {
     'dashboard.features': 'Возможности панели',
     'dashboard.features.description': 'Полный набор конвертации валют с расширенными функциями',
     
+    // Compact versions for header buttons
+    'auth.signin.compact': 'Вход',
+    'auth.signup.compact': 'Регистрация',
+    'auth.signout.compact': 'Выход',
+    'auth.welcome.compact': 'Привет',
+    'converter.title.compact': 'Конв',
+    
     'quick.action.converter': 'Конвертер валют',
     'quick.action.converter.desc': 'Профессиональный конвертер со всеми функциями',
     'quick.action.multiCurrency': 'Мультивалютный',
