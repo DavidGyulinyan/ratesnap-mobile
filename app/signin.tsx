@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -146,7 +147,7 @@ export default function SignInScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <TouchableOpacity onPress={() => router.back()}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
@@ -158,12 +159,17 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Main containers
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#fafbff',
   },
   scrollContainer: {
     flexGrow: 1,
+  },
+  backgroundPattern: {
+    flex: 1,
+    backgroundColor: '#fafbff',
   },
   content: {
     flex: 1,
@@ -171,23 +177,51 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
+  
+  // Card layout
+  logoContainer: {
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
+    backdropFilter: 'blur(10px)',
+  },
+  
+  // Typography
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginTop: 24,
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1e293b',
     marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
     marginBottom: 32,
+    lineHeight: 24,
   },
+  
+  // Form elements
   form: {
     width: '100%',
-    maxWidth: 400,
   },
   inputContainer: {
     marginBottom: 20,
@@ -200,85 +234,115 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: 'rgba(226, 232, 240, 0.8)',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 16,
-    backgroundColor: '#f9fafb',
+    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    color: '#1e293b',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
+  
+  // Buttons
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     marginBottom: 12,
+    flexWrap: 'wrap',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#6366f1',
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.3,
   },
   primaryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   googleButton: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: 'rgba(226, 232, 240, 0.8)',
   },
   googleButtonText: {
     color: '#374151',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    flex: 1,
+    textAlign: 'center',
   },
   appleButton: {
     backgroundColor: '#000',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
   },
   appleButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    flex: 1,
+    textAlign: 'center',
   },
+  
+  // Divider
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 32,
     width: '100%',
-    maxWidth: 400,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: 'rgba(226, 232, 240, 0.6)',
   },
   dividerText: {
     marginHorizontal: 16,
-    color: '#6b7280',
+    color: '#64748b',
     fontSize: 14,
+    fontWeight: '500',
   },
   socialButtons: {
     width: '100%',
-    maxWidth: 400,
   },
+  
+  // Footer
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 24,
+    paddingHorizontal: 20,
   },
   footerText: {
-    color: '#6b7280',
+    color: '#64748b',
     fontSize: 14,
   },
   signUpLink: {
-    color: '#3b82f6',
+    color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
   },

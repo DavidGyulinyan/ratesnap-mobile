@@ -8,10 +8,12 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import CurrencyFlag from "@/components/CurrencyFlag";
+import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import { detectUserLocation } from "@/components/LocationDetection";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
@@ -21,6 +23,7 @@ import AuthPromptModal from "@/components/AuthPromptModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getAsyncStorage } from "@/lib/storage";
+import LanguageDropdown from "@/components/LanguageDropdown";
 
 // Popular currencies for multi-currency conversion - moved outside component to avoid re-renders
 const POPULAR_CURRENCIES = [
@@ -62,7 +65,7 @@ export default function HomeScreen() {
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [fromCurrency, setFromCurrency] = useState("USD");
-  const [toCurrency, setToCurrency] = useState("EUR"); // Default to EUR, will be updated by location detection
+  const [toCurrency, setToCurrency] = useState("EUR");
   const [multiAmount, setMultiAmount] = useState("1");
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
@@ -118,11 +121,11 @@ export default function HomeScreen() {
         const data = JSON.parse(cachedData);
         setCurrenciesData(data);
         setCurrencyList(Object.keys(data.conversion_rates || {}));
-        console.log('📦 Loaded cached exchange rates for multi-currency');
+        console.log("📦 Loaded cached exchange rates for multi-currency");
       } else {
         // Set default currencies if no cached data
         setCurrencyList(POPULAR_CURRENCIES);
-        console.log('💡 No cached data available for multi-currency');
+        console.log("💡 No cached data available for multi-currency");
       }
     } catch (error) {
       console.error("Error loading cached rates:", error);
@@ -158,7 +161,7 @@ export default function HomeScreen() {
 
   const createRateAlert = async () => {
     if (!newAlert.targetRate || parseFloat(newAlert.targetRate) <= 0) {
-      alert(t('error.invalidAmount'));
+      alert(t("error.invalidAmount"));
       return;
     }
 
@@ -184,113 +187,97 @@ export default function HomeScreen() {
       condition: "below",
     });
 
-    alert(t('success.alertCreated'));
+    alert(t("success.alertCreated"));
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      Alert.alert('Success', 'You have been signed out successfully.');
+      Alert.alert("Success", "You have been signed out successfully.");
     } catch (error) {
-      Alert.alert('Error', 'Failed to sign out. Please try again.');
+      Alert.alert("Error", "Failed to sign out. Please try again.");
     }
   };
 
   const deleteAlert = async (alertId: string) => {
-    Alert.alert(
-      t('common.delete'),
-      t('alerts.deleteConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: "cancel",
+    Alert.alert(t("common.delete"), t("alerts.deleteConfirm"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          const updatedAlerts = rateAlerts.filter(
+            (alert) => alert.id !== alertId
+          );
+          setRateAlerts(updatedAlerts);
+          await AsyncStorage.setItem(
+            "rateAlerts",
+            JSON.stringify(updatedAlerts)
+          );
         },
-        {
-          text: t('common.delete'),
-          style: "destructive",
-          onPress: async () => {
-            const updatedAlerts = rateAlerts.filter(
-              (alert) => alert.id !== alertId
-            );
-            setRateAlerts(updatedAlerts);
-            await AsyncStorage.setItem(
-              "rateAlerts",
-              JSON.stringify(updatedAlerts)
-            );
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const deleteAllAlerts = async () => {
     if (rateAlerts.length === 0) return;
 
-    Alert.alert(
-      t('alerts.deleteAll'),
-      t('alerts.deleteAllConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: "cancel",
+    Alert.alert(t("alerts.deleteAll"), t("alerts.deleteAllConfirm"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("alerts.deleteAll"),
+        style: "destructive",
+        onPress: async () => {
+          setRateAlerts([]);
+          await AsyncStorage.setItem("rateAlerts", JSON.stringify([]));
         },
-        {
-          text: t('alerts.deleteAll'),
-          style: "destructive",
-          onPress: async () => {
-            setRateAlerts([]);
-            await AsyncStorage.setItem("rateAlerts", JSON.stringify([]));
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const deleteSavedRate = async (index: number) => {
-    Alert.alert(
-      t('common.delete'),
-      t('saved.deleteConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: "cancel",
+    Alert.alert(t("common.delete"), t("saved.deleteConfirm"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          const updatedRates = savedRates.filter((_, i) => i !== index);
+          setSavedRates(updatedRates);
+          const storage = getAsyncStorage();
+          await storage.setItem("savedRates", JSON.stringify(updatedRates));
         },
-        {
-          text: t('common.delete'),
-          style: "destructive",
-          onPress: async () => {
-            const updatedRates = savedRates.filter((_, i) => i !== index);
-            setSavedRates(updatedRates);
-            const storage = getAsyncStorage();
-            await storage.setItem("savedRates", JSON.stringify(updatedRates));
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const deleteAllSavedRates = async () => {
     if (savedRates.length === 0) return;
 
-    Alert.alert(
-      t('saved.deleteAll'),
-      t('saved.deleteAllConfirm'),
-      [
-        {
-          text: t('common.cancel'),
-          style: "cancel",
+    Alert.alert(t("saved.deleteAll"), t("saved.deleteAllConfirm"), [
+      {
+        text: t("common.cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("saved.deleteAll"),
+        style: "destructive",
+        onPress: async () => {
+          setSavedRates([]);
+          const storage = getAsyncStorage();
+          await storage.setItem("savedRates", JSON.stringify([]));
         },
-        {
-          text: t('saved.deleteAll'),
-          style: "destructive",
-          onPress: async () => {
-            setSavedRates([]);
-            const storage = getAsyncStorage();
-            await storage.setItem("savedRates", JSON.stringify([]));
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleFromCurrencySelect = (currency: string) => {
@@ -309,6 +296,16 @@ export default function HomeScreen() {
     setShowToCurrencyPicker(false);
   };
 
+  const getAuthText = (key: string) => {
+    // For Russian, use compact versions to prevent header overflow
+    const compactKey = key + ".compact";
+    const compactText = t(compactKey);
+    if (compactText !== compactKey) {
+      return compactText;
+    }
+    return t(key);
+  };
+
   const renderMainContent = () => {
     if (currentView === "converter") {
       return (
@@ -323,27 +320,43 @@ export default function HomeScreen() {
       <ThemedView style={styles.dashboardContainer}>
         {/* Dashboard Header - Fixed at top */}
         <View style={styles.dashboardHeader}>
-          <ThemedText type="title" style={styles.dashboardTitle}>
-            {t('app.title')} Dashboard
-          </ThemedText>
+          <View style={styles.titleContainer}>
+            <View style={styles.logoIcon}>
+              <ThemedText style={styles.logoEmoji}>💱</ThemedText>
+            </View>
+            <ThemedText type="title" style={styles.dashboardTitle}>
+              {t("app.title")} Dashboard
+            </ThemedText>
+          </View>
           <View style={styles.headerActions}>
+            {/* Language Switcher - Always visible */}
+            <LanguageDropdown compact={true} style={styles.languageSwitcher} />
+
             {/* Show sign-in/sign-up for non-authenticated users */}
             {!user ? (
               <>
                 <TouchableOpacity
                   style={styles.authButton}
-                  onPress={() => router.push('/signin')}
+                  onPress={() => router.push("/signin")}
                 >
-                  <ThemedText style={styles.authButtonText}>
-                    {t('auth.signin')}
+                  <ThemedText
+                    style={styles.authButtonText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getAuthText("auth.signin")}
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.authButton, styles.authButtonPrimary]}
-                  onPress={() => router.push('/signup')}
+                  onPress={() => router.push("/signup")}
                 >
-                  <ThemedText style={styles.authButtonPrimaryText}>
-                    {t('auth.signup')}
+                  <ThemedText
+                    style={styles.authButtonPrimaryText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getAuthText("auth.signup")}
                   </ThemedText>
                 </TouchableOpacity>
               </>
@@ -353,19 +366,31 @@ export default function HomeScreen() {
                   style={styles.converterButton}
                   onPress={() => setCurrentView("converter")}
                 >
-                  <ThemedText style={styles.converterButtonText}>
-                    💱 {t('converter.title')}
+                  <ThemedText
+                    style={styles.converterButtonText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getAuthText("converter.title")}
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.userInfo}
                   onPress={handleSignOut}
                 >
-                  <ThemedText style={styles.userInfoText}>
-                    {t('auth.welcome')}, {user.email?.split('@')[0]}
+                  <ThemedText
+                    style={styles.userInfoText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getAuthText("auth.welcome")}, {user.email?.split("@")[0]}
                   </ThemedText>
-                  <ThemedText style={styles.signOutText}>
-                    {t('auth.signout')}
+                  <ThemedText
+                    style={styles.signOutText}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {getAuthText("auth.signout")}
                   </ThemedText>
                 </TouchableOpacity>
               </>
@@ -388,10 +413,10 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>💱</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                {t('quick.action.converter')}
+                {t("quick.action.converter")}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {t('quick.action.converter.desc')}
+                {t("quick.action.converter.desc")}
               </ThemedText>
             </TouchableOpacity>
 
@@ -404,12 +429,12 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                {t('quick.action.multiCurrency')}
+                {t("quick.action.multiCurrency")}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {showMultiCurrency
-                  ? t('quick.action.multiCurrency.hide')
-                  : t('quick.action.multiCurrency.desc')}
+                  ? t("quick.action.multiCurrency.hide")
+                  : t("quick.action.multiCurrency.desc")}
               </ThemedText>
             </TouchableOpacity>
 
@@ -422,11 +447,14 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                {t('quick.action.rateAlerts')}
+                {t("quick.action.rateAlerts")}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {rateAlerts.length} {rateAlerts.length === 1 ? 'active alert' : 'active alerts'} -{" "}
-                {showRateAlerts ? t('quick.action.rateAlerts.hide') : t('quick.action.rateAlerts.desc')}
+                {rateAlerts.length}{" "}
+                {rateAlerts.length === 1 ? "active alert" : "active alerts"} -{" "}
+                {showRateAlerts
+                  ? t("quick.action.rateAlerts.hide")
+                  : t("quick.action.rateAlerts.desc")}
               </ThemedText>
             </TouchableOpacity>
 
@@ -439,13 +467,27 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>📋</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                {t('quick.action.savedRates')}
+                {t("quick.action.savedRates")}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
-                {savedRates.length} {savedRates.length === 1 ? 'saved rate' : 'saved rates'} -{" "}
+                {savedRates.length}{" "}
+                {savedRates.length === 1 ? "saved rate" : "saved rates"} -{" "}
                 {showSavedRates
-                  ? t('quick.action.savedRates.hide')
-                  : t('quick.action.savedRates.desc')}
+                  ? t("quick.action.savedRates.hide")
+                  : t("quick.action.savedRates.desc")}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickActionCard}
+              onPress={() => router.push("/(tabs)/settings")}
+            >
+              <ThemedText style={styles.quickActionIcon}>⚙️</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                {t("quick.action.settings")}
+              </ThemedText>
+              <ThemedText style={styles.quickActionDescription}>
+                {t("quick.action.settings.desc")}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -456,19 +498,21 @@ export default function HomeScreen() {
               <View style={styles.multiCurrencyCard}>
                 <View style={styles.multiCurrencyHeader}>
                   <ThemedText style={styles.multiCurrencyTitle}>
-                    📊 {t('converter.multiCurrency.section')}
+                    📊 {t("converter.multiCurrency.section")}
                   </ThemedText>
                 </View>
 
                 {!currenciesData ? (
                   <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>{t('converter.loadingRates')}</ThemedText>
+                    <ThemedText style={styles.emptyStateText}>
+                      {t("converter.loadingRates")}
+                    </ThemedText>
                     <TouchableOpacity
                       style={styles.refreshButton}
                       onPress={loadExchangeRates}
                     >
                       <ThemedText style={styles.refreshButtonText}>
-                        🔄 {t('converter.refreshData')}
+                        🔄 {t("converter.refreshData")}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -477,7 +521,9 @@ export default function HomeScreen() {
                     key="multiCurrencyConverter-main"
                     currenciesData={currenciesData}
                     fromCurrency="USD"
-                    onFromCurrencyChange={(currency) => console.log('From currency changed to:', currency)}
+                    onFromCurrencyChange={(currency) =>
+                      console.log("From currency changed to:", currency)
+                    }
                     onClose={() => setShowMultiCurrency(false)}
                     style={{ marginBottom: 24 }}
                   />
@@ -492,7 +538,7 @@ export default function HomeScreen() {
               <View style={styles.rateAlertsCard}>
                 <View style={styles.rateAlertsHeader}>
                   <ThemedText style={styles.rateAlertsTitle}>
-                    🔔 {t('alerts.title')}
+                    🔔 {t("alerts.title")}
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}
@@ -505,15 +551,15 @@ export default function HomeScreen() {
                 {/* Existing Alerts */}
                 <View style={styles.existingAlerts}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    {t('alerts.active')}
+                    {t("alerts.active")}
                   </ThemedText>
                   {rateAlerts.length === 0 ? (
                     <View style={styles.emptyState}>
                       <ThemedText style={styles.emptyStateText}>
-                        {t('alerts.none')}
+                        {t("alerts.none")}
                       </ThemedText>
                       <ThemedText style={styles.emptyStateSubtext}>
-                        {t('alerts.createFirst')}
+                        {t("alerts.createFirst")}
                       </ThemedText>
                     </View>
                   ) : (
@@ -550,7 +596,10 @@ export default function HomeScreen() {
                           onPress={() => setCurrentView("converter")}
                         >
                           <ThemedText style={styles.showMoreAlertsText}>
-                            {t('alerts.viewMore').replace('alerts', `${rateAlerts.length - 3} more alerts`)}
+                            {t("alerts.viewMore").replace(
+                              "alerts",
+                              `${rateAlerts.length - 3} more alerts`
+                            )}
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -560,7 +609,7 @@ export default function HomeScreen() {
                           onPress={deleteAllAlerts}
                         >
                           <ThemedText style={styles.deleteAllInlineText}>
-                            🗑️ {t('alerts.deleteAll')} ({rateAlerts.length})
+                            🗑️ {t("alerts.deleteAll")} ({rateAlerts.length})
                           </ThemedText>
                         </TouchableOpacity>
                       )}
@@ -571,7 +620,7 @@ export default function HomeScreen() {
                 {/* Create New Alert */}
                 <View style={styles.createAlertSection}>
                   <ThemedText style={styles.sectionSubtitle}>
-                    {t('alerts.createNew')}
+                    {t("alerts.createNew")}
                   </ThemedText>
                   <View style={styles.alertForm}>
                     <View style={styles.alertFormRow}>
@@ -584,7 +633,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          {t('converter.from')}: {newAlert.fromCurrency}
+                          {t("converter.from")}: {newAlert.fromCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -596,7 +645,7 @@ export default function HomeScreen() {
                           size={20}
                         />
                         <ThemedText style={styles.currencyPickerButtonText}>
-                          {t('converter.to')}: {newAlert.toCurrency}
+                          {t("converter.to")}: {newAlert.toCurrency}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -607,7 +656,7 @@ export default function HomeScreen() {
                         onChangeText={(text) =>
                           setNewAlert({ ...newAlert, targetRate: text })
                         }
-                        placeholder={t('alerts.targetRate')}
+                        placeholder={t("alerts.targetRate")}
                         keyboardType="numeric"
                       />
                       <TouchableOpacity
@@ -624,8 +673,8 @@ export default function HomeScreen() {
                       >
                         <ThemedText style={styles.conditionButtonText}>
                           {newAlert.condition === "below"
-                            ? `↓ ${t('alerts.condition.below')}`
-                            : `↑ ${t('alerts.condition.above')}`}
+                            ? `↓ ${t("alerts.condition.below")}`
+                            : `↑ ${t("alerts.condition.above")}`}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -634,7 +683,7 @@ export default function HomeScreen() {
                       onPress={createRateAlert}
                     >
                       <ThemedText style={styles.createAlertButtonText}>
-                        {t('alerts.create')}
+                        {t("alerts.create")}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -654,24 +703,32 @@ export default function HomeScreen() {
             showMoreEnabled={true}
             onShowMore={() => setCurrentView("converter")}
             maxVisibleItems={4}
-            title={`📋 ${t('saved.title')}`}
+            title={`📋 ${t("saved.title")}`}
             containerStyle={{ marginBottom: 24 }}
           />
 
+          {/* Google Ads Banner */}
+          <View style={styles.adsContainer}>
+            <GoogleAdsBanner
+              type="banner"
+              size="medium"
+              style={styles.adsBanner}
+            />
+          </View>
           {/* Features Preview */}
           <View style={styles.featuresSection}>
             <ThemedText style={styles.sectionTitle}>
-              ✨ {t('dashboard.features')}
+              ✨ {t("dashboard.features")}
             </ThemedText>
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    {t('feature.multiCurrency.title')}
+                    {t("feature.multiCurrency.title")}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    {t('feature.multiCurrency.desc')}
+                    {t("feature.multiCurrency.desc")}
                   </ThemedText>
                 </View>
               </View>
@@ -680,10 +737,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    {t('feature.calculator.title')}
+                    {t("feature.calculator.title")}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    {t('feature.calculator.desc')}
+                    {t("feature.calculator.desc")}
                   </ThemedText>
                 </View>
               </View>
@@ -692,10 +749,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    {t('feature.offline.title')}
+                    {t("feature.offline.title")}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    {t('feature.offline.desc')}
+                    {t("feature.offline.desc")}
                   </ThemedText>
                 </View>
               </View>
@@ -704,10 +761,10 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    {t('feature.location.title')}
+                    {t("feature.location.title")}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    {t('feature.location.desc')}
+                    {t("feature.location.desc")}
                   </ThemedText>
                 </View>
               </View>
@@ -716,16 +773,24 @@ export default function HomeScreen() {
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
                   <ThemedText style={styles.featureTitle}>
-                    {t('feature.caching.title')}
+                    {t("feature.caching.title")}
                   </ThemedText>
                   <ThemedText style={styles.featureDescription}>
-                    {t('feature.caching.desc')}
+                    {t("feature.caching.desc")}
                   </ThemedText>
                 </View>
               </View>
             </View>
           </View>
 
+          {/* Google Ads Banner */}
+          <View style={styles.adsContainer}>
+            <GoogleAdsBanner
+              type="banner"
+              size="medium"
+              style={styles.adsBanner}
+            />
+          </View>
           {/* Additional Content to Enable Scrolling */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -734,7 +799,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f7f9" }}>
       {renderMainContent()}
 
       {/* Currency Pickers for Rate Alerts */}
@@ -762,202 +827,299 @@ export default function HomeScreen() {
         message="Sign up to save your data and enable premium features"
         feature="general"
       />
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Main containers
   dashboardContainer: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "transparent",
   },
+
+  // Header styles
   dashboardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "transparent",
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  logoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#6366f1",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+    shadowColor: "#6366f1",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  logoEmoji: {
+    fontSize: 18,
   },
   dashboardTitle: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: "#1f2937",
-    flex: 1,
-    marginRight: 12,
+    fontWeight: "700",
+    color: "#6366f1",
+    textAlign: "right",
+    letterSpacing: 0.5,
   },
   headerActions: {
-    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    backdropFilter: "blur(8px)",
   },
+  languageSwitcher: {
+    marginRight: 2,
+  },
+  burgerMenu: {
+    marginLeft: 8,
+  },
+
+  // Action buttons
   converterButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#6366f1",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-    maxWidth: 140,
+    borderRadius: 10,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   converterButtonText: {
     color: "white",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 11,
     textAlign: "center",
+    flexWrap: "wrap",
   },
   authButton: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    maxWidth: 70,
   },
   authButtonText: {
-    color: "#374151",
+    color: "#64748b",
     fontWeight: "600",
-    fontSize: 12,
+    fontSize: 10,
     textAlign: "center",
+    flexWrap: "wrap",
   },
   authButtonPrimary: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
+    backgroundColor: "#6366f1",
+    borderColor: "#6366f1",
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+    maxWidth: 75,
+    paddingHorizontal: 10,
   },
   authButtonPrimaryText: {
     color: "white",
+    fontWeight: "600",
+    fontSize: 10,
+    textAlign: "center",
+    flexWrap: "wrap",
   },
   userInfo: {
     alignItems: "flex-end",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    maxWidth: 85,
   },
   userInfoText: {
-    color: "#6b7280",
-    fontSize: 10,
+    color: "#64748b",
+    fontSize: 9,
     textAlign: "right",
+    fontWeight: "500",
+    flexWrap: "wrap",
   },
   signOutText: {
-    color: "#dc2626",
-    fontSize: 12,
+    color: "#ef4444",
+    fontSize: 9,
     fontWeight: "600",
     textAlign: "right",
+    flexWrap: "wrap",
   },
+
+  // Scroll content
   dashboardScrollView: {
     flex: 1,
   },
   scrollContentContainer: {
     padding: 20,
-    paddingBottom: 40, // Extra padding at bottom for better scrolling
+    paddingBottom: 80,
   },
+
+  // Quick actions grid
   quickActions: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 32,
+    gap: 8,
   },
   quickActionCard: {
     width: "48%",
-    backgroundColor: "#ffffff",
-    padding: 24,
-    paddingTop: 32,
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 20,
+    borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "rgba(226, 232, 240, 0.6)",
     alignItems: "center",
     justifyContent: "flex-start",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
     minHeight: 160,
   },
   quickActionIcon: {
     fontSize: 36,
     height: 56,
-    marginBottom: 20,
+    marginBottom: 16,
     lineHeight: 56,
     textAlign: "center",
   },
   quickActionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1e293b",
     marginBottom: 8,
     textAlign: "center",
     lineHeight: 20,
   },
   quickActionDescription: {
     fontSize: 12,
-    color: "#6b7280",
+    color: "#64748b",
     textAlign: "center",
     lineHeight: 18,
     paddingHorizontal: 4,
   },
+  quickActionCardActive: {
+    borderColor: "#6366f1",
+    borderWidth: 2,
+    backgroundColor: "rgba(99, 102, 241, 0.05)",
+    shadowOpacity: 0.12,
+  },
+
+  // Features section
   featuresSection: {
-    backgroundColor: "#ffffff",
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    marginBottom: 24,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 20,
+    letterSpacing: 0.3,
   },
   featuresList: {
-    gap: 12,
+    gap: 16,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "flex-start",
+    paddingVertical: 4,
   },
   featureIcon: {
     fontSize: 20,
-    marginRight: 12,
+    marginRight: 16,
     marginTop: 2,
   },
   featureContent: {
     flex: 1,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 4,
+    color: "#1e293b",
+    marginBottom: 6,
+    lineHeight: 20,
   },
   featureDescription: {
-    fontSize: 12,
-    color: "#6b7280",
-    lineHeight: 16,
+    fontSize: 13,
+    color: "#64748b",
+    lineHeight: 18,
   },
   bottomSpacer: {
-    height: 20, // Extra space at the bottom for comfortable scrolling
+    height: 60,
   },
-  // Multi-Currency Styles
+
+  // Modern card sections
   multiCurrencySection: {
     marginBottom: 24,
   },
   multiCurrencyCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 16,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   multiCurrencyHeader: {
     flexDirection: "row",
@@ -967,128 +1129,74 @@ const styles = StyleSheet.create({
   },
   multiCurrencyTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontWeight: "700",
+    color: "#1e293b",
   },
   closeButton: {
-    padding: 4,
-    backgroundColor: "#fee2e2",
-    borderRadius: 16,
-    width: 28,
-    height: 28,
+    padding: 6,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 20,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonText: {
     fontSize: 16,
-    color: "#dc2626",
+    color: "#ef4444",
     fontWeight: "bold",
   },
-  inputSection: {
-    marginBottom: 16,
-  },
-  amountInputContainer: {
-    marginBottom: 12,
-  },
-  currencyInputContainer: {
-    marginBottom: 12,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 4,
-  },
-  amountInput: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#f9fafb",
-  },
-  currencyInput: {
-    flexDirection: "row",
+
+  // State styles
+  emptyState: {
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#f9fafb",
+    paddingVertical: 32,
   },
-  currencyInputText: {
-    marginLeft: 8,
+  emptyStateText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1f2937",
-  },
-  resultsSection: {
-    marginTop: 16,
-  },
-  resultsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 12,
-  },
-  conversionsGrid: {
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  conversionItem: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 8,
-    backgroundColor: "#f8fafc",
-    borderRadius: 6,
+    color: "#64748b",
     marginBottom: 8,
+    textAlign: "center",
   },
-  conversionInfo: {
-    marginLeft: 8,
-    flex: 1,
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: "#94a3b8",
+    textAlign: "center",
   },
-  conversionCurrency: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  conversionAmount: {
-    fontSize: 11,
-    color: "#6b7280",
-  },
-  showMoreButton: {
-    backgroundColor: "#dbeafe",
-    padding: 10,
-    borderRadius: 6,
+  refreshButton: {
+    backgroundColor: "#6366f1",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 16,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  showMoreButtonText: {
-    color: "#2563eb",
+  refreshButtonText: {
+    color: "white",
     fontSize: 14,
     fontWeight: "600",
   },
-  quickActionCardActive: {
-    borderColor: "#2563eb",
-    borderWidth: 2,
-    backgroundColor: "#eff6ff",
-  },
-  // Rate Alerts Styles
+
+  // Rate alerts styles
   rateAlertsSection: {
     marginBottom: 24,
   },
   rateAlertsCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#8b5cf6",
-    padding: 16,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   rateAlertsHeader: {
     flexDirection: "row",
@@ -1098,58 +1206,66 @@ const styles = StyleSheet.create({
   },
   rateAlertsTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#1f2937",
+    fontWeight: "700",
+    color: "#1e293b",
   },
   existingAlerts: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   alertsList: {
-    gap: 8,
+    gap: 12,
   },
   alertItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 8,
-    backgroundColor: "#f8fafc",
-    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.6)",
   },
   alertArrow: {
-    marginHorizontal: 8,
-    fontSize: 12,
-    color: "#6b7280",
+    marginHorizontal: 10,
+    fontSize: 14,
+    color: "#64748b",
   },
   alertText: {
     marginLeft: 8,
     fontSize: 14,
     fontWeight: "600",
-    color: "#8b5cf6",
+    color: "#6366f1",
   },
   createAlertSection: {
-    marginTop: 16,
+    marginTop: 20,
   },
   alertForm: {
-    gap: 12,
+    gap: 16,
   },
   alertFormRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   alertInput: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 8,
-    padding: 10,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    borderRadius: 10,
+    padding: 12,
     fontSize: 14,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    color: "#1e293b",
   },
   conditionButton: {
-    backgroundColor: "#8b5cf6",
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: "#6366f1",
+    padding: 12,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     minWidth: 80,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   conditionButtonText: {
     color: "white",
@@ -1157,47 +1273,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   createAlertButton: {
-    backgroundColor: "#059669",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#10b981",
+    padding: 14,
+    borderRadius: 10,
     alignItems: "center",
+    shadowColor: "#10b981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createAlertButtonText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
   },
   showMoreAlertsText: {
-    color: "#8b5cf6",
-    fontSize: 12,
+    color: "#6366f1",
+    fontSize: 13,
     fontWeight: "600",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 12,
   },
-  // Additional styles
   sectionSubtitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 20,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6b7280",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  emptyStateSubtext: {
-    fontSize: 12,
-    color: "#9ca3af",
-    textAlign: "center",
-  },
-  // Alert-specific styles
   alertContent: {
     flex: 1,
     flexDirection: "row",
@@ -1205,115 +1308,73 @@ const styles = StyleSheet.create({
   },
   alertDeleteButton: {
     padding: 8,
-    backgroundColor: "#fee2e2",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     borderRadius: 6,
-    marginLeft: 8,
+    marginLeft: 12,
   },
   alertDeleteText: {
-    fontSize: 16,
+    fontSize: 14,
   },
   deleteAllInlineButton: {
-    backgroundColor: "#dc2626",
+    backgroundColor: "#ef4444",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 16,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
   },
   deleteAllInlineText: {
     color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
+    fontWeight: "600",
+    fontSize: 14,
   },
-  // Currency picker button styles
   currencyPickerButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
-    backgroundColor: "#f8fafc",
-    borderRadius: 8,
+    backgroundColor: "rgba(248, 250, 252, 0.8)",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "rgba(226, 232, 240, 0.6)",
     gap: 8,
   },
   currencyPickerButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#1f2937",
+    color: "#1e293b",
   },
-  // Primary conversion styles for user's currency
-  primaryConversion: {
-    backgroundColor: "#e0f2fe",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#0284c7",
-  },
-  primaryConversionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#0c4a6e",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  primaryConversionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    color: "red",
-    justifyContent: "center",
-  },
-  primaryConversionAmount: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0369a1",
-    marginLeft: 8,
-  },
-  // Currency Management Styles
-  conversionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  removeCurrencyButton: {
-    width: 20,
-    height: 20,
+
+  // Settings button
+  settingsButton: {
+    backgroundColor: "rgba(107, 114, 128, 0.9)",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: "#fee2e2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
+    shadowColor: "#6b7280",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  removeCurrencyText: {
-    color: "#dc2626",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  manageCurrenciesButton: {
-    backgroundColor: "#f3f4f6",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
-  manageCurrenciesText: {
-    color: "#374151",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  // Multi-Currency Loading and Refresh
-  refreshButton: {
-    backgroundColor: "#2563eb",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  refreshButtonText: {
+  settingsButtonText: {
     color: "white",
-    fontSize: 14,
     fontWeight: "600",
+    fontSize: 10,
+    textAlign: "center",
+  },
+
+  // Ads
+  adsContainer: {
+    marginBottom: 32,
+    alignItems: "center",
+  },
+  adsBanner: {
+    width: "100%",
+    marginBottom: 0,
   },
 });

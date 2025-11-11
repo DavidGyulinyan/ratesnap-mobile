@@ -1,18 +1,17 @@
 import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
-
-WebBrowser.maybeCompleteAuthSession(); // MUST run before Navigation
-
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
-
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -24,24 +23,35 @@ export default function RootLayout() {
 
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            {user ? (
-              <>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </>
-            ) : (
-              <>
-                <Stack.Screen name="signin" options={{ presentation: 'modal', title: 'Sign In' }} />
-                <Stack.Screen name="signup" options={{ presentation: 'modal', title: 'Sign Up' }} />
-              </>
-            )}
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <View style={{ flex: 1 }}>
+            <Stack screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: 'transparent',
+                paddingTop: 0,
+                paddingBottom: 0,
+                paddingLeft: 0,
+                paddingRight: 0
+              }
+            }}>
+              {user ? (
+                <>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                </>
+              ) : (
+                <>
+                  <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+                  <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
+                </>
+              )}
+            </Stack>
+            <StatusBar style="auto" />
+          </View>
+        </AuthProvider>
+      </SafeAreaProvider>
     </LanguageProvider>
   );
 }

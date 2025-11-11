@@ -1,29 +1,121 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Modern, user-friendly color palette and design system
+ * Optimized for better UX and visual appeal
  */
 
 import { Platform } from "react-native";
 
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#fff";
+// Modern color palette
+const primary = "#6366f1"; // Modern indigo
+const primaryDark = "#4f46e5";
+const secondary = "#06b6d4"; // Cyan
+const accent = "#f59e0b"; // Amber
+const success = "#10b981"; // Emerald
+const warning = "#f59e0b";
+const error = "#ef4444"; // Red
 
 export const Colors = {
   light: {
-    text: "#11181C",
-    background: "#fff",
-    tint: tintColorLight,
-    icon: "#687076",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
+    // Primary colors
+    primary: primary,
+    primaryDark: primaryDark,
+    secondary: secondary,
+    colorAccent: accent,
+    
+    // Background colors
+    background: "#fafbff",
+    surface: "#ffffff",
+    surfaceSecondary: "#f8fafc",
+    cardBackground: "#ffffff",
+    modalBackground: "rgba(0, 0, 0, 0.5)",
+    
+    // Text colors
+    text: "#1e293b",
+    textSecondary: "#64748b",
+    textTertiary: "#94a3b8",
+    textInverse: "#ffffff",
+    
+    // Interactive colors
+    tint: primary,
+    accent: accent,
+    success: success,
+    warning: warning,
+    error: error,
+    
+    // Border and dividers
+    border: "#e2e8f0",
+    borderLight: "#f1f5f9",
+    divider: "#e2e8f0",
+    
+    // Icon colors
+    icon: "#64748b",
+    iconSecondary: "#94a3b8",
+    iconInverse: "#ffffff",
+    
+    // Tab colors
+    tabIconDefault: "#64748b",
+    tabIconSelected: primary,
+    tabBackground: "#f8fafc",
+    
+    // Special backgrounds
+    headerBackground: "#ffffff",
+    headerBorder: "#e2e8f0",
+    
+    // Status colors
+    online: "#10b981",
+    offline: "#ef4444",
+    pending: "#f59e0b",
   },
   dark: {
-    text: "#ECEDEE",
-    background: "#151718",
-    tint: tintColorDark,
-    icon: "#9BA1A6",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
+    // Primary colors
+    primary: primary,
+    primaryDark: primaryDark,
+    secondary: secondary,
+    colorAccent: accent,
+    
+    // Background colors
+    background: "#0f172a",
+    surface: "#1e293b",
+    surfaceSecondary: "#334155",
+    cardBackground: "#1e293b",
+    modalBackground: "rgba(0, 0, 0, 0.7)",
+    
+    // Text colors
+    text: "#f1f5f9",
+    textSecondary: "#cbd5e1",
+    textTertiary: "#94a3b8",
+    textInverse: "#1e293b",
+    
+    // Interactive colors
+    tint: primary,
+    accent: accent,
+    success: success,
+    warning: warning,
+    error: error,
+    
+    // Border and dividers
+    border: "#334155",
+    borderLight: "#475569",
+    divider: "#334155",
+    
+    // Icon colors
+    icon: "#cbd5e1",
+    iconSecondary: "#94a3b8",
+    iconInverse: "#1e293b",
+    
+    // Tab colors
+    tabIconDefault: "#94a3b8",
+    tabIconSelected: primary,
+    tabBackground: "#1e293b",
+    
+    // Special backgrounds
+    headerBackground: "#1e293b",
+    headerBorder: "#334155",
+    
+    // Status colors
+    online: "#10b981",
+    offline: "#ef4444",
+    pending: "#f59e0b",
   },
 };
 
