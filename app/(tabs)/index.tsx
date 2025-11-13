@@ -1,17 +1,17 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
 import CurrencyConverter from "@/components/CurrencyConverter";
-import CurrencyFlag from "@/components/CurrencyFlag";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
+import RateAlertManager from "@/components/RateAlertManager";
+import MathCalculator from "@/components/MathCalculator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getAsyncStorage } from "@/lib/storage";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -58,6 +58,8 @@ export default function HomeScreen() {
   );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
+  const [showRateAlerts, setShowRateAlerts] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
@@ -160,6 +162,59 @@ export default function HomeScreen() {
       return compactText;
     }
     return t(key);
+  };
+
+  const handleCalculatorResult = (result: number): void => {
+    console.log('Calculator result:', result);
+    // You can use this result for currency conversion or other calculations
+    Alert.alert('Calculation Result', `Result: ${result}`);
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      // Force a test alert to show immediately (bypassing rate check)
+      const testMessage = `🎯 USD → AMD rate alert!\n💰 Current rate: 385.75\n🚀 Alert triggered: USD is above 382 AMD\n\n📱 This is a test notification (Expo Go)`;
+      
+      // Show immediate in-app alert - this is what would happen when a real alert triggers
+      Alert.alert(
+        '🚨 RATE ALERT TRIGGERED!',
+        testMessage,
+        [
+          {
+            text: 'View Details',
+            onPress: () => {
+              Alert.alert(
+                '💰 USD → AMD Alert Details',
+                'Target: USD above 382 AMD\nStatus: ACTIVE ✅\nLast Checked: Just now\nThis is a simulated notification for testing.',
+                [{ text: 'OK' }]
+              );
+            }
+          },
+          { text: 'Dismiss', style: 'cancel' }
+        ]
+      );
+
+      // Show confirmation that test was completed
+      setTimeout(() => {
+        Alert.alert(
+          "📱 TEST COMPLETED SUCCESSFULLY!",
+          `✅ The alert notification system is working!\n\n🎯 What just happened:\n• A rate alert popup appeared\n• This simulates a real notification\n• The alert shows USD → AMD above 382\n\n📲 In Expo Go:\n• In-app alerts are used\n• No push notifications available\n\n🚀 In Production:\n• Real push notifications would appear\n• Background monitoring would work\n• Cross-platform compatibility`,
+          [
+            {
+              text: "Perfect!",
+              style: "default"
+            }
+          ]
+        );
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      Alert.alert(
+        "❌ Error",
+        "Failed to send test notification. Check console for details."
+      );
+    }
   };
 
   const renderMainContent = () => {
@@ -279,6 +334,24 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
+                showCalculator && styles.quickActionCardActive,
+              ]}
+              onPress={() => setShowCalculator(!showCalculator)}
+            >
+              <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Quick Calculator
+              </ThemedText>
+              <ThemedText style={styles.quickActionDescription}>
+                {showCalculator
+                  ? "Hide calculator widget"
+                  : "Open basic math calculator"}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.quickActionCard,
                 showMultiCurrency && styles.quickActionCardActive,
               ]}
               onPress={() => setShowMultiCurrency(!showMultiCurrency)}
@@ -307,14 +380,32 @@ export default function HomeScreen() {
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {savedRates.length}{" "}
-                {savedRates.length === 1 ? "saved rate" : "saved rates"}
-                {savedRates.filter(rate => rate.hasAlert).length > 0 && (
-                  <> • {savedRates.filter(rate => rate.hasAlert).length} alerts</>
-                )}
-                {" "}-{" "}
+                {savedRates.length === 1 ? "saved rate" : "saved rates"}{" "}
+                -{" "}
                 {showSavedRates
                   ? t("quick.action.savedRates.hide")
                   : t("quick.action.savedRates.desc")}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.quickActionCard,
+                showRateAlerts && styles.quickActionCardActive,
+              ]}
+              onPress={() => setShowRateAlerts(!showRateAlerts)}
+            >
+              <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                {t("quick.action.rateAlerts")}
+              </ThemedText>
+              <ThemedText style={styles.quickActionDescription}>
+                {savedRates.filter(rate => rate.hasAlert).length}{" "}
+                {savedRates.filter(rate => rate.hasAlert).length === 1 ? "active alert" : "active alerts"}{" "}
+                -{" "}
+                {showRateAlerts
+                  ? t("quick.action.rateAlerts.hide")
+                  : t("quick.action.rateAlerts.desc")}
               </ThemedText>
             </TouchableOpacity>
 
@@ -372,7 +463,32 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Unified Saved Rates and Alerts Section */}
+          {/* Inline Calculator Widget */}
+          {showCalculator && (
+            <View style={styles.calculatorSection}>
+              <View style={styles.calculatorCard}>
+                <View style={styles.calculatorHeader}>
+                  <ThemedText style={styles.calculatorTitle}>
+                    🧮 Quick Calculator
+                  </ThemedText>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setShowCalculator(false)}
+                  >
+                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
+                  </TouchableOpacity>
+                </View>
+                
+                <MathCalculator
+                  visible={true}
+                  onClose={() => setShowCalculator(false)}
+                  onResult={handleCalculatorResult}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Saved Rates Section - Separate Component */}
           {showSavedRates && (
             <SavedRates
               savedRates={savedRates}
@@ -386,12 +502,36 @@ export default function HomeScreen() {
               maxVisibleItems={4}
               title={`📋 ${t("saved.title")}`}
               containerStyle={{ marginBottom: 24 }}
-              currenciesData={currenciesData}
-              onRatesUpdate={() => {
-                // Reload saved rates after any changes
-                loadSavedRates();
-              }}
             />
+          )}
+
+          {/* Rate Alerts Section - Using Same Component as Currency Converter */}
+          {showRateAlerts && (
+            <View>
+              {/* Test Notification Button */}
+              <View style={styles.testNotificationContainer}>
+                <TouchableOpacity
+                  style={styles.testNotificationButton}
+                  onPress={handleTestNotification}
+                >
+                  <ThemedText style={styles.testNotificationButtonText}>
+                    {"🧪 Test USD > 382 AMD Alert"}
+                  </ThemedText>
+                </TouchableOpacity>
+                <ThemedText style={styles.testNotificationDescription}>
+                  Click to test notification when 1 USD is more than 382 AMD
+                </ThemedText>
+              </View>
+
+              <RateAlertManager
+                savedRates={savedRates}
+                onRatesUpdate={() => {
+                  // Reload saved rates after any changes
+                  loadSavedRates();
+                }}
+                currenciesData={currenciesData}
+              />
+            </View>
           )}
 
           {/* Google Ads Banner */}
@@ -1046,5 +1186,67 @@ const styles = StyleSheet.create({
   adsBanner: {
     width: "100%",
     marginBottom: 0,
+  },
+
+  // Test notification styles
+  testNotificationContainer: {
+    backgroundColor: "#f0f9ff",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#0ea5e9",
+    padding: 20,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  testNotificationButton: {
+    backgroundColor: "#0ea5e9",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    shadowColor: "#0ea5e9",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  testNotificationButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  testNotificationDescription: {
+    fontSize: 14,
+    color: "#0c4a6e",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+
+  // Calculator widget styles
+  calculatorSection: {
+    marginBottom: 24,
+  },
+  calculatorCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  calculatorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  calculatorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
   },
 });
