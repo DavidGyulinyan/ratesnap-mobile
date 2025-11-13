@@ -42,6 +42,7 @@ export default function MultiCurrencyConverter({
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [showTargetCurrencyPicker, setShowTargetCurrencyPicker] = useState(false);
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [closeButtonPressed, setCloseButtonPressed] = useState(false);
 
   const { t } = useLanguage();
 
@@ -432,8 +433,22 @@ export default function MultiCurrencyConverter({
         <View style={styles.header}>
           <ThemedText style={styles.title}>🔄 Multi-Currency Converter</ThemedText>
           {onClose && (
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <ThemedText style={styles.closeButtonText}>×</ThemedText>
+            <TouchableOpacity
+              style={[
+                styles.closeButton,
+                closeButtonPressed && styles.closeButtonActive
+              ]}
+              onPressIn={() => setCloseButtonPressed(true)}
+              onPressOut={() => setCloseButtonPressed(false)}
+              onPress={() => {
+                onClose();
+                setCloseButtonPressed(false);
+              }}
+            >
+              <ThemedText style={[
+                styles.closeButtonText,
+                closeButtonPressed && styles.closeButtonTextActive
+              ]}>×</ThemedText>
             </TouchableOpacity>
           )}
         </View>
@@ -564,27 +579,34 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
   },
   title: {
+    flex: 1,
     fontSize: 20,
     fontWeight: "700",
     color: "#1f2937",
+    paddingRight: 16,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: "#fee2e2",
-    borderRadius: 16,
+    backgroundColor: "#f3f4f6",
+    borderRadius: '50%',
     alignItems: "center",
     justifyContent: "center",
   },
+  closeButtonActive: {
+    backgroundColor: "#e5e7eb",
+  },
   closeButtonText: {
-    fontSize: 18,
-    color: "#dc2626",
-    fontWeight: "bold",
+    fontSize: 16,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  closeButtonTextActive: {
+    color: "#4b5563",
   },
   inputGroup: {
     marginBottom: 16,

@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Linking,
   FlatList,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from 'expo-constants';
@@ -21,9 +22,22 @@ import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import SavedRates from "./SavedRates";
 import AuthPromptModal from "./AuthPromptModal";
+import RateAlertManager from "./RateAlertManager";
+import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCloudSync, SavedRatesSync } from "@/lib/cloudSync";
+
+interface AlertSettings {
+  targetRate: number;
+  direction: 'above' | 'below' | 'equals';
+  isActive: boolean;
+  frequency: 'hourly' | 'daily';
+  lastChecked?: number;
+  triggered?: boolean;
+  triggeredAt?: number;
+  message?: string;
+}
 
 interface SavedRate {
   id: string;
@@ -31,6 +45,8 @@ interface SavedRate {
   toCurrency: string;
   rate: number;
   timestamp: number;
+  hasAlert?: boolean;
+  alertSettings?: AlertSettings;
 }
 
 interface CurrencyConverterProps {
@@ -488,6 +504,127 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     loadSavedRates();
   }, [user]);
 
+  // Initialize notification service when component mounts
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        // Check if notificationService exists
+        if (!notificationService) {
+          console.log('⚠️ Notification service not available');
+          return;
+        }
+
+        // Handle web platform gracefully - notifications not needed for mobile app web demo
+        if (Platform.OS === 'web') {
+          console.log('🌐 Web platform detected - notifications will work on iOS/Android');
+          return;
+        }
+        
+        // Check if methods exist before calling
+        if (typeof notificationService.requestPermissions === 'function') {
+          await notificationService.requestPermissions();
+        }
+        
+        if (typeof notificationService.getPushToken === 'function') {
+          await notificationService.getPushToken();
+        }
+        
+        if (typeof notificationService.setupNotificationListeners === 'function') {
+          await notificationService.setupNotificationListeners();
+        }
+        
+        console.log('📱 Notification service initialized');
+      } catch (error) {
+        console.error('❌ Failed to initialize notifications:', error);
+        // Don't throw error - let the app continue working
+        // Don't show error to user for web platform or for non-critical failures
+        try {
+          if (Platform.OS !== 'web' && error instanceof Error) {
+            // Only show alert for non-web platforms and real errors
+            Alert.alert('Notification Setup', 'Some notification features may not work properly. The app will continue to work normally.');
+          }
+        } catch (alertError) {
+          console.log('Failed to show alert:', alertError);
+        }
+      }
+    };
+
+    // Use setTimeout to delay initialization and prevent blocking
+    const timeoutId = setTimeout(async () => {
+      await initializeNotifications();
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Background rate monitoring for alerts
+  useEffect(() => {
+    const checkRateAlerts = async () => {
+      try {
+        const alertsWithActiveSettings = savedRates.filter(rate =>
+          rate.hasAlert && rate.alertSettings?.isActive && !rate.alertSettings.triggered
+        );
+
+        for (const rate of alertsWithActiveSettings) {
+          if (!currenciesData) continue;
+
+          const currentRate = currenciesData.conversion_rates[rate.toCurrency] /
+                            currenciesData.conversion_rates[rate.fromCurrency];
+          
+          const targetRate = rate.alertSettings!.targetRate;
+          const direction = rate.alertSettings!.direction;
+          
+          // Check if alert should trigger
+          let shouldTrigger = false;
+          switch (direction) {
+            case 'above':
+              shouldTrigger = currentRate > targetRate;
+              break;
+            case 'below':
+              shouldTrigger = currentRate < targetRate;
+              break;
+            case 'equals':
+              shouldTrigger = Math.abs(currentRate - targetRate) < 0.0001;
+              break;
+          }
+
+          if (shouldTrigger) {
+            // Mark as triggered and send notification
+            const updatedRates = savedRates.map(r =>
+              r.id === rate.id
+                ? { ...r, alertSettings: { ...r.alertSettings!, triggered: true, triggeredAt: Date.now() } }
+                : r
+            );
+            setSavedRates(updatedRates);
+            await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+            
+            // Send immediate notification
+            await notificationService.sendImmediateAlert({
+              id: rate.id,
+              fromCurrency: rate.fromCurrency,
+              toCurrency: rate.toCurrency,
+              targetRate,
+              direction,
+              isActive: true,
+              lastChecked: Date.now(),
+              triggered: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking rate alerts:', error);
+      }
+    };
+
+    // Check alerts every 5 minutes when the app is active
+    if (savedRates.some(rate => rate.hasAlert && rate.alertSettings?.isActive)) {
+      const interval = setInterval(checkRateAlerts, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [savedRates, currenciesData]);
+
   const handleSaveRate = async (): Promise<void> => {
     if (!fromCurrency || !toCurrency || !currenciesData) return;
 
@@ -857,6 +994,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             </ThemedText>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[styles.featureToggle, showRateAlerts && styles.featureToggleActive]}
+            onPress={() => setShowRateAlerts(!showRateAlerts)}
+          >
+            <ThemedText style={styles.featureToggleText}>
+              🔔 Rate Alerts ({savedRates.filter(rate => rate.hasAlert).length})
+            </ThemedText>
+          </TouchableOpacity>
+
           {/* Cloud Sync Toggle */}
           <TouchableOpacity
             style={[styles.featureToggle, isCloudSyncEnabled && styles.featureToggleActive]}
@@ -979,6 +1125,24 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           title={`⭐ ${t('saved.title')}`}
         />
 
+        {/* Rate Alert Manager Section */}
+        {showRateAlerts && (
+          <RateAlertManager
+            savedRates={savedRates}
+            onRatesUpdate={() => {
+              // Reload saved rates after alert changes
+              const loadSavedRates = async () => {
+                const stored = await AsyncStorage.getItem("savedRates");
+                if (stored) {
+                  setSavedRates(JSON.parse(stored));
+                }
+              };
+              loadSavedRates();
+            }}
+            currenciesData={currenciesData}
+          />
+        )}
+
         {/* Currency Pickers */}
         <CurrencyPicker
           visible={showFromPicker}
@@ -1020,30 +1184,9 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           feature="sync"
         />
       </ScrollView>
-      <Footer t={t} tWithParams={tWithParams} />
     </SafeAreaView>
   );
 }
-
-const Footer = ({ t, tWithParams }: { t: (key: string) => string; tWithParams: (key: string, params: { [key: string]: string | number }) => string }) => (
-  <View style={styles.footer}>
-    <ThemedText style={styles.footerText}>
-      {tWithParams('footer.copyright', {
-        appTitle: t('app.title'),
-        suiteName: t('footer.suiteName')
-      })}
-    </ThemedText>
-    <TouchableOpacity
-      onPress={() =>
-        Linking.openURL(
-          "https://docs.google.com/document/d/e/2PACX-1vSqgDzlbEnxw-KoCS6ecj_tGzjSlkxDc7bUBMwzor65LKNLTEqzxm4q2iVvStCkmzo4N6dnVlcRGRuo/pub"
-        )
-      }
-    >
-      <ThemedText style={styles.termsText}>{t('footer.terms')}</ThemedText>
-    </TouchableOpacity>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -1272,25 +1415,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     fontStyle: "italic",
-  },
-  footer: {
-    padding: 20,
-    paddingBottom: 40,
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
-  },
-  footerText: {
-    fontSize: 12,
-    color: "#1f2937",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  termsText: {
-    fontSize: 12,
-    color: "#7c3aed",
-    textAlign: "center",
-    textDecorationLine: "underline",
   },
 });

@@ -107,8 +107,8 @@ export default function SavedRates({
           {savedRates.length === 0 ? (
             <View style={styles.emptySavedRates}>
               <ThemedText style={styles.emptySavedRatesText}>
-                No saved rates yet. Convert currencies and click &quot;Save This
-                Rate&quot; to add some!
+                No saved rates yet. Convert currencies and click "Save This
+                Rate" to add some!
               </ThemedText>
             </View>
           ) : (
@@ -134,7 +134,7 @@ export default function SavedRates({
                   onPress={onDeleteAll}
                 >
                   <ThemedText style={styles.deleteAllText}>
-                    🗑️ {t('saved.deleteAll')} ({savedRates.length})
+                   {t('saved.deleteAll')} ({savedRates.length})
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   savedRateItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
@@ -211,10 +211,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   savedRatesTitle: {
-    color: "#1f2937",
+    color: "#1e2937",
   },
   showHideText: {
-    color: "#1f2937",
+    color: "#1e2937",
   },
   showHideTextActive: {
     color: "#7c3aed",

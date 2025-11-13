@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -90,116 +91,122 @@ function SignUpScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          <Logo size={48} showText={true} textSize={24} />
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join RateSnap to sync your data</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <StatusBar barStyle="dark-content" />
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.content}>
+            <Logo size={48} showText={true} textSize={24} />
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join RateSnap to sync your data</Text>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Username (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={username}
-                onChangeText={setUsername}
-                placeholder="Choose a username"
-                autoCapitalize="none"
-              />
-            </View>
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Username (Optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="Choose a username"
+                  autoCapitalize="none"
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Create a password"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Password</Text>
+                <TextInput
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Create a password"
+                  secureTextEntry
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirm your password"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm your password"
+                  secureTextEntry
+                />
+              </View>
 
-            <TouchableOpacity
-              style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
-              onPress={handleSignUp}
-              disabled={loading}
-            >
-              <Text style={styles.primaryButtonText}>
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.googleButton]}
-              onPress={handleGoogleSignIn}
-            >
-              <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </TouchableOpacity>
-
-            {Platform.OS === 'ios' && (
               <TouchableOpacity
-                style={[styles.button, styles.appleButton]}
-                onPress={handleAppleSignIn}
+                style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
+                onPress={handleSignUp}
+                disabled={loading}
               >
-                <Ionicons name="logo-apple" size={20} color="#000" />
-                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                <Text style={styles.primaryButtonText}>
+                  {loading ? 'Creating Account...' : 'Create Account'}
+                </Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Text style={styles.signInLink}>Sign In</Text>
-            </TouchableOpacity>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.socialButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.googleButton]}
+                onPress={handleGoogleSignIn}
+              >
+                <Ionicons name="logo-google" size={20} color="#4285F4" />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </TouchableOpacity>
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={[styles.button, styles.appleButton]}
+                  onPress={handleAppleSignIn}
+                >
+                  <Ionicons name="logo-apple" size={20} color="#000" />
+                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text style={styles.signInLink}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 export default SignUpScreen;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -210,7 +217,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 40, // Reduced top padding since SafeAreaView handles safe area
     paddingBottom: 40,
     alignItems: 'center',
   },
@@ -255,8 +262,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     marginBottom: 12,
+    flexWrap: 'wrap',
   },
   primaryButton: {
     backgroundColor: '#3b82f6',
@@ -265,6 +273,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    includeFontPadding: false,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -276,18 +287,26 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: '#374151',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    includeFontPadding: false,
+    flex: 1,
+    textAlign: 'center',
   },
   appleButton: {
     backgroundColor: '#000',
   },
   appleButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+    flexWrap: 'wrap',
+    includeFontPadding: false,
+    flex: 1,
+    textAlign: 'center',
   },
   divider: {
     flexDirection: 'row',
