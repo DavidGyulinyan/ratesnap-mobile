@@ -242,11 +242,15 @@ export default function RateAlertManager({
     if (!rate.alertSettings.isActive) return 'Inactive';
     if (rate.alertSettings.triggered) return 'Triggered!';
     
-    const lastChecked = rate.alertSettings.lastChecked 
-      ? new Date(rate.alertSettings.lastChecked).toLocaleString()
+    const lastChecked = rate.alertSettings.lastChecked
+      ? new Date(rate.alertSettings.lastChecked).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        })
       : 'Never';
     
-    return `Active - Last checked: ${lastChecked}`;
+    return `Active (${lastChecked})`;
   };
 
   const getAlertStatusColor = (rate: SavedRate): string => {
@@ -282,11 +286,11 @@ export default function RateAlertManager({
                   <CurrencyFlag currency={rate.fromCurrency} size={20} />
                   <ThemedText style={styles.arrow}>→</ThemedText>
                   <CurrencyFlag currency={rate.toCurrency} size={20} />
-                  <ThemedText style={styles.currencyText}>
+                  <ThemedText style={styles.currencyText} numberOfLines={1} ellipsizeMode="tail">
                     {rate.fromCurrency} → {rate.toCurrency}
                   </ThemedText>
                 </View>
-                <ThemedText style={styles.rateValue}>
+                <ThemedText style={styles.rateValue} numberOfLines={1} ellipsizeMode="tail">
                   {rate.rate.toFixed(6)}
                 </ThemedText>
               </View>
@@ -320,8 +324,8 @@ export default function RateAlertManager({
                       <Switch
                         value={rate.alertSettings.isActive}
                         onValueChange={(value) => toggleAlertActive(rate.id, value)}
-                        trackColor={{ false: '#d1d5db', true: '#10b981' }}
-                        thumbColor={rate.alertSettings.isActive ? '#ffffff' : '#ffffff'}
+                        trackColor={{ false: '#ec1c1cff', true: '#10b981' }}
+                        thumbColor='#ffffff'
                       />
                     </View>
                     
@@ -519,9 +523,11 @@ const styles = StyleSheet.create({
   currencyPair: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
   },
   arrow: {
-    marginHorizontal: 8,
+    marginHorizontal: 6,
     fontSize: 16,
     color: '#6b7280',
     fontWeight: 'bold',
@@ -530,12 +536,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
-    marginLeft: 8,
+    marginLeft: 6,
+    flex: 1,
   },
   rateValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#059669',
+    minWidth: 80,
+    textAlign: 'right',
   },
   alertSection: {
     borderTopWidth: 1,
@@ -548,22 +557,28 @@ const styles = StyleSheet.create({
   alertRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
   alertLabel: {
     fontSize: 14,
     color: '#6b7280',
     fontWeight: '500',
+    minWidth: 70,
   },
   alertValue: {
     fontSize: 14,
     color: '#1f2937',
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+    flexWrap: 'wrap',
   },
   alertControls: {
     flexDirection: 'row',
