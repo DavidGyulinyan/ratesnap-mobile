@@ -976,34 +976,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
         {/* Feature Toggle Buttons */}
         <View style={styles.featureToggles}>
-          <TouchableOpacity
-            style={[styles.featureToggle, showMultiCurrency && styles.featureToggleActive]}
-            onPress={() => setShowMultiCurrency(!showMultiCurrency)}
-          >
-            <ThemedText style={styles.featureToggleText}>
-              📊 {t('dashboard.multiCurrency')}
-            </ThemedText>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.featureToggle, showSavedRates && styles.featureToggleActive]}
-            onPress={() => setShowSavedRates(!showSavedRates)}
-          >
-            <ThemedText style={styles.featureToggleText}>
-              💾 {t('dashboard.savedRates')} ({savedRates.length})
-            </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.featureToggle, showRateAlerts && styles.featureToggleActive]}
-            onPress={() => setShowRateAlerts(!showRateAlerts)}
-          >
-            <ThemedText style={styles.featureToggleText}>
-              🔔 Rate Alerts ({savedRates.filter(rate => rate.hasAlert).length})
-            </ThemedText>
-          </TouchableOpacity>
-
-          {/* Cloud Sync Toggle */}
+            {/* Cloud Sync Toggle */}
           <TouchableOpacity
             style={[styles.featureToggle, isCloudSyncEnabled && styles.featureToggleActive]}
             onPress={handleEnableCloudSync}
@@ -1098,10 +1071,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               ⭐ {t('converter.saveRate')}
             </ThemedText>
           </TouchableOpacity>
-
-          <ThemedText style={styles.disclaimer}>
-            💡 {t('converter.professional')}
-          </ThemedText>
         </View>
 
         {/* Multi-Currency Converter - Using Shared Component */}
