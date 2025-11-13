@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Dimensions, useWindowDimensions, ScrollView } from "react-native";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
+import { useCalculatorHistory } from "@/hooks/useUserData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MathCalculatorProps {
   visible: boolean;
@@ -16,6 +18,9 @@ export default function MathCalculator({
   onResult,
   onAddToConverter,
 }: MathCalculatorProps) {
+  const { user } = useAuth();
+  const { saveCalculation, loading: historyLoading } = useCalculatorHistory();
+  
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
@@ -73,10 +78,15 @@ export default function MathCalculator({
     } else if (operation) {
       const currentValue = previousValue || 0;
       const newValue = calculate(currentValue, inputValue, operation);
+      const result = parseFloat(newValue.toFixed(roundingDecimalPlaces));
 
-      setDisplay(`${parseFloat(newValue.toFixed(roundingDecimalPlaces))}`);
+      setDisplay(`${result}`);
       setPreviousValue(newValue);
       setEquation(prev => prev + " " + operationSymbol);
+      
+      // Show result immediately in history
+      const intermediateResult = `${currentValue} ${operation === "/" ? "÷" : operation === "*" ? "×" : operation} ${inputValue} = ${result}`;
+      addToHistory(intermediateResult);
     }
 
     setWaitingForOperand(true);
@@ -106,7 +116,7 @@ export default function MathCalculator({
     }
   };
 
-  const performCalculation = () => {
+  const performCalculation = async () => {
     const inputValue = parseFloat(display);
 
     if (previousValue !== null && operation) {
@@ -121,8 +131,26 @@ export default function MathCalculator({
       setWaitingForOperand(true);
       setCalculationComplete(true);
 
-      // Add to history
+      // Add to local history
       addToHistory(fullEquation);
+
+      // Save to user history if authenticated
+      if (user) {
+        try {
+          const calculationType = operation === '%' ? 'percentage' :
+                                 ['+', '-', '*', '/'].includes(operation) ? 'basic' : 'advanced';
+          
+          await saveCalculation(fullEquation, result, calculationType, {
+            memory,
+            roundingDecimalPlaces,
+            operation,
+            previousValue,
+            inputValue
+          });
+        } catch (error) {
+          console.error('Error saving calculation to history:', error);
+        }
+      }
 
       // Pass result to parent if callback provided
       if (onResult) {
@@ -322,7 +350,7 @@ export default function MathCalculator({
         case "delete":
           return <Text style={styles.deleteButtonText}>{text}</Text>;
         case "equals":
-          return <Text style={styles.equalsButtonText}>Use</Text>;
+          return <Text style={styles.equalsButtonText}>{text}</Text>;
         case "memory":
         case "financial":
         case "utility":
@@ -346,8 +374,19 @@ export default function MathCalculator({
   };
 
   const getDisplayText = () => {
+    // Always show current display value (which includes intermediate results)
     if (calculationComplete) {
       return equation;
+    }
+    
+    // Show the current calculation with result preview
+    if (equation && operation && !waitingForOperand && previousValue !== null) {
+      const currentValue = parseFloat(display);
+      if (!isNaN(currentValue)) {
+        const previewResult = calculate(previousValue, currentValue, operation);
+        const result = parseFloat(previewResult.toFixed(roundingDecimalPlaces));
+        return `${equation} = ${result}`;
+      }
     }
     
     // Show equation in real-time when building calculation
@@ -555,8 +594,7 @@ export default function MathCalculator({
               ]}>
                 {renderButton("0", () => inputNumber("0"), "default", 2)}
                 {renderButton(".", inputDecimal)}
-                {renderButton("±", toggleSign, "utility")}
-                {renderButton("Use", performCalculation, "equals")}
+                {renderButton("=", performCalculation, "equals")}
               </View>
             </>
           ) : (
@@ -663,8 +701,7 @@ export default function MathCalculator({
               ]}>
                 {renderButton("0", () => inputNumber("0"), "default", 2)}
                 {renderButton(".", inputDecimal)}
-                {renderButton("±", toggleSign, "utility")}
-                {renderButton("Use", performCalculation, "equals")}
+                {renderButton("=", performCalculation, "equals")}
               </View>
             </>
           )}

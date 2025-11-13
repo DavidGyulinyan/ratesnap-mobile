@@ -41,6 +41,9 @@ const translations = {
     'quick.action.savedRates.hide': 'Hide saved rates',
     'quick.action.settings': 'Settings',
     'quick.action.settings.desc': 'Account and app preferences',
+    'quick.action.calculator': 'Quick Calculator',
+    'quick.action.calculator.desc': 'Open basic math calculator',
+    'quick.action.calculator.hide': 'Hide calculator widget',
     
     // Currency Converter
     'converter.title': 'Currency Converter',
@@ -177,6 +180,10 @@ const translations = {
     'feature.multiCurrency.desc': 'Convert to multiple currencies instantly with live rates',
     'feature.calculator.title': 'Calculator Integration',
     'feature.calculator.desc': 'Built-in calculator for amount calculations',
+    
+    // Calculator
+    'calculator.title': 'Quick Calculator',
+    'calculator.close': 'Close',
     'feature.offline.title': 'Offline Mode',
     'feature.offline.desc': 'Works without internet using cached rates',
     'feature.location.title': 'Auto-Detect Location',
@@ -259,6 +266,9 @@ const translations = {
     'quick.action.savedRates.hide': 'Թաքցնել պահպանված դրույքները',
     'quick.action.settings': 'Կարգավորումներ',
     'quick.action.settings.desc': 'Հաշվի և հավելվածի նախընտրություններ',
+    'quick.action.calculator': 'Արագ հաշվիչ',
+    'quick.action.calculator.desc': 'Բացել հիմնական մաթեմատիկական հաշվիչ',
+    'quick.action.calculator.hide': 'Թաքցնել հաշվիչի վիջեթը',
     
     'converter.title': 'Արժույթի փոխարկիչ',
     'converter.subtitle': 'Արժույթի փոխարկման ամբողջական հավաքածու բարդ գործառույթներով',
@@ -381,6 +391,10 @@ const translations = {
     'feature.multiCurrency.desc': 'Արագ փոխարկում բազմաթիվ արժույթներով իրական ժամանակի դրույքներով',
     'feature.calculator.title': 'Հաշվիչի ինտեգրում',
     'feature.calculator.desc': 'Ներկառուցված հաշվիչ գումարի հաշվարկների համար',
+    
+    // Calculator
+    'calculator.title': 'Արագ հաշվիչ',
+    'calculator.close': 'Փակել',
     'feature.offline.title': 'Անցանց ռեժիմ',
     'feature.offline.desc': 'Աշխատում է առանց ինտերնետի` օգտագործելով քեշավորված դրույքները',
     'feature.location.title': 'Ավտոմատ տեղն որոշում',
@@ -433,6 +447,9 @@ const translations = {
     'quick.action.savedRates.hide': 'Скрыть сохраненные курсы',
     'quick.action.settings': 'Настройки',
     'quick.action.settings.desc': 'Учетная запись и настройки приложения',
+    'quick.action.calculator': 'Быстрый калькулятор',
+    'quick.action.calculator.desc': 'Открыть базовый математический калькулятор',
+    'quick.action.calculator.hide': 'Скрыть виджет калькулятора',
     
     'converter.title': 'Конвертер валют',
     'converter.subtitle': 'Полный набор конвертации валют с расширенными функциями',
@@ -533,6 +550,10 @@ const translations = {
     'feature.multiCurrency.desc': 'Быстрая конвертация в несколько валют с курсами в реальном времени',
     'feature.calculator.title': 'Интеграция калькулятора',
     'feature.calculator.desc': 'Встроенный калькулятор для расчета сумм',
+    
+    // Calculator
+    'calculator.title': 'Быстрый калькулятор',
+    'calculator.close': 'Закрыть',
     'feature.offline.title': 'Автономный режим',
     'feature.offline.desc': 'Работает без интернета, используя кэшированные курсы',
     'feature.location.title': 'Автоопределение местоположения',
@@ -599,6 +620,9 @@ const translations = {
     'quick.action.savedRates.hide': 'Ocultar tasas guardadas',
     'quick.action.settings': 'Configuración',
     'quick.action.settings.desc': 'Cuenta y preferencias de la aplicación',
+    'quick.action.calculator': 'Calculadora Rápida',
+    'quick.action.calculator.desc': 'Abrir calculadora matemática básica',
+    'quick.action.calculator.hide': 'Ocultar widget de calculadora',
     
     'converter.title': 'Convertidor de Moneda',
     'converter.subtitle': 'Suite completa de conversión de moneda con funciones avanzadas',
@@ -699,6 +723,10 @@ const translations = {
     'feature.multiCurrency.desc': 'Convierte a múltiples monedas instantáneamente con tasas en vivo',
     'feature.calculator.title': 'Integración de Calculadora',
     'feature.calculator.desc': 'Calculadora integrada para cálculos de cantidad',
+    
+    // Calculator
+    'calculator.title': 'Calculadora Rápida',
+    'calculator.close': 'Cerrar',
     'feature.offline.title': 'Modo Sin Conexión',
     'feature.offline.desc': 'Funciona sin internet usando tasas en caché',
     'feature.location.title': 'Detección Automática de Ubicación',
@@ -765,6 +793,9 @@ const translations = {
     'quick.action.savedRates.hide': '隐藏已保存汇率',
     'quick.action.settings': '设置',
     'quick.action.settings.desc': '账户和应用偏好',
+    'quick.action.calculator': '快速计算器',
+    'quick.action.calculator.desc': '打开基本数学计算器',
+    'quick.action.calculator.hide': '隐藏计算器小部件',
     
     'converter.title': '货币转换器',
     'converter.subtitle': '带高级功能的完整货币转换套件',
@@ -865,6 +896,10 @@ const translations = {
     'feature.multiCurrency.desc': '使用实时汇率即时转换为多种货币',
     'feature.calculator.title': '计算器集成',
     'feature.calculator.desc': '内置计算器用于金额计算',
+    
+    // Calculator
+    'calculator.title': '快速计算器',
+    'calculator.close': '关闭',
     'feature.offline.title': '离线模式',
     'feature.offline.desc': '使用缓存汇率无需互联网即可工作',
     'feature.location.title': '自动检测位置',
@@ -931,6 +966,9 @@ const translations = {
     'quick.action.savedRates.hide': 'सेव्ड रेट्स छुपाएं',
     'quick.action.settings': 'सेटिंग्स',
     'quick.action.settings.desc': 'खाते और ऐप प्राथमिकताएं',
+    'quick.action.calculator': 'त्वरित कैलकुलेटर',
+    'quick.action.calculator.desc': 'बेसिक मैथ कैलकुलेटर खोलें',
+    'quick.action.calculator.hide': 'कैलकुलेटर विजेट छुपाएं',
     
     'converter.title': 'मुद्रा कन्वर्टर',
     'converter.subtitle': 'उन्नत सुविधाओं के साथ पूर्ण मुद्रा रूपांतरण सूट',
@@ -1031,6 +1069,10 @@ const translations = {
     'feature.multiCurrency.desc': 'लाइव दरों के साथ तुरंत कई मुद्राओं में रूपांतरण',
     'feature.calculator.title': 'कैलकुलेटर इंटीग्रेशन',
     'feature.calculator.desc': 'राशि गणनाओं के लिए बिल्ट-इन कैलकुलेटर',
+    
+    // Calculator
+    'calculator.title': 'त्वरित कैलकुलेटर',
+    'calculator.close': 'बंद करें',
     'feature.offline.title': 'ऑफ़लाइन मोड',
     'feature.offline.desc': 'कैश्ड दरों का उपयोग करके बिना इंटरनेट के काम करता है',
     'feature.location.title': 'ऑटो-लोकेशन डिटेक्शन',

@@ -340,12 +340,12 @@ export default function HomeScreen() {
             >
               <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
               <ThemedText style={styles.quickActionTitle}>
-                Quick Calculator
+                {t("quick.action.calculator")}
               </ThemedText>
               <ThemedText style={styles.quickActionDescription}>
                 {showCalculator
-                  ? "Hide calculator widget"
-                  : "Open basic math calculator"}
+                  ? t("quick.action.calculator.hide")
+                  : t("quick.action.calculator.desc")}
               </ThemedText>
             </TouchableOpacity>
 
@@ -469,7 +469,7 @@ export default function HomeScreen() {
               <View style={styles.calculatorCard}>
                 <View style={styles.calculatorHeader}>
                   <ThemedText style={styles.calculatorTitle}>
-                    🧮 Quick Calculator
+                    🧮 {t("calculator.title")}
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.closeButton}

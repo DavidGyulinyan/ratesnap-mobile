@@ -10,44 +10,34 @@ import {
   Switch,
   Platform,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import { useLanguage } from "@/contexts/LanguageContext";
-import notificationService, { RateAlert } from "@/lib/expoGoSafeNotificationService";
+import { useRateAlerts } from "@/hooks/useUserData";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface AlertSettings {
-  targetRate: number;
-  direction: 'above' | 'below' | 'equals';
-  isActive: boolean;
-  frequency: 'hourly' | 'daily';
-  lastChecked?: number;
-  triggered?: boolean;
-  triggeredAt?: number;
-  message?: string;
-}
-
-interface SavedRate {
+interface RateAlert {
   id: string;
-  fromCurrency: string;
-  toCurrency: string;
-  rate: number;
-  timestamp: number;
-  hasAlert?: boolean;
-  alertSettings?: AlertSettings;
+  user_id: string;
+  from_currency: string;
+  to_currency: string;
+  target_rate: number;
+  condition: 'above' | 'below';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RateAlertManagerProps {
-  savedRates: SavedRate[];
+  savedRates: any[];
   onRatesUpdate: () => void;
   currenciesData?: any;
 }
 
 interface AlertFormData {
   targetRate: string;
-  direction: 'above' | 'below' | 'equals';
+  direction: 'above' | 'below';
   isActive: boolean;
-  frequency: 'hourly' | 'daily';
 }
 
 export default function RateAlertManager({
@@ -56,43 +46,41 @@ export default function RateAlertManager({
   currenciesData,
 }: RateAlertManagerProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { rateAlerts, loading, createAlert, updateAlert, deleteAlert, error } = useRateAlerts();
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const [editingRateId, setEditingRateId] = useState<string | null>(null);
+  const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [formData, setFormData] = useState<AlertFormData>({
     targetRate: '',
     direction: 'above',
     isActive: true,
-    frequency: 'hourly',
   });
 
-  const handleCreateAlert = (rate: SavedRate) => {
-    setEditingRateId(rate.id);
-    
-    const currentRate = rate.rate;
+  const handleCreateAlert = () => {
+    setEditingAlertId(null);
     setFormData({
-      targetRate: currentRate.toString(),
+      targetRate: '1.0',
       direction: 'above',
       isActive: true,
-      frequency: 'hourly',
     });
     setShowAlertModal(true);
   };
 
-  const handleEditAlert = (rate: SavedRate) => {
-    if (!rate.alertSettings) return;
-    
-    setEditingRateId(rate.id);
+  const handleEditAlert = (alert: RateAlert) => {
+    setEditingAlertId(alert.id);
     setFormData({
-      targetRate: rate.alertSettings.targetRate.toString(),
-      direction: rate.alertSettings.direction,
-      isActive: rate.alertSettings.isActive,
-      frequency: rate.alertSettings.frequency,
+      targetRate: alert.target_rate.toString(),
+      direction: alert.condition,
+      isActive: alert.is_active,
     });
     setShowAlertModal(true);
   };
 
   const handleSaveAlert = async () => {
-    if (!editingRateId) return;
+    if (!user) {
+      Alert.alert('Sign In Required', 'Please sign in to create rate alerts');
+      return;
+    }
 
     const targetRate = parseFloat(formData.targetRate);
     if (isNaN(targetRate) || targetRate <= 0) {
@@ -101,50 +89,70 @@ export default function RateAlertManager({
     }
 
     try {
-      const updatedRates = savedRates.map(rate => {
-        if (rate.id === editingRateId) {
-          const alertSettings: AlertSettings = {
-            targetRate,
-            direction: formData.direction,
-            isActive: formData.isActive,
-            frequency: formData.frequency,
-            lastChecked: Date.now(),
-            triggered: false,
-          };
+      if (editingAlertId) {
+        // Update existing alert
+        const success = await updateAlert(editingAlertId, {
+          target_rate: targetRate,
+          condition: formData.direction,
+          is_active: formData.isActive,
+        });
 
-          // Create notification alert
-          const rateAlert: RateAlert = {
-            id: rate.id,
-            fromCurrency: rate.fromCurrency,
-            toCurrency: rate.toCurrency,
-            targetRate,
-            direction: formData.direction,
-            isActive: formData.isActive,
-            lastChecked: Date.now(),
-            triggered: false,
-          };
-
-          if (formData.isActive) {
-            notificationService.scheduleRateAlert(rateAlert);
-          } else {
-            notificationService.cancelRateAlert(rate.id);
-          }
-
-          return {
-            ...rate,
-            hasAlert: true,
-            alertSettings,
-          };
+        if (!success) {
+          Alert.alert('Error', 'Failed to update rate alert');
+          return;
         }
-        return rate;
-      });
+      } else {
+        // Create new alert - need to select currencies first
+        Alert.alert(
+          'Select Currencies',
+          'Please select the currency pair for this alert:',
+          [
+            {
+              text: 'EUR/USD',
+              onPress: async () => {
+                const success = await createAlert('EUR', 'USD', targetRate, formData.direction);
+                if (!success) {
+                  Alert.alert('Error', 'Failed to create rate alert');
+                  return;
+                }
+                onRatesUpdate();
+              }
+            },
+            {
+              text: 'GBP/USD',
+              onPress: async () => {
+                const success = await createAlert('GBP', 'USD', targetRate, formData.direction);
+                if (!success) {
+                  Alert.alert('Error', 'Failed to create rate alert');
+                  return;
+                }
+                onRatesUpdate();
+              }
+            },
+            {
+              text: 'USD/JPY',
+              onPress: async () => {
+                const success = await createAlert('USD', 'JPY', targetRate, formData.direction);
+                if (!success) {
+                  Alert.alert('Error', 'Failed to create rate alert');
+                  return;
+                }
+                onRatesUpdate();
+              }
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            }
+          ]
+        );
+        setShowAlertModal(false);
+        return;
+      }
 
-      // Save to storage
-      await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
-      await onRatesUpdate();
-      
       setShowAlertModal(false);
-      setEditingRateId(null);
+      setEditingAlertId(null);
+      onRatesUpdate();
       
       Alert.alert('Success', 'Rate alert has been saved successfully!');
     } catch (error) {
@@ -153,7 +161,7 @@ export default function RateAlertManager({
     }
   };
 
-  const handleDeleteAlert = async (rateId: string) => {
+  const handleDeleteAlert = async (alertId: string) => {
     Alert.alert(
       'Delete Alert',
       'Are you sure you want to delete this rate alert?',
@@ -163,199 +171,173 @@ export default function RateAlertManager({
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await notificationService.cancelRateAlert(rateId);
-              
-              const updatedRates = savedRates.map(rate => {
-                if (rate.id === rateId) {
-                  return {
-                    ...rate,
-                    hasAlert: false,
-                    alertSettings: undefined,
-                  };
-                }
-                return rate;
-              });
-
-              await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
-              await onRatesUpdate();
-              
-              Alert.alert('Success', 'Rate alert has been deleted');
-            } catch (error) {
-              console.error('Error deleting alert:', error);
+            const success = await deleteAlert(alertId);
+            if (!success) {
               Alert.alert('Error', 'Failed to delete rate alert');
             }
-          },
-        },
+            onRatesUpdate();
+          }
+        }
       ]
     );
   };
 
-  const toggleAlertActive = async (rateId: string, isActive: boolean) => {
-    try {
-      const rate = savedRates.find(r => r.id === rateId);
-      if (!rate || !rate.alertSettings) return;
-
-      const updatedRates = savedRates.map(r => {
-        if (r.id === rateId) {
-          return {
-            ...r,
-            alertSettings: {
-              ...r.alertSettings!,
-              isActive,
-              lastChecked: Date.now(),
-            },
-          };
-        }
-        return r;
-      });
-
-      // Update notification service
-      const rateAlert: RateAlert = {
-        id: rateId,
-        fromCurrency: rate.fromCurrency,
-        toCurrency: rate.toCurrency,
-        targetRate: rate.alertSettings.targetRate,
-        direction: rate.alertSettings.direction,
-        isActive,
-        lastChecked: Date.now(),
-        triggered: false,
-      };
-
-      if (isActive) {
-        await notificationService.scheduleRateAlert(rateAlert);
-      } else {
-        await notificationService.cancelRateAlert(rateId);
-      }
-
-      await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
-      await onRatesUpdate();
-      
-    } catch (error) {
-      console.error('Error toggling alert:', error);
+  const toggleAlertActive = async (alertId: string, isActive: boolean) => {
+    const success = await updateAlert(alertId, { is_active: isActive });
+    if (!success) {
+      Alert.alert('Error', 'Failed to update alert status');
     }
+    onRatesUpdate();
   };
 
-  const getAlertStatusText = (rate: SavedRate): string => {
-    if (!rate.hasAlert || !rate.alertSettings) return 'No Alert';
-    
-    if (!rate.alertSettings.isActive) return 'Inactive';
-    if (rate.alertSettings.triggered) return 'Triggered!';
-    
-    const lastChecked = rate.alertSettings.lastChecked
-      ? new Date(rate.alertSettings.lastChecked).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-      : 'Never';
-    
-    return `Active (${lastChecked})`;
+  const getAlertStatusText = (alert: RateAlert): string => {
+    if (!alert.is_active) return 'Inactive';
+    return 'Active';
   };
 
-  const getAlertStatusColor = (rate: SavedRate): string => {
-    if (!rate.hasAlert || !rate.alertSettings) return '#6b7280';
-    if (!rate.alertSettings.isActive) return '#9ca3af';
-    if (rate.alertSettings.triggered) return '#dc2626';
+  const getAlertStatusColor = (alert: RateAlert): string => {
+    if (!alert.is_active) return '#9ca3af';
     return '#10b981';
   };
+
+  // Show sign-in prompt if user is not authenticated
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            Rate Alerts
+          </ThemedText>
+        </View>
+
+        <View style={styles.emptyState}>
+          <ThemedText style={styles.emptyStateText}>
+            Sign in to create and manage currency rate alerts!
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            Rate Alerts
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Loading...
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            Rate Alerts
+          </ThemedText>
+        </View>
+        <View style={styles.emptyState}>
+          <ThemedText style={styles.emptyStateText}>
+            Error: {error}
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="subtitle" style={styles.title}>
-           Rate Alerts
+          Rate Alerts
         </ThemedText>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateAlert}
+          >
+            <ThemedText style={styles.createButtonText}>+ Create Alert</ThemedText>
+          </TouchableOpacity>
+        </View>
         <ThemedText style={styles.subtitle}>
-          {savedRates.filter(rate => rate.hasAlert).length} active alerts
+          {rateAlerts.filter(alert => alert.is_active).length} active alerts
         </ThemedText>
       </View>
 
-      <ScrollView style={styles.ratesList}>
-        {savedRates.length === 0 ? (
+      <ScrollView style={styles.alertsList}>
+        {rateAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
-              No saved rates available. Save some rates first to set up alerts!
+              No rate alerts yet. Create your first alert to get notified when rates reach your target!
             </ThemedText>
           </View>
         ) : (
-          savedRates.map((rate) => (
-            <View key={rate.id} style={styles.rateCard}>
-              <View style={styles.rateHeader}>
+          rateAlerts.map((alert) => (
+            <View key={alert.id} style={styles.alertCard}>
+              <View style={styles.alertHeader}>
                 <View style={styles.currencyPair}>
-                  <CurrencyFlag currency={rate.fromCurrency} size={20} />
+                  <CurrencyFlag currency={alert.from_currency} size={20} />
                   <ThemedText style={styles.arrow}>→</ThemedText>
-                  <CurrencyFlag currency={rate.toCurrency} size={20} />
-                  <ThemedText style={styles.currencyText} numberOfLines={1} ellipsizeMode="tail">
-                    {rate.fromCurrency} → {rate.toCurrency}
+                  <CurrencyFlag currency={alert.to_currency} size={20} />
+                  <ThemedText style={styles.currencyText}>
+                    {alert.from_currency} → {alert.to_currency}
                   </ThemedText>
                 </View>
-                <ThemedText style={styles.rateValue} numberOfLines={1} ellipsizeMode="tail">
-                  {rate.rate.toFixed(6)}
-                </ThemedText>
+                <View style={styles.alertControls}>
+                  <ThemedText style={styles.switchLabel}>Active</ThemedText>
+                  <Switch
+                    value={alert.is_active}
+                    onValueChange={(value) => toggleAlertActive(alert.id, value)}
+                    trackColor={{ false: '#ec1c1cff', true: '#10b981' }}
+                    thumbColor='#ffffff'
+                  />
+                </View>
               </View>
 
-              {rate.hasAlert && rate.alertSettings ? (
-                <View style={styles.alertSection}>
-                  <View style={styles.alertInfo}>
-                    <View style={styles.alertRow}>
-                      <ThemedText style={styles.alertLabel}>Target:</ThemedText>
-                      <ThemedText style={styles.alertValue}>
-                        {rate.alertSettings.direction} {rate.alertSettings.targetRate.toFixed(6)}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.alertRow}>
-                      <ThemedText style={styles.alertLabel}>Status:</ThemedText>
-                      <ThemedText style={[styles.statusText, { color: getAlertStatusColor(rate) }]}>
-                        {getAlertStatusText(rate)}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.alertRow}>
-                      <ThemedText style={styles.alertLabel}>Frequency:</ThemedText>
-                      <ThemedText style={styles.alertValue}>
-                        {rate.alertSettings.frequency}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  <View style={styles.alertControls}>
-                    <View style={styles.switchContainer}>
-                      <ThemedText style={styles.switchLabel}>Active</ThemedText>
-                      <Switch
-                        value={rate.alertSettings.isActive}
-                        onValueChange={(value) => toggleAlertActive(rate.id, value)}
-                        trackColor={{ false: '#ec1c1cff', true: '#10b981' }}
-                        thumbColor='#ffffff'
-                      />
-                    </View>
-                    
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => handleEditAlert(rate)}
-                      >
-                        <ThemedText style={styles.editButtonText}>Edit</ThemedText>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDeleteAlert(rate.id)}
-                      >
-                        <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.createAlertButton}
-                  onPress={() => handleCreateAlert(rate)}
-                >
-                  <ThemedText style={styles.createAlertButtonText}>
-                    Create Alert
+              <View style={styles.alertInfo}>
+                <View style={styles.alertRow}>
+                  <ThemedText style={styles.alertLabel}>Target:</ThemedText>
+                  <ThemedText style={styles.alertValue}>
+                    {alert.condition} {alert.target_rate.toFixed(6)}
                   </ThemedText>
+                </View>
+                <View style={styles.alertRow}>
+                  <ThemedText style={styles.alertLabel}>Status:</ThemedText>
+                  <ThemedText style={[styles.statusText, { color: getAlertStatusColor(alert) }]}>
+                    {getAlertStatusText(alert)}
+                  </ThemedText>
+                </View>
+                <View style={styles.alertRow}>
+                  <ThemedText style={styles.alertLabel}>Created:</ThemedText>
+                  <ThemedText style={styles.alertValue}>
+                    {new Date(alert.created_at).toLocaleDateString()}
+                  </ThemedText>
+                </View>
+              </View>
+
+              <View style={styles.alertActions}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditAlert(alert)}
+                >
+                  <ThemedText style={styles.editButtonText}>Edit</ThemedText>
                 </TouchableOpacity>
-              )}
+                
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteAlert(alert.id)}
+                >
+                  <ThemedText style={styles.deleteButtonText}>Delete</ThemedText>
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -377,7 +359,7 @@ export default function RateAlertManager({
               <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
             </TouchableOpacity>
             <ThemedText type="subtitle" style={styles.modalTitle}>
-              {editingRateId ? 'Edit Alert' : 'Create Alert'}
+              {editingAlertId ? 'Edit Alert' : 'Create Alert'}
             </ThemedText>
             <TouchableOpacity onPress={handleSaveAlert} style={styles.saveButton}>
               <ThemedText style={styles.saveButtonText}>Save</ThemedText>
@@ -399,7 +381,7 @@ export default function RateAlertManager({
             <View style={styles.formGroup}>
               <ThemedText style={styles.label}>Direction</ThemedText>
               <View style={styles.directionButtons}>
-                {(['above', 'below', 'equals'] as const).map((direction) => (
+                {(['above', 'below'] as const).map((direction) => (
                   <TouchableOpacity
                     key={direction}
                     style={[
@@ -415,31 +397,6 @@ export default function RateAlertManager({
                       ]}
                     >
                       {direction}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.formGroup}>
-              <ThemedText style={styles.label}>Frequency</ThemedText>
-              <View style={styles.frequencyButtons}>
-                {(['hourly', 'daily'] as const).map((frequency) => (
-                  <TouchableOpacity
-                    key={frequency}
-                    style={[
-                      styles.frequencyButton,
-                      formData.frequency === frequency && styles.frequencyButtonActive,
-                    ]}
-                    onPress={() => setFormData({ ...formData, frequency })}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.frequencyButtonText,
-                        formData.frequency === frequency && styles.frequencyButtonTextActive,
-                      ]}
-                    >
-                      {frequency}
                     </ThemedText>
                   </TouchableOpacity>
                 ))}
@@ -475,6 +432,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
+  headerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  createButton: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  createButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -484,8 +457,9 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#6b7280',
+    marginTop: 8,
   },
-  ratesList: {
+  alertsList: {
     flex: 1,
     padding: 16,
   },
@@ -501,7 +475,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
-  rateCard: {
+  alertCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
@@ -514,11 +488,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  rateHeader: {
+  alertHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   currencyPair: {
     flexDirection: 'row',
@@ -539,17 +513,15 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     flex: 1,
   },
-  rateValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#059669',
-    minWidth: 80,
-    textAlign: 'right',
+  alertControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  alertSection: {
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-    paddingTop: 16,
+  switchLabel: {
+    fontSize: 14,
+    color: '#374151',
+    marginRight: 8,
+    fontWeight: '500',
   },
   alertInfo: {
     marginBottom: 16,
@@ -580,23 +552,9 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     flexWrap: 'wrap',
   },
-  alertControls: {
+  alertActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  switchLabel: {
-    fontSize: 14,
-    color: '#374151',
-    marginRight: 12,
-    fontWeight: '500',
-  },
-  actionButtons: {
-    flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 8,
   },
   editButton: {
@@ -619,17 +577,6 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     color: 'white',
     fontSize: 12,
-    fontWeight: '600',
-  },
-  createAlertButton: {
-    backgroundColor: '#10b981',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  createAlertButtonText: {
-    color: 'white',
-    fontSize: 16,
     fontWeight: '600',
   },
   modalContainer: {
@@ -711,29 +658,9 @@ const styles = StyleSheet.create({
   directionButtonTextActive: {
     color: 'white',
   },
-  frequencyButtons: {
+  switchContainer: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  frequencyButton: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  frequencyButtonActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#2563eb',
-  },
-  frequencyButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  frequencyButtonTextActive: {
-    color: 'white',
+    justifyContent: 'space-between',
   },
 });
