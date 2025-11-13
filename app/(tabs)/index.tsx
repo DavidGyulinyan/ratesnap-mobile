@@ -6,6 +6,7 @@ import LanguageDropdown from "@/components/LanguageDropdown";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
+import MathCalculator from "@/components/MathCalculator";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,6 +59,7 @@ export default function HomeScreen() {
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
@@ -160,6 +162,12 @@ export default function HomeScreen() {
       return compactText;
     }
     return t(key);
+  };
+
+  const handleCalculatorResult = (result: number): void => {
+    console.log('Calculator result:', result);
+    // You can use this result for currency conversion or other calculations
+    Alert.alert('Calculation Result', `Result: ${result}`);
   };
 
   const handleTestNotification = async () => {
@@ -326,6 +334,24 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.quickActionCard,
+                showCalculator && styles.quickActionCardActive,
+              ]}
+              onPress={() => setShowCalculator(!showCalculator)}
+            >
+              <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
+              <ThemedText style={styles.quickActionTitle}>
+                Quick Calculator
+              </ThemedText>
+              <ThemedText style={styles.quickActionDescription}>
+                {showCalculator
+                  ? "Hide calculator widget"
+                  : "Open basic math calculator"}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.quickActionCard,
                 showMultiCurrency && styles.quickActionCardActive,
               ]}
               onPress={() => setShowMultiCurrency(!showMultiCurrency)}
@@ -433,6 +459,31 @@ export default function HomeScreen() {
                     style={{ marginBottom: 24 }}
                   />
                 )}
+              </View>
+            </View>
+          )}
+
+          {/* Inline Calculator Widget */}
+          {showCalculator && (
+            <View style={styles.calculatorSection}>
+              <View style={styles.calculatorCard}>
+                <View style={styles.calculatorHeader}>
+                  <ThemedText style={styles.calculatorTitle}>
+                    🧮 Quick Calculator
+                  </ThemedText>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setShowCalculator(false)}
+                  >
+                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
+                  </TouchableOpacity>
+                </View>
+                
+                <MathCalculator
+                  visible={true}
+                  onClose={() => setShowCalculator(false)}
+                  onResult={handleCalculatorResult}
+                />
               </View>
             </View>
           )}
@@ -1169,5 +1220,33 @@ const styles = StyleSheet.create({
     color: "#0c4a6e",
     textAlign: "center",
     fontStyle: "italic",
+  },
+
+  // Calculator widget styles
+  calculatorSection: {
+    marginBottom: 24,
+  },
+  calculatorCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.6)",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  calculatorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  calculatorTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
   },
 });
