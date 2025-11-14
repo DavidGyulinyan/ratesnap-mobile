@@ -1,24 +1,27 @@
-import React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSavedRates } from "@/hooks/useUserData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SavedRate {
   id: string;
-  fromCurrency: string;
-  toCurrency: string;
+  from_currency: string;
+  to_currency: string;
   rate: number;
-  timestamp?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface SavedRatesProps {
-  savedRates: SavedRate[];
+  savedRates?: SavedRate[]; // Optional - will use hook data if not provided
   showSavedRates: boolean;
   onToggleVisibility: () => void;
   onSelectRate?: (from: string, to: string) => void;
-  onDeleteRate: (id: string | number) => void;
-  onDeleteAll?: () => void;
+  onDeleteRate?: (id: string | number) => void; // Optional - will use hook if not provided
+  onDeleteAll?: () => void; // Optional - will use hook if not provided
   showMoreEnabled?: boolean;
   onShowMore?: () => void;
   maxVisibleItems?: number;
@@ -27,7 +30,7 @@ interface SavedRatesProps {
 }
 
 export default function SavedRates({
-  savedRates,
+  savedRates: propSavedRates,
   showSavedRates,
   onToggleVisibility,
   onSelectRate,
@@ -40,39 +43,114 @@ export default function SavedRates({
   title,
 }: SavedRatesProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { savedRates: hookSavedRates, deleteRate, deleteAllRates, loading } = useSavedRates();
+  
+  // Use hook data if no prop provided and user is authenticated
+  const savedRates = propSavedRates || (user ? hookSavedRates : []);
   
   const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
   
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteRate = async (id: string) => {
+    if (onDeleteRate) {
+      onDeleteRate(id);
+    } else if (user) {
+      Alert.alert(
+        'Delete Rate',
+        'Are you sure you want to delete this saved rate?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setDeletingId(id);
+                const success = await deleteRate(id);
+                if (success) {
+                  Alert.alert('Success', 'Rate deleted successfully');
+                } else {
+                  Alert.alert(
+                    'Delete Failed',
+                    'Unable to delete the rate. Please try again or check your internet connection.'
+                  );
+                }
+              } catch (error) {
+                Alert.alert(
+                  'Error',
+                  'An unexpected error occurred while deleting the rate.'
+                );
+                console.error('Delete rate error:', error);
+              } finally {
+                setDeletingId(null);
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleDeleteAllRates = async () => {
+    if (onDeleteAll) {
+      onDeleteAll();
+    } else if (user) {
+      Alert.alert(
+        'Delete All Rates',
+        'Are you sure you want to delete all saved rates? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete All',
+            style: 'destructive',
+            onPress: async () => {
+              const success = await deleteAllRates();
+              if (!success) {
+                Alert.alert('Error', 'Failed to delete all saved rates');
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+  
   const renderSavedRateItem = (rate: SavedRate, index: number) => (
     <TouchableOpacity
-      key={typeof rate.id === "string" ? rate.id : index}
+      key={rate.id || index}
       style={styles.savedRateItem}
-      onPress={() => onSelectRate?.(rate.fromCurrency, rate.toCurrency)}
+      onPress={() => onSelectRate?.(rate.from_currency, rate.to_currency)}
     >
       <View style={styles.savedRateContent}>
         <View style={styles.savedRateHeader}>
-          <CurrencyFlag currency={rate.fromCurrency} size={16} />
+          <CurrencyFlag currency={rate.from_currency} size={16} />
           <ThemedText style={styles.arrow}>→</ThemedText>
-          <CurrencyFlag currency={rate.toCurrency} size={16} />
+          <CurrencyFlag currency={rate.to_currency} size={16} />
           <ThemedText style={styles.savedRateTitle}>
-            {rate.fromCurrency} → {rate.toCurrency}
+            {rate.from_currency} → {rate.to_currency}
           </ThemedText>
         </View>
         <ThemedText style={styles.rateValue}>
           {t('converter.rate')}: {rate.rate.toFixed(6)}
         </ThemedText>
-        {rate.timestamp && (
-          <ThemedText style={styles.savedRateDate}>
-            {t('saved.savedOn')}: {new Date(rate.timestamp).toLocaleDateString()} {t('saved.at')}{" "}
-            {new Date(rate.timestamp).toLocaleTimeString()}
-          </ThemedText>
-        )}
+        <ThemedText style={styles.savedRateDate}>
+          {t('saved.savedOn')}: {new Date(rate.created_at).toLocaleDateString()} {t('saved.at')}{" "}
+          {new Date(rate.created_at).toLocaleTimeString()}
+        </ThemedText>
       </View>
       <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => onDeleteRate(rate.id || index)}
+        style={[styles.deleteButton, deletingId === rate.id && styles.deleteButtonDisabled]}
+        onPress={() => handleDeleteRate(rate.id)}
+        disabled={deletingId === rate.id}
       >
-        <ThemedText style={styles.deleteButtonText}>🗑️</ThemedText>
+        <ThemedText style={[
+          styles.deleteButtonText,
+          deletingId === rate.id && styles.deleteButtonTextDisabled
+        ]}>
+          {deletingId === rate.id ? '⏳' : '🗑️'}
+        </ThemedText>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -81,6 +159,26 @@ export default function SavedRates({
     showMoreEnabled && savedRates.length > maxVisibleItems
       ? savedRates.slice(0, maxVisibleItems)
       : savedRates;
+
+  // Show loading state
+  if (loading && !user) {
+    return (
+      <View style={[styles.savedRatesSection, containerStyle]}>
+        <View style={styles.savedRatesHeader}>
+          <ThemedText type="subtitle" style={styles.savedRatesTitle}>
+            {displayTitle} (0)
+          </ThemedText>
+        </View>
+        <View style={styles.savedRatesList}>
+          <View style={styles.emptySavedRates}>
+            <ThemedText style={styles.emptySavedRatesText}>
+              Loading saved rates...
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.savedRatesSection, containerStyle]}>
@@ -104,11 +202,16 @@ export default function SavedRates({
 
       {showSavedRates && (
         <View style={[styles.savedRatesList, styles.fadeIn]}>
-          {savedRates.length === 0 ? (
+          {!user ? (
             <View style={styles.emptySavedRates}>
               <ThemedText style={styles.emptySavedRatesText}>
-                No saved rates yet. Convert currencies and click "Save This
-                Rate" to add some!
+                Sign in to save and sync your currency rates across devices!
+              </ThemedText>
+            </View>
+          ) : savedRates.length === 0 ? (
+            <View style={styles.emptySavedRates}>
+              <ThemedText style={styles.emptySavedRatesText}>
+                No saved rates yet. Convert currencies and click "Save This Rate" to add some!
               </ThemedText>
             </View>
           ) : (
@@ -128,10 +231,10 @@ export default function SavedRates({
                 </TouchableOpacity>
               )}
 
-              {savedRates.length > 1 && onDeleteAll && (
+              {savedRates.length > 1 && (
                 <TouchableOpacity
                   style={styles.deleteAllButton}
-                  onPress={onDeleteAll}
+                  onPress={handleDeleteAllRates}
                 >
                   <ThemedText style={styles.deleteAllText}>
                    {t('saved.deleteAll')} ({savedRates.length})
@@ -228,8 +331,14 @@ const styles = StyleSheet.create({
     padding: 8,
     marginLeft: 8,
   },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
   deleteButtonText: {
     fontSize: 16,
+  },
+  deleteButtonTextDisabled: {
+    opacity: 0.5,
   },
   fadeIn: {
     opacity: 1,

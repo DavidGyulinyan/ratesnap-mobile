@@ -13,6 +13,8 @@ import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useConverterHistory } from "@/hooks/useUserData";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MultiCurrencyConverterProps {
   currenciesData: any;
@@ -45,6 +47,8 @@ export default function MultiCurrencyConverter({
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
 
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { saveConversion, loading: historyLoading } = useConverterHistory();
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";
@@ -106,9 +110,33 @@ export default function MultiCurrencyConverter({
     setConversions(conversionResults);
   }, [currenciesData, amount, fromCurrency, conversionTargets]);
 
+  // Save conversion to history when calculations change
+  const saveConversionToHistory = useCallback(async () => {
+    if (user && amount && fromCurrency && conversionTargets.length > 0 && Object.keys(conversions).length > 0) {
+      try {
+        const targetCurrencies = conversionTargets.map(target => ({
+          currency: target.currency,
+          amount: conversions[target.currency] || 0,
+          rate: currenciesData?.conversion_rates?.[target.currency] || 0
+        }));
+
+        await saveConversion(fromCurrency, parseFloat(amount), targetCurrencies, conversions);
+      } catch (error) {
+        console.error('Error saving conversion to history:', error);
+      }
+    }
+  }, [user, amount, fromCurrency, conversionTargets, conversions, currenciesData, saveConversion]);
+
   useEffect(() => {
     calculateConversions();
   }, [calculateConversions]);
+
+  // Save to history whenever conversions are calculated
+  useEffect(() => {
+    if (Object.keys(conversions).length > 0) {
+      saveConversionToHistory();
+    }
+  }, [conversions, saveConversionToHistory]);
 
   // Load saved state from storage
   const loadSavedState = useCallback(async () => {
