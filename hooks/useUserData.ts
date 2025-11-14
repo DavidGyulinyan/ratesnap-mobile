@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UserDataService } from '@/lib/userDataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAsyncStorage } from '@/lib/storage';
 
 export interface UseSavedRatesReturn {
   savedRates: any[];
@@ -58,34 +59,105 @@ export function useSavedRates(): UseSavedRatesReturn {
   const [error, setError] = useState<string | null>(null);
 
   const refreshRates = useCallback(async () => {
-    if (!user) {
-      setSavedRates([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      const rates = await UserDataService.getSavedRates();
-      setSavedRates(rates);
+
+      // Always load from local storage first - check both possible keys
+      const storage = getAsyncStorage();
+      let localRatesData = await storage.getItem('savedRates');
+      if (!localRatesData) {
+        localRatesData = await storage.getItem('saved_rates'); // Check alternative key
+      }
+
+      let localRates: any[] = [];
+      if (localRatesData) {
+        try {
+          const parsed = JSON.parse(localRatesData);
+          // Convert local storage format to database format for consistency
+          localRates = parsed.map((rate: any, index: number) => ({
+            id: rate.id || `local-${index}`,
+            from_currency: rate.fromCurrency || rate.from_currency,
+            to_currency: rate.toCurrency || rate.to_currency,
+            rate: rate.rate,
+            created_at: rate.timestamp ? new Date(rate.timestamp).toISOString() : new Date().toISOString(),
+            updated_at: rate.timestamp ? new Date(rate.timestamp).toISOString() : new Date().toISOString()
+          }));
+        } catch (parseError) {
+          console.error('Error parsing local rates data:', parseError);
+          localRates = [];
+        }
+      }
+
+      if (user) {
+        // Authenticated user - try to load from database and merge with local
+        try {
+          const dbRates = await UserDataService.getSavedRates();
+          // Merge: prefer database rates, but include local rates that aren't in database
+          const mergedRates = [...dbRates];
+          localRates.forEach(localRate => {
+            if (!mergedRates.find(dbRate => dbRate.from_currency === localRate.from_currency && dbRate.to_currency === localRate.to_currency)) {
+              mergedRates.push(localRate);
+            }
+          });
+          setSavedRates(mergedRates);
+        } catch (dbError) {
+          // If database fails, fall back to local storage
+          console.warn('Database load failed, using local storage:', dbError);
+          setSavedRates(localRates);
+        }
+      } else {
+        // Non-authenticated user - use only local storage
+        setSavedRates(localRates);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch saved rates');
+      setSavedRates([]);
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   const saveRate = useCallback(async (fromCurrency: string, toCurrency: string, rate: number): Promise<boolean> => {
-    if (!user) return false;
-
     try {
-      const newRate = await UserDataService.saveRate(fromCurrency, toCurrency, rate);
-      if (newRate) {
-        setSavedRates(prev => [newRate, ...prev]);
+      if (user) {
+        // Authenticated user - save to database
+        const newRate = await UserDataService.saveRate(fromCurrency, toCurrency, rate);
+        if (newRate) {
+          setSavedRates(prev => [newRate, ...prev]);
+          return true;
+        }
+        return false;
+      } else {
+        // Non-authenticated user - save to local storage
+        const storage = getAsyncStorage();
+        const currentRates = await storage.getItem('savedRates');
+        const ratesArray = currentRates ? JSON.parse(currentRates) : [];
+
+        const newLocalRate = {
+          id: `local-${Date.now()}`,
+          fromCurrency,
+          toCurrency,
+          rate,
+          timestamp: Date.now()
+        };
+
+        const updatedRates = [newLocalRate, ...ratesArray].slice(0, 10); // Keep only 10 most recent
+        await storage.setItem('savedRates', JSON.stringify(updatedRates));
+
+        // Update local state with formatted data
+        const formattedRate = {
+          id: newLocalRate.id,
+          from_currency: fromCurrency,
+          to_currency: toCurrency,
+          rate: rate,
+          created_at: new Date(newLocalRate.timestamp).toISOString(),
+          updated_at: new Date(newLocalRate.timestamp).toISOString()
+        };
+
+        setSavedRates(prev => [formattedRate, ...prev.slice(0, 9)]); // Keep only 10
         return true;
       }
-      return false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save rate');
       return false;
@@ -93,15 +165,28 @@ export function useSavedRates(): UseSavedRatesReturn {
   }, [user]);
 
   const deleteRate = useCallback(async (id: string): Promise<boolean> => {
-    if (!user) return false;
-
     try {
-      const success = await UserDataService.deleteSavedRate(id);
-      if (success) {
-        setSavedRates(prev => prev.filter(rate => rate.id !== id));
-        return true;
+      if (user) {
+        // Authenticated user - delete from database
+        const success = await UserDataService.deleteSavedRate(id);
+        if (success) {
+          setSavedRates(prev => prev.filter(rate => rate.id !== id));
+          return true;
+        }
+        return false;
+      } else {
+        // Non-authenticated user - delete from local storage
+        const storage = getAsyncStorage();
+        const currentRates = await storage.getItem('savedRates');
+        if (currentRates) {
+          const ratesArray = JSON.parse(currentRates);
+          const updatedRates = ratesArray.filter((rate: any) => rate.id !== id);
+          await storage.setItem('savedRates', JSON.stringify(updatedRates));
+          setSavedRates(prev => prev.filter(rate => rate.id !== id));
+          return true;
+        }
+        return false;
       }
-      return false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete rate');
       return false;
@@ -109,15 +194,22 @@ export function useSavedRates(): UseSavedRatesReturn {
   }, [user]);
 
   const deleteAllRates = useCallback(async (): Promise<boolean> => {
-    if (!user) return false;
-
     try {
-      const success = await UserDataService.deleteAllSavedRates();
-      if (success) {
+      if (user) {
+        // Authenticated user - delete all from database
+        const success = await UserDataService.deleteAllSavedRates();
+        if (success) {
+          setSavedRates([]);
+          return true;
+        }
+        return false;
+      } else {
+        // Non-authenticated user - clear local storage
+        const storage = getAsyncStorage();
+        await storage.setItem('savedRates', JSON.stringify([]));
         setSavedRates([]);
         return true;
       }
-      return false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete all rates');
       return false;

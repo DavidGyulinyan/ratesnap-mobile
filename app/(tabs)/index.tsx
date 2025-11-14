@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSavedRates } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { savedRates, deleteRate, deleteAllRates } = useSavedRates();
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
@@ -63,12 +65,10 @@ export default function HomeScreen() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
-  const [savedRates, setSavedRates] = useState<any[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
 
   useEffect(() => {
     loadExchangeRates();
-    loadSavedRates();
   }, []);
 
   const loadExchangeRates = async () => {
@@ -94,18 +94,6 @@ export default function HomeScreen() {
     }
   };
 
-  const loadSavedRates = async () => {
-    try {
-      const storage = getAsyncStorage();
-      const savedRatesData = await storage.getItem("savedRates");
-      if (savedRatesData) {
-        setSavedRates(JSON.parse(savedRatesData));
-      }
-    } catch (error) {
-      console.error("Error loading saved rates:", error);
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -115,23 +103,11 @@ export default function HomeScreen() {
     }
   };
 
-  const deleteSavedRate = async (index: number) => {
-    Alert.alert(t("common.delete"), t("saved.deleteConfirm"), [
-      {
-        text: t("common.cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: async () => {
-          const updatedRates = savedRates.filter((_, i) => i !== index);
-          setSavedRates(updatedRates);
-          const storage = getAsyncStorage();
-          await storage.setItem("savedRates", JSON.stringify(updatedRates));
-        },
-      },
-    ]);
+  const deleteSavedRate = async (id: string | number) => {
+    const success = await deleteRate(id.toString());
+    if (!success) {
+      Alert.alert('Error', 'Failed to delete rate. Please try again.');
+    }
   };
 
   const deleteAllSavedRates = async () => {
@@ -146,9 +122,10 @@ export default function HomeScreen() {
         text: t("saved.deleteAll"),
         style: "destructive",
         onPress: async () => {
-          setSavedRates([]);
-          const storage = getAsyncStorage();
-          await storage.setItem("savedRates", JSON.stringify([]));
+          const success = await deleteAllRates();
+          if (!success) {
+            Alert.alert('Error', 'Failed to delete all rates. Please try again.');
+          }
         },
       },
     ]);
@@ -495,7 +472,7 @@ export default function HomeScreen() {
               showSavedRates={showSavedRates}
               onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
               onSelectRate={() => setCurrentView("converter")}
-              onDeleteRate={(id) => deleteSavedRate(Number(id))}
+              onDeleteRate={deleteSavedRate}
               onDeleteAll={deleteAllSavedRates}
               showMoreEnabled={true}
               onShowMore={() => setCurrentView("converter")}
@@ -524,10 +501,17 @@ export default function HomeScreen() {
               </View>
 
               <RateAlertManager
-                savedRates={savedRates}
+                savedRates={savedRates.map(rate => ({
+                  id: rate.id,
+                  fromCurrency: rate.from_currency,
+                  toCurrency: rate.to_currency,
+                  rate: rate.rate,
+                  timestamp: new Date(rate.created_at).getTime(),
+                  hasAlert: false, // This might need to be updated based on actual alert data
+                  alertSettings: undefined
+                }))}
                 onRatesUpdate={() => {
-                  // Reload saved rates after any changes
-                  loadSavedRates();
+                  // The hook will automatically update when rates change
                 }}
                 currenciesData={currenciesData}
               />
