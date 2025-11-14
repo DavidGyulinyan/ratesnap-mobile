@@ -202,16 +202,13 @@ export default function SavedRates({
 
       {showSavedRates && (
         <View style={[styles.savedRatesList, styles.fadeIn]}>
-          {!user ? (
+          {savedRates.length === 0 ? (
             <View style={styles.emptySavedRates}>
               <ThemedText style={styles.emptySavedRatesText}>
-                Sign in to save and sync your currency rates across devices!
-              </ThemedText>
-            </View>
-          ) : savedRates.length === 0 ? (
-            <View style={styles.emptySavedRates}>
-              <ThemedText style={styles.emptySavedRatesText}>
-                No saved rates yet. Convert currencies and click "Save This Rate" to add some!
+                {!user
+                  ? "Sign in to save and sync your currency rates across devices!"
+                  : "No saved rates yet. Convert currencies and click \"Save This Rate\" to add some!"
+                }
               </ThemedText>
             </View>
           ) : (
