@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   View,
   TextInput,
@@ -88,6 +88,8 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
   const { user } = useAuth();
   const { syncSavedRates } = useCloudSync();
+  const syncInProgressRef = useRef(false);
+  const lastSyncUserIdRef = useRef<string | null>(null);
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
@@ -677,19 +679,52 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   };
 
   const handleDeleteRate = async (id: string | number): Promise<void> => {
-    const updatedRates = savedRates.filter((rate) => rate.id !== id);
-    setSavedRates(updatedRates);
-    await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
-
-    // If user is logged in and cloud sync is enabled, update cloud
-    if (user && isCloudSyncEnabled) {
-      try {
-        await SavedRatesSync.deleteLocalRate(id.toString());
-        await syncSavedRates('upload');
-        console.log('✅ Rate deleted from cloud successfully');
-      } catch (error) {
-        console.log('⚠️ Failed to delete from cloud:', error);
+    try {
+      // Find the rate being deleted to get the cloud-compatible data
+      const rateToDelete = savedRates.find(rate => rate.id === id);
+      if (!rateToDelete) {
+        console.log('⚠️ Rate not found for deletion:', id);
+        return;
       }
+
+      // Update local state first
+      const updatedRates = savedRates.filter((rate) => rate.id !== id);
+      setSavedRates(updatedRates);
+      
+      // Save to local storage using both keys for compatibility
+      await AsyncStorage.setItem("savedRates", JSON.stringify(updatedRates));
+      await AsyncStorage.setItem("saved_rates", JSON.stringify(updatedRates));
+
+      // If user is logged in and cloud sync is enabled, sync with cloud
+      if (user && isCloudSyncEnabled) {
+        try {
+          console.log('🗑️ Deleting rate from cloud:', rateToDelete);
+          
+          // For local deletion, we need to match by currency pair and user
+          const rateToDeleteFormatted = {
+            fromCurrency: rateToDelete.fromCurrency,
+            toCurrency: rateToDelete.toCurrency,
+            rate: rateToDelete.rate
+          };
+          
+          await SavedRatesSync.saveLocalRate(rateToDeleteFormatted);
+          
+          // Upload the current state (which excludes the deleted rate)
+          const result = await syncSavedRates('upload');
+          if (result) {
+            console.log('✅ Rate deleted from cloud successfully');
+          } else {
+            console.log('⚠️ Cloud sync failed, but local deletion succeeded');
+          }
+        } catch (error) {
+          console.log('⚠️ Failed to delete from cloud:', error);
+          // Don't throw - local deletion already succeeded
+        }
+      } else {
+        console.log('💾 Rate deleted locally (cloud sync not enabled or user not logged in)');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting rate:', error);
     }
   };
 
@@ -904,10 +939,13 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
   // Handle cloud sync when user logs in
   useEffect(() => {
-    if (user) {
-      // When user logs in, try to sync from cloud
+    if (user && syncSavedRates && user.id !== lastSyncUserIdRef.current && !syncInProgressRef.current) {
+      // When user logs in, try to sync from cloud - only once per user session
       const handleUserLogin = async () => {
         try {
+          syncInProgressRef.current = true;
+          lastSyncUserIdRef.current = user.id;
+          console.log('🔄 Starting cloud sync for logged-in user...');
           const result = await syncSavedRates('download');
           if (result) {
             console.log('✅ Synced saved rates after login');
@@ -928,9 +966,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           }
         } catch (error) {
           console.log('⚠️ Failed to sync after login:', error);
+        } finally {
+          syncInProgressRef.current = false;
         }
       };
       handleUserLogin();
+    } else if (!user) {
+      // Reset sync state when user logs out
+      syncInProgressRef.current = false;
+      lastSyncUserIdRef.current = null;
     }
   }, [user, syncSavedRates]);
 
@@ -1085,7 +1129,14 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
         {/* Saved Rates Section - Using Shared Component */}
         <SavedRates
-          savedRates={savedRates}
+          savedRates={savedRates.map(rate => ({
+            id: rate.id,
+            from_currency: rate.fromCurrency,
+            to_currency: rate.toCurrency,
+            rate: rate.rate,
+            created_at: new Date(rate.timestamp).toISOString(),
+            updated_at: new Date(rate.timestamp).toISOString()
+          }))}
           showSavedRates={showSavedRates}
           onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
           onSelectRate={handleSelectRate}

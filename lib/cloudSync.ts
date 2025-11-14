@@ -1,6 +1,7 @@
 import { getSupabaseClient, SavedRate, RateAlert, User } from '@/lib/supabase-safe';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAsyncStorage } from './storage';
+import { useCallback } from 'react';
 
 const LOCAL_SAVED_RATES_KEY = 'saved_rates';
 const LOCAL_RATE_ALERTS_KEY = 'rate_alerts';
@@ -307,7 +308,7 @@ export class RateAlertsSync {
 export const useCloudSync = () => {
   const { user } = useAuth();
 
-  const syncSavedRates = async (direction: 'upload' | 'download' | 'both'): Promise<boolean> => {
+  const syncSavedRates = useCallback(async (direction: 'upload' | 'download' | 'both'): Promise<boolean> => {
     if (!user) return false;
 
     try {
@@ -332,9 +333,9 @@ export const useCloudSync = () => {
       console.error('Sync error:', error);
       return false;
     }
-  };
+  }, [user]);
 
-  const syncRateAlerts = async (direction: 'upload' | 'download' | 'both'): Promise<boolean> => {
+  const syncRateAlerts = useCallback(async (direction: 'upload' | 'download' | 'both'): Promise<boolean> => {
     if (!user) return false;
 
     try {
@@ -359,16 +360,16 @@ export const useCloudSync = () => {
       console.error('Alert sync error:', error);
       return false;
     }
-  };
+  }, [user]);
 
-  const syncAll = async (): Promise<boolean> => {
+  const syncAll = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
     const savedRatesSuccess = await syncSavedRates('both');
     const rateAlertsSuccess = await syncRateAlerts('both');
 
     return savedRatesSuccess && rateAlertsSuccess;
-  };
+  }, [user, syncSavedRates, syncRateAlerts]);
 
   return {
     syncSavedRates,

@@ -56,6 +56,15 @@ export interface PickedRate {
   created_at: string;
 }
 
+// Helper function to handle table not found errors
+const handleTableNotFound = (tableName: string, error: any) => {
+  if (error.code === 'PGRST205') {
+    console.warn(`⚠️ Database table '${tableName}' not found. Please run the migration script as described in SUPABASE-SETUP-GUIDE.md`);
+    return true;
+  }
+  return false;
+};
+
 // User data service class
 export class UserDataService {
   private static getUserId(): string | null {
@@ -87,7 +96,9 @@ export class UserDataService {
         .single();
 
       if (error) {
-        console.error('Error saving rate:', error);
+        if (!handleTableNotFound('saved_rates', error)) {
+          console.error('Error saving rate:', error);
+        }
         return null;
       }
 
@@ -113,7 +124,9 @@ export class UserDataService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching saved rates:', error);
+        if (!handleTableNotFound('saved_rates', error)) {
+          console.error('Error fetching saved rates:', error);
+        }
         return [];
       }
 
@@ -130,20 +143,33 @@ export class UserDataService {
       if (!supabase) throw new Error('Supabase client not available');
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { error } = await supabase
-        .from('saved_rates')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error deleting saved rate:', error);
+      if (!user) {
+        console.error('User not authenticated for deleteSavedRate');
         return false;
       }
 
-      return true;
+      console.log('Attempting to delete saved rate:', { id, user_id: user.id });
+
+      const { data, error } = await supabase
+        .from('saved_rates')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select('id'); // Get back the ID of deleted row(s)
+
+      if (error) {
+        console.error('Supabase delete error:', error);
+        if (!handleTableNotFound('saved_rates', error)) {
+          console.error('Error deleting saved rate:', error);
+        }
+        return false;
+      }
+
+      // Check if any rows were actually deleted
+      const deletedRows = data?.length || 0;
+      console.log('Delete operation completed:', { deletedRows, expected: 1 });
+
+      return deletedRows > 0;
     } catch (error) {
       console.error('Error in deleteSavedRate:', error);
       return false;
@@ -164,7 +190,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting all saved rates:', error);
+        if (!handleTableNotFound('saved_rates', error)) {
+          console.error('Error deleting all saved rates:', error);
+        }
         return false;
       }
 
@@ -203,7 +231,9 @@ export class UserDataService {
         .single();
 
       if (error) {
-        console.error('Error creating rate alert:', error);
+        if (!handleTableNotFound('rate_alerts', error)) {
+          console.error('Error creating rate alert:', error);
+        }
         return null;
       }
 
@@ -229,7 +259,9 @@ export class UserDataService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching rate alerts:', error);
+        if (!handleTableNotFound('rate_alerts', error)) {
+          console.error('Error fetching rate alerts:', error);
+        }
         return [];
       }
 
@@ -258,7 +290,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error updating rate alert:', error);
+        if (!handleTableNotFound('rate_alerts', error)) {
+          console.error('Error updating rate alert:', error);
+        }
         return false;
       }
 
@@ -284,7 +318,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting rate alert:', error);
+        if (!handleTableNotFound('rate_alerts', error)) {
+          console.error('Error deleting rate alert:', error);
+        }
         return false;
       }
 
@@ -322,7 +358,9 @@ export class UserDataService {
         .single();
 
       if (error) {
-        console.error('Error saving converter history:', error);
+        if (!handleTableNotFound('multi_currency_converter_history', error)) {
+          console.error('Error saving converter history:', error);
+        }
         return null;
       }
 
@@ -349,7 +387,9 @@ export class UserDataService {
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching converter history:', error);
+        if (!handleTableNotFound('multi_currency_converter_history', error)) {
+          console.error('Error fetching converter history:', error);
+        }
         return [];
       }
 
@@ -375,7 +415,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting converter history:', error);
+        if (!handleTableNotFound('multi_currency_converter_history', error)) {
+          console.error('Error deleting converter history:', error);
+        }
         return false;
       }
 
@@ -413,7 +455,9 @@ export class UserDataService {
         .single();
 
       if (error) {
-        console.error('Error saving calculator history:', error);
+        if (!handleTableNotFound('math_calculator_history', error)) {
+          console.error('Error saving calculator history:', error);
+        }
         return null;
       }
 
@@ -440,7 +484,9 @@ export class UserDataService {
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching calculator history:', error);
+        if (!handleTableNotFound('math_calculator_history', error)) {
+          console.error('Error fetching calculator history:', error);
+        }
         return [];
       }
 
@@ -466,7 +512,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting calculator history:', error);
+        if (!handleTableNotFound('math_calculator_history', error)) {
+          console.error('Error deleting calculator history:', error);
+        }
         return false;
       }
 
@@ -491,7 +539,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error clearing calculator history:', error);
+        if (!handleTableNotFound('math_calculator_history', error)) {
+          console.error('Error clearing calculator history:', error);
+        }
         return false;
       }
 
@@ -531,7 +581,9 @@ export class UserDataService {
         .single();
 
       if (error) {
-        console.error('Error tracking picked rate:', error);
+        if (!handleTableNotFound('picked_rates', error)) {
+          console.error('Error tracking picked rate:', error);
+        }
         return null;
       }
 
@@ -558,7 +610,9 @@ export class UserDataService {
         .limit(limit);
 
       if (error) {
-        console.error('Error fetching picked rates:', error);
+        if (!handleTableNotFound('picked_rates', error)) {
+          console.error('Error fetching picked rates:', error);
+        }
         return [];
       }
 
@@ -584,7 +638,9 @@ export class UserDataService {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error deleting picked rate:', error);
+        if (!handleTableNotFound('picked_rates', error)) {
+          console.error('Error deleting picked rate:', error);
+        }
         return false;
       }
 
@@ -613,8 +669,10 @@ export class UserDataService {
           .eq('user_id', user.id);
 
         if (error) {
-          console.error(`Error clearing data from ${table}:`, error);
-          return false;
+          if (!handleTableNotFound(table, error)) {
+            console.error(`Error clearing data from ${table}:`, error);
+            return false;
+          }
         }
       }
 
