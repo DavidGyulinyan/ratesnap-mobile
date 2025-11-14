@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -48,7 +47,7 @@ export default function MultiCurrencyConverter({
 
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { saveConversion, loading: historyLoading } = useConverterHistory();
+  const { saveConversion } = useConverterHistory();
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";

@@ -345,26 +345,51 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
+      // First, try to update existing record for this user
+      const { data: updateData, error: updateError } = await supabase
         .from('multi_currency_converter_history')
-        .insert({
-          user_id: user.id,
+        .update({
           from_currency: fromCurrency,
           amount: amount,
           target_currencies: targetCurrencies,
           conversion_results: conversionResults
         })
+        .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) {
-        if (!handleTableNotFound('multi_currency_converter_history', error)) {
-          console.error('Error saving converter history:', error);
+      if (updateError) {
+        // If update failed (likely no existing record), insert new record
+        if (updateError.code === 'PGRST116') { // No rows found to update
+          const { data: insertData, error: insertError } = await supabase
+            .from('multi_currency_converter_history')
+            .insert({
+              user_id: user.id,
+              from_currency: fromCurrency,
+              amount: amount,
+              target_currencies: targetCurrencies,
+              conversion_results: conversionResults
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            if (!handleTableNotFound('multi_currency_converter_history', insertError)) {
+              console.error('Error inserting converter history:', insertError);
+            }
+            return null;
+          }
+
+          return insertData;
+        } else {
+          if (!handleTableNotFound('multi_currency_converter_history', updateError)) {
+            console.error('Error updating converter history:', updateError);
+          }
+          return null;
         }
-        return null;
       }
 
-      return data;
+      return updateData;
     } catch (error) {
       console.error('Error in saveConverterHistory:', error);
       return null;
