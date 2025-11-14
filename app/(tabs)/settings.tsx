@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import Footer from '@/components/Footer';
+import DatabaseDebug from '@/components/DatabaseDebug';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
@@ -758,6 +759,9 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
 
           {/* Terms of Use Section */}
           {renderTermsSection()}
+
+          {/* Database Debug Section */}
+          <DatabaseDebug />
 
           {/* Additional Settings Sections */}
           <View style={styles.section}>

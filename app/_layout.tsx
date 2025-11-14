@@ -36,17 +36,11 @@ export default function RootLayout() {
                 paddingRight: 0
               }
             }}>
-              {user ? (
-                <>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-                </>
-              ) : (
-                <>
-                  <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
-                  <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
-                </>
-              )}
+              {/* Always register all screens, navigation control will handle which is shown */}
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
             </Stack>
             <StatusBar style="auto" />
           </View>

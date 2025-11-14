@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
@@ -51,6 +51,8 @@ export default function SavedRates({
   
   const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
   
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const handleDeleteRate = async (id: string) => {
     if (onDeleteRate) {
       onDeleteRate(id);
@@ -64,9 +66,25 @@ export default function SavedRates({
             text: 'Delete',
             style: 'destructive',
             onPress: async () => {
-              const success = await deleteRate(id);
-              if (!success) {
-                Alert.alert('Error', 'Failed to delete saved rate');
+              try {
+                setDeletingId(id);
+                const success = await deleteRate(id);
+                if (success) {
+                  Alert.alert('Success', 'Rate deleted successfully');
+                } else {
+                  Alert.alert(
+                    'Delete Failed',
+                    'Unable to delete the rate. Please try again or check your internet connection.'
+                  );
+                }
+              } catch (error) {
+                Alert.alert(
+                  'Error',
+                  'An unexpected error occurred while deleting the rate.'
+                );
+                console.error('Delete rate error:', error);
+              } finally {
+                setDeletingId(null);
               }
             }
           }
@@ -123,10 +141,16 @@ export default function SavedRates({
         </ThemedText>
       </View>
       <TouchableOpacity
-        style={styles.deleteButton}
+        style={[styles.deleteButton, deletingId === rate.id && styles.deleteButtonDisabled]}
         onPress={() => handleDeleteRate(rate.id)}
+        disabled={deletingId === rate.id}
       >
-        <ThemedText style={styles.deleteButtonText}>🗑️</ThemedText>
+        <ThemedText style={[
+          styles.deleteButtonText,
+          deletingId === rate.id && styles.deleteButtonTextDisabled
+        ]}>
+          {deletingId === rate.id ? '⏳' : '🗑️'}
+        </ThemedText>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -307,8 +331,14 @@ const styles = StyleSheet.create({
     padding: 8,
     marginLeft: 8,
   },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
   deleteButtonText: {
     fontSize: 16,
+  },
+  deleteButtonTextDisabled: {
+    opacity: 0.5,
   },
   fadeIn: {
     opacity: 1,
