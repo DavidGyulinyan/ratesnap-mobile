@@ -362,9 +362,21 @@ export function useConverterHistory(): UseConverterHistoryReturn {
     if (!user) return false;
 
     try {
-      const newRecord = await UserDataService.saveConverterHistory(fromCurrency, amount, targetCurrencies, results);
-      if (newRecord) {
-        setConverterHistory(prev => [newRecord, ...prev]);
+      const savedRecord = await UserDataService.saveConverterHistory(fromCurrency, amount, targetCurrencies, results);
+      if (savedRecord) {
+        setConverterHistory(prev => {
+          // Replace existing record for this user, or add if not exists
+          const existingIndex = prev.findIndex(record => record.user_id === user.id);
+          if (existingIndex >= 0) {
+            // Update existing record
+            const updated = [...prev];
+            updated[existingIndex] = savedRecord;
+            return updated;
+          } else {
+            // Add new record
+            return [savedRecord, ...prev];
+          }
+        });
         return true;
       }
       return false;
