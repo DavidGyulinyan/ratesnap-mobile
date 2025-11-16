@@ -66,7 +66,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
       },
       {
         id: 'user-info',
-        title: `👤 ${user.email?.split('@')[0]}`,
+        title: `👤 ${user.user_metadata?.username || user.email?.split('@')[0] || 'User'}`,
         subtitle: user.email,
         onPress: () => {
           setIsVisible(false);
