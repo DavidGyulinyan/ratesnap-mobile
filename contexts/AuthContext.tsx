@@ -120,12 +120,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (error) {
-        console.error('Sign in error:', error);
-
         // Handle email confirmation error specifically
         if (error.message.includes('Email not confirmed') ||
             error.message.includes('email_not_confirmed') ||
-            error.message.includes('not confirmed')) {
+            error.message.includes('not confirmed') ||
+            error.message.includes('Email link is invalid or has expired')) {
+          // Don't log email confirmation errors to console since we handle them gracefully
           return {
             error: {
               message: 'Please check your email and click the confirmation link before signing in. Didn\'t receive the email?',
@@ -134,6 +134,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           };
         }
 
+        // Handle invalid credentials
+        if (error.message.includes('Invalid login credentials') ||
+            error.message.includes('User not found') ||
+            error.message.includes('Invalid email or password')) {
+          // Don't log invalid credentials errors to console since we handle them gracefully
+          return {
+            error: {
+              message: 'Invalid email or password. Please check your credentials and try again.',
+              name: 'InvalidCredentialsError'
+            } as AuthError
+          };
+        }
+
+        // Log other unexpected errors
+        console.error('Sign in error:', error);
         return { error };
       }
 

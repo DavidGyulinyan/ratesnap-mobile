@@ -12,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -28,11 +29,25 @@ function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
+
+  const getLanguageDisplayName = (lang: string) => {
+    const languageNames: { [key: string]: string } = {
+      'en': 'English',
+      'hy': 'Հայերեն (Armenian)',
+      'ru': 'Русский (Russian)',
+      'es': 'Español (Spanish)',
+      'zh': '中文 (Chinese)',
+      'hi': 'हिन्दी (Hindi)'
+    };
+    return languageNames[lang] || lang;
+  };
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
@@ -56,6 +71,14 @@ function SignUpScreen() {
       if (error) {
         Alert.alert('Sign Up Error', error.message);
       } else {
+        // Save the selected language preference for new users
+        try {
+          await AsyncStorage.setItem('appLanguage', selectedLanguage);
+          console.log('Language preference saved:', selectedLanguage);
+        } catch (error) {
+          console.error('Failed to save language preference:', error);
+        }
+
         Alert.alert(
           'Account Created! 📧',
           'Please check your email and click the confirmation link to activate your account. You won\'t be able to sign in until you confirm your email.',
@@ -123,6 +146,21 @@ function SignUpScreen() {
                   placeholder="Choose a username"
                   autoCapitalize="none"
                 />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Preferred Language</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowLanguagePicker(true)}
+                  >
+                    <Text style={styles.pickerButtonText}>
+                      {getLanguageDisplayName(selectedLanguage)}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#64748b" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.inputContainer}>
@@ -230,6 +268,56 @@ function SignUpScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Language Picker Modal */}
+      {showLanguagePicker && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.languagePickerModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Language</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowLanguagePicker(false)}
+              >
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.languageList}>
+              {[
+                { code: 'en', name: 'English' },
+                { code: 'hy', name: 'Հայերեն (Armenian)' },
+                { code: 'ru', name: 'Русский (Russian)' },
+                { code: 'es', name: 'Español (Spanish)' },
+                { code: 'zh', name: '中文 (Chinese)' },
+                { code: 'hi', name: 'हिन्दी (Hindi)' }
+              ].map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageOption,
+                    selectedLanguage === lang.code && styles.languageOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedLanguage(lang.code);
+                    setShowLanguagePicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.languageOptionText,
+                    selectedLanguage === lang.code && styles.languageOptionTextSelected
+                  ]}>
+                    {lang.name}
+                  </Text>
+                  {selectedLanguage === lang.code && (
+                    <Ionicons name="checkmark" size={20} color="#3b82f6" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -395,6 +483,86 @@ const styles = StyleSheet.create({
   signInLink: {
     color: '#3b82f6',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  pickerContainer: {
+    position: 'relative',
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f9fafb',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#1f2937',
+    flex: 1,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  languagePickerModal: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  languageList: {
+    maxHeight: 300,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  languageOptionSelected: {
+    backgroundColor: '#eff6ff',
+  },
+  languageOptionText: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  languageOptionTextSelected: {
+    color: '#1d4ed8',
     fontWeight: '600',
   },
 });

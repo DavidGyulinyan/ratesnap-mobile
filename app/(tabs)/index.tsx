@@ -7,6 +7,7 @@ import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
 import MathCalculator from "@/components/MathCalculator";
+import OnboardingGuide from "@/components/OnboardingGuide";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -63,13 +65,27 @@ export default function HomeScreen() {
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
 
   useEffect(() => {
     loadExchangeRates();
+    checkOnboardingStatus();
   }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem('onboardingCompleted');
+      if (!onboardingCompleted && user) {
+        // Show onboarding for authenticated users who haven't completed it
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Failed to check onboarding status:', error);
+    }
+  };
 
   const loadExchangeRates = async () => {
     try {
@@ -299,7 +315,7 @@ export default function HomeScreen() {
                   </ThemedText>
                   <ThemedText style={styles.quickActionDescription}>
                     {savedRates.length}{" "}
-                    {savedRates.length === 1 ? "saved rate" : "saved rates"}
+                    {savedRates.length === 1 ? t("saved.rate") : t("saved.rates")}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
@@ -320,27 +336,11 @@ export default function HomeScreen() {
                   </ThemedText>
                   <ThemedText style={styles.quickActionDescription}>
                     {savedRates.filter(rate => rate.hasAlert).length}{" "}
-                    {savedRates.filter(rate => rate.hasAlert).length === 1 ? "active alert" : "active alerts"}
+                    {savedRates.filter(rate => rate.hasAlert).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={() => router.push("/(tabs)/settings")}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerSettings]}>
-                  <ThemedText style={styles.quickActionIcon}>⚙️</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={styles.quickActionTitle}>
-                    {t("quick.action.settings")}
-                  </ThemedText>
-                  <ThemedText style={styles.quickActionDescription}>
-                    {t("quick.action.settings.desc")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
             </ScrollView>
           </View>
 
@@ -552,6 +552,15 @@ export default function HomeScreen() {
       </ThemedView>
     );
   };
+
+  // Show onboarding for new users
+  if (showOnboarding) {
+    return (
+      <OnboardingGuide
+        onComplete={() => setShowOnboarding(false)}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f7f9" }}>

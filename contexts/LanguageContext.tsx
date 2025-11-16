@@ -20,6 +20,7 @@ const translations = {
     
     // Dashboard
     'dashboard.title': 'Dashboard',
+    'dashboard.quickActions': 'Quick Actions',
     'dashboard.converter': 'Converter',
     'dashboard.multiCurrency': 'Multi Currency',
     'dashboard.rateAlerts': 'Rate Alerts',
@@ -95,6 +96,10 @@ const translations = {
     'saved.noRates': 'No saved rates yet. Convert currencies and click "Save This Rate" to add some!',
     'saved.savedOn': 'Saved on',
     'saved.at': 'at',
+    'saved.rate': 'saved rate',
+    'saved.rates': 'saved rates',
+    'alerts.activeAlert': 'active alert',
+    'alerts.activeAlerts': 'active alerts',
     'success.rateSaved': 'Rate saved successfully!',
     'success.alertCreated': 'Rate alert created successfully!',
     'success.alertDeleted': 'Rate alert deleted',
@@ -246,6 +251,7 @@ const translations = {
     'app.subtitle': 'Մասնագիտական արժույթի փոխարկիչների հավաքածու',
     
     'dashboard.title': 'Վահանակ',
+    'dashboard.quickActions': 'Արագ գործողություններ',
     'dashboard.converter': 'Փոխարկիչ',
     'dashboard.multiCurrency': 'Բազմարժույթ',
     'dashboard.rateAlerts': 'Դրույքի ծանուցումներ',
@@ -382,6 +388,10 @@ const translations = {
     'saved.noRates': 'Դեռ չկան պահպանված դրույքներ: Փոխարկեք արժույթները և սեղմեք "Պահպանել այս դրույքը" որպեսզի որևէ բան ավելացնեք:',
     'saved.savedOn': 'Պահպանվել է',
     'saved.at': 'ժամը',
+    'saved.rate': 'պահպանված դրույք',
+    'saved.rates': 'պահպանված դրույքներ',
+    'alerts.activeAlert': 'ակտիվ ծանուցում',
+    'alerts.activeAlerts': 'ակտիվ ծանուցումներ',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Կրկնվող արժույթ',
@@ -420,6 +430,7 @@ const translations = {
     'app.subtitle': 'Профессиональный набор конвертеров валют',
     
     'dashboard.title': 'Панель',
+    'dashboard.quickActions': 'Быстрые действия',
     'dashboard.converter': 'Конвертер',
     'dashboard.multiCurrency': 'Мультивалютный',
     'dashboard.rateAlerts': 'Уведомления о курсах',
@@ -542,6 +553,10 @@ const translations = {
     'saved.noRates': 'Пока нет сохраненных курсов. Конвертируйте валюты и нажмите "Сохранить этот курс", чтобы добавить!',
     'saved.savedOn': 'Сохранено',
     'saved.at': 'в',
+    'saved.rate': 'сохраненный курс',
+    'saved.rates': 'сохраненные курсы',
+    'alerts.activeAlert': 'активное уведомление',
+    'alerts.activeAlerts': 'активные уведомления',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Дубликат валюты',
@@ -600,6 +615,7 @@ const translations = {
     'app.subtitle': 'Suite Profesional de Conversores de Moneda',
     
     'dashboard.title': 'Panel',
+    'dashboard.quickActions': 'Acciones Rápidas',
     'dashboard.converter': 'Convertidor',
     'dashboard.multiCurrency': 'Multi Moneda',
     'dashboard.rateAlerts': 'Alertas de Tipo',
@@ -715,6 +731,10 @@ const translations = {
     'saved.noRates': 'Aún no hay tasas guardadas. ¡Convierte monedas y haz clic en "Guardar Esta Tasa" para agregar algunas!',
     'saved.savedOn': 'Guardado el',
     'saved.at': 'a las',
+    'saved.rate': 'tasa guardada',
+    'saved.rates': 'tasas guardadas',
+    'alerts.activeAlert': 'alerta activa',
+    'alerts.activeAlerts': 'alertas activas',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Moneda Duplicada',
@@ -773,6 +793,7 @@ const translations = {
     'app.subtitle': '专业货币转换器套件',
     
     'dashboard.title': '仪表板',
+    'dashboard.quickActions': '快速操作',
     'dashboard.converter': '转换器',
     'dashboard.multiCurrency': '多货币',
     'dashboard.rateAlerts': '汇率提醒',
@@ -888,6 +909,10 @@ const translations = {
     'saved.noRates': '还没有保存的汇率。转换货币并点击"保存此汇率"来添加一些！',
     'saved.savedOn': '保存于',
     'saved.at': '时间',
+    'saved.rate': '已保存汇率',
+    'saved.rates': '已保存汇率',
+    'alerts.activeAlert': '活跃提醒',
+    'alerts.activeAlerts': '活跃提醒',
 
     // Errors & Messages
     'error.duplicateCurrency': '重复货币',
@@ -946,6 +971,7 @@ const translations = {
     'app.subtitle': 'पेशेवर मुद्रा कन्वर्टर सूट',
     
     'dashboard.title': 'डैशबोर्ड',
+    'dashboard.quickActions': 'त्वरित कार्य',
     'dashboard.converter': 'कन्वर्टर',
     'dashboard.multiCurrency': 'मल्टी करेंसी',
     'dashboard.rateAlerts': 'रेट अलर्ट्स',
@@ -1061,6 +1087,10 @@ const translations = {
     'saved.noRates': 'अभी तक कोई सेव्ड रेट्स नहीं। मुद्राएं बदलें और कुछ जोड़ने के लिए "इस दर को सेव करें" पर क्लिक करें!',
     'saved.savedOn': 'सेव किया गया',
     'saved.at': 'पर',
+    'saved.rate': 'सेव्ड रेट',
+    'saved.rates': 'सेव्ड रेट्स',
+    'alerts.activeAlert': 'एक्टिव अलर्ट',
+    'alerts.activeAlerts': 'एक्टिव अलर्ट्स',
 
     // Errors & Messages
     'error.duplicateCurrency': 'डुप्लिकेट करेंसी',

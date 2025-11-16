@@ -138,8 +138,9 @@ export default function LanguageDropdown({
             </View>
             
             <FlatList
-              data={Object.entries(languageData).map(([key, data]) => ({ 
-                key: key as Language, 
+              data={Object.entries(languageData).map(([
+                key, data]) => ({
+                key: key as Language,
                 data: {
                   name: data.name,
                   fullName: data.fullName,
@@ -149,7 +150,7 @@ export default function LanguageDropdown({
               }))}
               renderItem={renderLanguageItem}
               keyExtractor={(item) => item.key}
-              scrollEnabled={false}
+              scrollEnabled={true}
               style={styles.languageList}
             />
           </View>

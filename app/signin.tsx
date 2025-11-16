@@ -24,6 +24,7 @@ export default function SignInScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [invalidCredentials, setInvalidCredentials] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
   const { signIn, signInWithGoogle, signInWithApple, resendConfirmationEmail } = useAuth();
@@ -38,12 +39,15 @@ export default function SignInScreen() {
 
     setLoading(true);
     setEmailNotConfirmed(false);
+    setInvalidCredentials(false);
     try {
       const { error } = await signIn(email, password);
       if (error) {
         // Check if it's an email confirmation error
         if (error.name === 'EmailNotConfirmedError') {
           setEmailNotConfirmed(true);
+        } else if (error.name === 'InvalidCredentialsError') {
+          setInvalidCredentials(true);
         } else {
           Alert.alert('Sign In Error', error.message);
         }
@@ -52,7 +56,8 @@ export default function SignInScreen() {
         router.back();
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Sign in error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -160,6 +165,13 @@ export default function SignInScreen() {
                 {loading ? 'Signing In...' : 'Sign In'}
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.forgotPasswordLink}
+              onPress={() => router.push('/forgot-password')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Email Confirmation Error */}
@@ -177,6 +189,22 @@ export default function SignInScreen() {
                 <Text style={styles.resendButtonText}>
                   {resendLoading ? 'Sending...' : '📤 Resend Confirmation Email'}
                 </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Invalid Credentials Error */}
+          {invalidCredentials && (
+            <View style={styles.credentialsError}>
+              <Text style={styles.credentialsErrorTitle}>❌ Invalid Credentials</Text>
+              <Text style={styles.credentialsErrorText}>
+                The email or password you entered is incorrect. Please check and try again.
+              </Text>
+              <TouchableOpacity
+                style={[styles.button, styles.retryButton]}
+                onPress={() => setInvalidCredentials(false)}
+              >
+                <Text style={styles.retryButtonText}>Try Again</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -463,6 +491,51 @@ const styles = StyleSheet.create({
   },
   resendButtonText: {
     color: '#92400e',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Invalid Credentials Error Styles
+  credentialsError: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  credentialsErrorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#dc2626',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  credentialsErrorText: {
+    fontSize: 14,
+    color: '#b91c1c',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#dc2626',
+    borderColor: '#b91c1c',
+  },
+  retryButtonText: {
+    color: '#fee2e2',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Forgot Password Link
+  forgotPasswordLink: {
+    alignSelf: 'center',
+    marginTop: 16,
+    padding: 8,
+  },
+  forgotPasswordText: {
+    color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
   },
