@@ -16,6 +16,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error?: AuthError }>;
   signInWithApple: () => Promise<{ error?: AuthError }>;
   resetPassword: (email: string) => Promise<{ error?: AuthError }>;
+  resendConfirmationEmail: (email: string) => Promise<{ error?: AuthError }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,7 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       console.log('Starting sign in process for email:', email);
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -120,6 +121,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) {
         console.error('Sign in error:', error);
+
+        // Handle email confirmation error specifically
+        if (error.message.includes('Email not confirmed') ||
+            error.message.includes('email_not_confirmed') ||
+            error.message.includes('not confirmed')) {
+          return {
+            error: {
+              message: 'Please check your email and click the confirmation link before signing in. Didn\'t receive the email?',
+              name: 'EmailNotConfirmedError'
+            } as AuthError
+          };
+        }
+
         return { error };
       }
 
@@ -249,6 +263,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const resendConfirmationEmail = async (email: string) => {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return { error: { message: 'Authentication service not available' } as AuthError };
+    }
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      return {};
+    } catch (error) {
+      return { error: error as AuthError };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
@@ -259,6 +295,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signInWithGoogle,
     signInWithApple,
     resetPassword,
+    resendConfirmationEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

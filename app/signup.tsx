@@ -56,8 +56,16 @@ function SignUpScreen() {
       if (error) {
         Alert.alert('Sign Up Error', error.message);
       } else {
-        Alert.alert('Success', 'Account created successfully! Please check your email to verify your account.');
-        router.back();
+        Alert.alert(
+          'Account Created! 📧',
+          'Please check your email and click the confirmation link to activate your account. You won\'t be able to sign in until you confirm your email.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/signin')
+            }
+          ]
+        );
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');

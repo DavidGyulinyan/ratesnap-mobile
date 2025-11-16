@@ -23,8 +23,10 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  const { signIn, signInWithGoogle, signInWithApple, resendConfirmationEmail } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -35,10 +37,16 @@ export default function SignInScreen() {
     }
 
     setLoading(true);
+    setEmailNotConfirmed(false);
     try {
       const { error } = await signIn(email, password);
       if (error) {
-        Alert.alert('Sign In Error', error.message);
+        // Check if it's an email confirmation error
+        if (error.name === 'EmailNotConfirmedError') {
+          setEmailNotConfirmed(true);
+        } else {
+          Alert.alert('Sign In Error', error.message);
+        }
       } else {
         // Navigation will be handled by the auth state change
         router.back();
@@ -47,6 +55,27 @@ export default function SignInScreen() {
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const { error } = await resendConfirmationEmail(email);
+      if (error) {
+        Alert.alert('Error', 'Failed to resend confirmation email. Please try again.');
+      } else {
+        Alert.alert('Success', 'Confirmation email sent! Please check your inbox and click the confirmation link.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -132,6 +161,25 @@ export default function SignInScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Email Confirmation Error */}
+          {emailNotConfirmed && (
+            <View style={styles.confirmationError}>
+              <Text style={styles.confirmationErrorTitle}>📧 Email Not Confirmed</Text>
+              <Text style={styles.confirmationErrorText}>
+                Please check your email and click the confirmation link before signing in.
+              </Text>
+              <TouchableOpacity
+                style={[styles.button, styles.resendButton, resendLoading && styles.buttonDisabled]}
+                onPress={handleResendConfirmation}
+                disabled={resendLoading}
+              >
+                <Text style={styles.resendButtonText}>
+                  {resendLoading ? 'Sending...' : '📤 Resend Confirmation Email'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -382,6 +430,39 @@ const styles = StyleSheet.create({
   },
   signUpLink: {
     color: '#6366f1',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Email Confirmation Error Styles
+  confirmationError: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+  },
+  confirmationErrorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  confirmationErrorText: {
+    fontSize: 14,
+    color: '#78350f',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  resendButton: {
+    backgroundColor: '#f59e0b',
+    borderColor: '#d97706',
+  },
+  resendButtonText: {
+    color: '#92400e',
     fontSize: 14,
     fontWeight: '600',
   },
