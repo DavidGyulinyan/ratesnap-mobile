@@ -28,7 +28,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     try {
       await signOut();
       setIsVisible(false);
-      Alert.alert('Success', 'You have been signed out successfully.');
+      Alert.alert(t('auth.signoutSuccess'));
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out. Please try again.');
     }
@@ -37,7 +37,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
   const menuItems = [
     {
       id: 'settings',
-      title: '⚙️ Settings',
+      title: '⚙️ ' + t('settings.title'),
       onPress: () => {
         setIsVisible(false);
         router.push('/(tabs)/settings');
@@ -45,7 +45,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     },
     {
       id: 'language',
-      title: '🌍 Language',
+      title: '🌍 ' + t('settings.language'),
       component: (
         <View style={styles.languageContainer}>
           <LanguageDropdown 
@@ -58,7 +58,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     ...(user ? [
       {
         id: 'converter',
-        title: '💱 Currency Converter',
+        title: '💱 ' + t('auth.converter'),
         onPress: () => {
           setIsVisible(false);
           router.replace('/');
@@ -77,14 +77,14 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     ...(user ? [
       {
         id: 'signout',
-        title: '🚪 Sign Out',
+        title: '🚪 ' + t('auth.signout'),
         onPress: handleSignOut,
         danger: true,
       },
     ] : [
       {
         id: 'signin',
-        title: '🔐 Sign In',
+        title: '🔐 ' + t('auth.signin'),
         onPress: () => {
           setIsVisible(false);
           router.push('/signin');
@@ -92,7 +92,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
       },
       {
         id: 'signup',
-        title: '✨ Sign Up',
+        title: '✨ ' + t('auth.signup'),
         onPress: () => {
           setIsVisible(false);
           router.push('/signup');
@@ -173,7 +173,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
                   RateSnap v1.0
                 </ThemedText>
                 <ThemedText style={styles.appInfoSubtext}>
-                  Professional Currency Converter
+                  {t('app.subtitle')}
                 </ThemedText>
               </View>
             </ScrollView>
@@ -291,5 +291,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     marginTop: 4,
+    textAlign: 'center',
   },
 });

@@ -51,17 +51,17 @@ function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('signup.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('common.error'), t('signup.passwordsDontMatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(t('common.error'), t('signup.passwordTooShort'));
       return;
     }
 
@@ -69,7 +69,7 @@ function SignUpScreen() {
     try {
       const { error } = await signUp(email, password, username);
       if (error) {
-        Alert.alert('Sign Up Error', error.message);
+        Alert.alert(t('auth.signup'), error.message);
       } else {
         // Save the selected language preference for new users
         try {
@@ -80,18 +80,18 @@ function SignUpScreen() {
         }
 
         Alert.alert(
-          'Account Created! 📧',
-          'Please check your email and click the confirmation link to activate your account. You won\'t be able to sign in until you confirm your email.',
+          t('signup.accountCreated') + ' 📧',
+          t('signup.checkEmail'),
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => router.push('/signin')
             }
           ]
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert(t('common.error'), t('error.loading'));
     } finally {
       setLoading(false);
     }
@@ -133,23 +133,23 @@ function SignUpScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.content}>
             <Logo size={48} showText={true} textSize={24} />
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join RateSnap to sync your data</Text>
+            <Text style={styles.title}>{t('signup.createAccount')}</Text>
+            <Text style={styles.subtitle}>{t('signup.subtitle')}</Text>
 
             <View style={styles.form}>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Username (Optional)</Text>
+                <Text style={styles.label}>{t('signup.usernameOptional')}</Text>
                 <TextInput
                   style={styles.input}
                   value={username}
                   onChangeText={setUsername}
-                  placeholder="Choose a username"
+                  placeholder={t('signup.chooseUsername')}
                   autoCapitalize="none"
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Preferred Language</Text>
+                <Text style={styles.label}>{t('signup.preferredLanguage')}</Text>
                 <View style={styles.pickerContainer}>
                   <TouchableOpacity
                     style={styles.pickerButton}
@@ -164,12 +164,12 @@ function SignUpScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>{t('auth.email')}</Text>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="Enter your email"
+                  placeholder={t('signup.enterEmail')}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -177,13 +177,13 @@ function SignUpScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>{t('auth.password')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={password}
                     onChangeText={setPassword}
-                    placeholder="Create a password"
+                    placeholder={t('signup.createPassword')}
                     secureTextEntry={!passwordVisible}
                   />
                   <TouchableOpacity
@@ -200,13 +200,13 @@ function SignUpScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password</Text>
+                <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Confirm your password"
+                    placeholder={t('signup.confirmPassword')}
                     secureTextEntry={!confirmPasswordVisible}
                   />
                   <TouchableOpacity
@@ -228,7 +228,7 @@ function SignUpScreen() {
                 disabled={loading}
               >
                 <Text style={styles.primaryButtonText}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? t('signup.creatingAccount') : t('signup.createAccount')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -260,7 +260,7 @@ function SignUpScreen() {
             </View>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
               <TouchableOpacity onPress={() => router.push('/signin')}>
                 <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>

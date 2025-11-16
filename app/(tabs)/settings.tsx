@@ -856,16 +856,16 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
           {/* Exchange Rate Information Section */}
           <View style={styles.section}>
             <ThemedText style={styles.sectionTitle}>
-              📈 Exchange Rate Information
+              📈{t('settings.exchangeRateInfo')}
             </ThemedText>
             <ThemedText style={styles.sectionDescription}>
-              Real-time currency exchange rates are updated hourly
+              {t('settings.exchangeRateInfoDescription')}
             </ThemedText>
 
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>
-                  🕒 Last Update:
+                  🕒 {t('time.lastUpdate')}:
                 </ThemedText>
                 <ThemedText style={styles.infoValue}>
                   {exchangeRateData?.time_last_update_utc
@@ -875,7 +875,7 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
               </View>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>
-                  ⏰ Next Update:
+                  ⏰ {t('time.nextUpdate')}:
                 </ThemedText>
                 <ThemedText style={styles.infoValue}>
                   {exchangeRateData?.time_next_update_utc
@@ -894,7 +894,7 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
                 '• All rates are displayed in real-time when online')}
             >
               <ThemedText style={styles.settingItemText}>
-                ℹ️ About Exchange Rates
+                ℹ️ {t('settings.aboutExchangeRates')}
               </ThemedText>
               <ThemedText style={styles.arrowText}>›</ThemedText>
             </TouchableOpacity>

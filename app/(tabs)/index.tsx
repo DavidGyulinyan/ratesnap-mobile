@@ -212,7 +212,7 @@ export default function HomeScreen() {
               <ThemedText style={styles.logoEmoji}>💱</ThemedText>
             </View>
             <ThemedText type="title" style={styles.dashboardTitle}>
-              {t("app.title")} Dashboard
+              RateSnap Dashboard
             </ThemedText>
           </View>
           <View style={styles.headerRight}>
@@ -571,7 +571,7 @@ export default function HomeScreen() {
         visible={showAuthPrompt}
         onClose={() => setShowAuthPrompt(false)}
         title="Create account to sync and enable alerts"
-        message="Sign up to save your data and enable premium features"
+        message="Sign up to save your data"
         feature="general"
       />
       <Footer />
