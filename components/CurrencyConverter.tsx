@@ -844,104 +844,123 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           </TouchableOpacity>
         )}
 
-        {/* Enhanced Header with Features */}
-        <View style={styles.enhancedHeader}>
-          <View style={styles.headerLogoContainer}>
-            <Logo size={32} showText={true} textSize={20} />
-          </View>
-          <ThemedText type="title" style={styles.mainTitle}>
-            {t('converter.subtitle')}
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            {t('dashboard.features.description')}
-          </ThemedText>
-        </View>
-
-
-        <View style={styles.updateInfo}>
-          <ThemedText style={styles.updateText}>
-            {t('time.lastUpdate')}: {currenciesData?.time_last_update_utc}
-          </ThemedText>
-          <ThemedText style={styles.updateText}>
-            {t('time.nextUpdate')}: {currenciesData?.time_next_update_utc}
-          </ThemedText>
-        </View>
-
-        {/* Main Converter Box - Enhanced */}
-        <View style={styles.mainConverterBox}>
-          <ThemedText style={styles.converterTitle}>💱 {t('converter.standard')}</ThemedText>
-          
-          <View style={styles.convertedAmountBox}>
-            <ThemedText style={styles.convertedAmountText}>
-              {amount && parseFloat(amount) > 0 && convertedAmount
-                ? tWithParams('converter.conversionResult', {
-                    amount,
-                    fromCurrency,
-                    convertedAmount,
-                    toCurrency
-                  })
-                : fromCurrency && toCurrency && currenciesData
-                  ? tWithParams('converter.exchangeRateResult', {
-                      rateLabel: t('converter.exchangeRate'),
-                      fromCurrency,
-                      rate: getExchangeRate().toFixed(4),
-                      toCurrency
-                    })
-                  : t('converter.selectCurrencies')}
-            </ThemedText>
-          </View>
-
-          <View style={styles.amountInputContainer}>
-            <TextInput
-              style={styles.amountInput}
-              placeholder={t('converter.enterAmount')}
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="numeric"
-            />
+        {/* Modern Currency Converter - Complete Redesign */}
+        <View style={styles.modernConverterCard}>
+          <View style={styles.converterHeader}>
+            <ThemedText style={styles.converterTitle}>💱 Currency Converter</ThemedText>
             <TouchableOpacity
-              style={styles.calculatorButton}
+              style={styles.calculatorHeaderButton}
               onPress={() => setShowCalculator(true)}
             >
-              <ThemedText style={styles.calculatorButtonText}>🧮 {t('converter.calculator')}</ThemedText>
+              <ThemedText style={styles.calculatorHeaderText}>🧮</ThemedText>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.currencySelectors}>
+          {/* Amount Input Section */}
+          <View style={styles.amountSection}>
+            <ThemedText style={styles.amountLabel}>Amount</ThemedText>
+            <View style={styles.amountInputWrapper}>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter amount"
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="numeric"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+
+            {/* Quick Amount Presets */}
+            <View style={styles.quickAmounts}>
+              {[1, 10, 100, 1000].map((preset) => (
+                <TouchableOpacity
+                  key={preset}
+                  style={styles.quickAmountButton}
+                  onPress={() => setAmount(preset.toString())}
+                >
+                  <ThemedText style={styles.quickAmountText}>{preset}</ThemedText>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Currency Selection - Horizontal Layout */}
+          <View style={styles.currencySelection}>
             <TouchableOpacity
-              style={styles.currencyButton}
+              style={styles.currencySelector}
               onPress={() => setShowFromPicker(true)}
             >
-              <View style={styles.currencyButtonContent}>
-                <CurrencyFlag currency={fromCurrency} size={20} />
-                <ThemedText style={styles.currencyButtonText}>
-                  {t('converter.from')}: {fromCurrency}
-                </ThemedText>
+              <View style={styles.currencyFlagContainer}>
+                <CurrencyFlag currency={fromCurrency} size={24} />
+              </View>
+              <View style={styles.currencyInfo}>
+                <ThemedText style={styles.currencyLabel}>From</ThemedText>
+                <ThemedText style={styles.currencyCode}>{fromCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
-              <ThemedText style={styles.swapButtonText}>⇄</ThemedText>
+            <TouchableOpacity
+              style={styles.swapButtonModern}
+              onPress={handleSwap}
+            >
+              <ThemedText style={styles.swapIcon}>⇄</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.currencyButton}
+              style={styles.currencySelector}
               onPress={() => setShowToPicker(true)}
             >
-              <View style={styles.currencyButtonContent}>
-                <CurrencyFlag currency={toCurrency} size={20} />
-                <ThemedText style={styles.currencyButtonText}>
-                  {t('converter.to')}: {toCurrency}
-                </ThemedText>
+              <View style={styles.currencyFlagContainer}>
+                <CurrencyFlag currency={toCurrency} size={24} />
+              </View>
+              <View style={styles.currencyInfo}>
+                <ThemedText style={styles.currencyLabel}>To</ThemedText>
+                <ThemedText style={styles.currencyCode}>{toCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveRate}>
-            <ThemedText style={styles.saveButtonText}>
-              ⭐ {t('converter.saveRate')}
-            </ThemedText>
-          </TouchableOpacity>
+          {/* Conversion Result - Prominent Display */}
+          <View style={styles.resultSection}>
+            <View style={styles.resultCard}>
+              {amount && parseFloat(amount) > 0 && convertedAmount ? (
+                <View style={styles.conversionDisplay}>
+                  <View style={styles.amountRow}>
+                    <ThemedText style={styles.inputAmount}>
+                      {parseFloat(amount).toLocaleString()} {fromCurrency}
+                    </ThemedText>
+                    <ThemedText style={styles.equals}>=</ThemedText>
+                  </View>
+                  <View style={styles.resultRow}>
+                    <ThemedText style={styles.outputAmount}>
+                      {parseFloat(convertedAmount).toLocaleString()} {toCurrency}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.rateInfo}>
+                    <ThemedText style={styles.rateText}>
+                      1 {fromCurrency} = {getExchangeRate().toFixed(4)} {toCurrency}
+                    </ThemedText>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.placeholderResult}>
+                  <ThemedText style={styles.placeholderText}>
+                    Enter an amount to see conversion
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.saveRateButton}
+              onPress={handleSaveRate}
+            >
+              <ThemedText style={styles.saveRateText}>⭐ Save Rate</ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Multi-Currency Converter - Using Shared Component */}
@@ -1122,21 +1141,6 @@ const styles = StyleSheet.create({
     color: "#374151",
     textAlign: "center",
   },
-  updateInfo: {
-    marginBottom: 20,
-    alignItems: "center",
-    padding: 12,
-    backgroundColor: "#f0f9ff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#0ea5e9",
-  },
-  updateText: {
-    color: "#0c4a6e",
-    fontSize: 12,
-    textAlign: "center",
-    marginBottom: 2,
-  },
   mainConverterBox: {
     borderWidth: 2,
     borderColor: "#7c3aed",
@@ -1150,7 +1154,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginBottom: 20,
   },
-  converterTitle: {
+  converterTitleOld: {
     fontSize: 18,
     fontWeight: "600",
     color: "#1f2937",
@@ -1178,7 +1182,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     gap: 12,
   },
-  amountInput: {
+  amountInputOld: {
     flex: 1,
     borderWidth: 2,
     borderColor: "#d1d5db",
@@ -1275,5 +1279,226 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     fontStyle: "italic",
+  },
+
+  // Modern Currency Converter Styles
+  modernConverterCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  converterHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  converterTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1f2937",
+  },
+  calculatorHeaderButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calculatorHeaderText: {
+    fontSize: 20,
+  },
+
+  // Amount Section
+  amountSection: {
+    marginBottom: 24,
+  },
+  amountLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 12,
+  },
+  amountInputWrapper: {
+    marginBottom: 16,
+  },
+  amountInput: {
+    borderWidth: 2,
+    borderColor: "#d1d5db",
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    fontSize: 18,
+    backgroundColor: "#ffffff",
+    color: "#1f2937",
+    fontWeight: "500",
+  },
+
+  // Quick Amounts
+  quickAmounts: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  quickAmountButton: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  quickAmountText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4b5563",
+  },
+
+  // Currency Selection
+  currencySelection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  currencySelector: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  currencyFlagContainer: {
+    marginBottom: 8,
+  },
+  currencyInfo: {
+    alignItems: "center",
+  },
+  currencyLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+  currencyCode: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1f2937",
+  },
+  swapButtonModern: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#6366f1",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 12,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  swapIcon: {
+    fontSize: 18,
+    color: "#ffffff",
+    fontWeight: "bold",
+  },
+
+  // Result Section
+  resultSection: {
+    marginBottom: 24,
+  },
+  resultCard: {
+    backgroundColor: "#f0f9ff",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: "#3b82f6",
+    alignItems: "center",
+  },
+  conversionDisplay: {
+    width: "100%",
+    alignItems: "center",
+  },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  inputAmount: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1f2937",
+  },
+  equals: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#6b7280",
+    marginHorizontal: 12,
+  },
+  resultRow: {
+    marginBottom: 12,
+  },
+  outputAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1d4ed8",
+  },
+  rateInfo: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#dbeafe",
+  },
+  rateText: {
+    fontSize: 14,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  placeholderResult: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: "#9ca3af",
+    fontStyle: "italic",
+  },
+
+  // Action Buttons
+  actionButtons: {
+    alignItems: "center",
+  },
+  saveRateButton: {
+    backgroundColor: "#f59e0b",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    shadowColor: "#f59e0b",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  saveRateText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

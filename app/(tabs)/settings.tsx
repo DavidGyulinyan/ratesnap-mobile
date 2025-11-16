@@ -15,6 +15,7 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
+import { getAsyncStorage } from '@/lib/storage';
 
 export default function SettingsScreen() {
   const { t, language } = useLanguage();
@@ -40,6 +41,12 @@ export default function SettingsScreen() {
   const [deletionInProgress, setDeletionInProgress] = useState(false);
   const [pendingDeletion, setPendingDeletion] = useState(false);
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
+
+  // Exchange rate data state
+  const [exchangeRateData, setExchangeRateData] = useState<{
+    time_last_update_utc?: string;
+    time_next_update_utc?: string;
+  } | null>(null);
 
   // Terms of use - moved to external file for better performance
   const getCurrentTerms = () => {
@@ -428,7 +435,7 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
   useEffect(() => {
     const checkPendingDeletion = async () => {
       if (!user) return;
-      
+
       try {
         const supabase = getSupabaseClient();
         if (!supabase) return;
@@ -450,6 +457,27 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
 
     checkPendingDeletion();
   }, [user]);
+
+  // Load exchange rate data on component mount
+  useEffect(() => {
+    const loadExchangeRateData = async () => {
+      try {
+        const storage = getAsyncStorage();
+        const cachedData = await storage.getItem("cachedExchangeRates");
+        if (cachedData) {
+          const data = JSON.parse(cachedData);
+          setExchangeRateData({
+            time_last_update_utc: data.time_last_update_utc,
+            time_next_update_utc: data.time_next_update_utc,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading exchange rate data:', error);
+      }
+    };
+
+    loadExchangeRateData();
+  }, []);
 
   const renderAccountInfoSection = () => {
     if (!user) {
@@ -803,7 +831,7 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
             <ThemedText style={styles.sectionTitle}>
               {t('settings.dataManagement')}
             </ThemedText>
-            
+
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Cache cleared successfully')}
@@ -820,6 +848,53 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
             >
               <ThemedText style={styles.settingItemText}>
                 📊 {t('settings.exportData')}
+              </ThemedText>
+              <ThemedText style={styles.arrowText}>›</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          {/* Exchange Rate Information Section */}
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>
+              📈 Exchange Rate Information
+            </ThemedText>
+            <ThemedText style={styles.sectionDescription}>
+              Real-time currency exchange rates are updated hourly
+            </ThemedText>
+
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>
+                  🕒 Last Update:
+                </ThemedText>
+                <ThemedText style={styles.infoValue}>
+                  {exchangeRateData?.time_last_update_utc
+                    ? new Date(exchangeRateData.time_last_update_utc).toLocaleString()
+                    : 'Not available'}
+                </ThemedText>
+              </View>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>
+                  ⏰ Next Update:
+                </ThemedText>
+                <ThemedText style={styles.infoValue}>
+                  {exchangeRateData?.time_next_update_utc
+                    ? new Date(exchangeRateData.time_next_update_utc).toLocaleString()
+                    : 'Not available'}
+                </ThemedText>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => Alert.alert('Exchange Rate Info',
+                'Exchange rates are provided by CurrencyFreaks API and updated hourly.\n\n' +
+                '• Rates are cached locally for offline use\n' +
+                '• Updates occur automatically in the background\n' +
+                '• All rates are displayed in real-time when online')}
+            >
+              <ThemedText style={styles.settingItemText}>
+                ℹ️ About Exchange Rates
               </ThemedText>
               <ThemedText style={styles.arrowText}>›</ThemedText>
             </TouchableOpacity>
