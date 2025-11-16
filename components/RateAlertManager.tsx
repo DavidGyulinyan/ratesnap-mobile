@@ -8,10 +8,10 @@ import {
   ScrollView,
   Modal,
   Switch,
-  Platform,
 } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import CurrencyPicker from "./CurrencyPicker";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRateAlerts } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +35,8 @@ interface RateAlertManagerProps {
 }
 
 interface AlertFormData {
+  fromCurrency: string;
+  toCurrency: string;
   targetRate: string;
   direction: 'above' | 'below';
   isActive: boolean;
@@ -48,9 +50,16 @@ export default function RateAlertManager({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { rateAlerts, loading, createAlert, updateAlert, deleteAlert, error } = useRateAlerts();
+
+  // Extract currencies list from currenciesData
+  const currencies = currenciesData?.conversion_rates ? Object.keys(currenciesData.conversion_rates) : [];
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
+  const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
+  const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
   const [formData, setFormData] = useState<AlertFormData>({
+    fromCurrency: 'USD',
+    toCurrency: 'AMD',
     targetRate: '',
     direction: 'above',
     isActive: true,
@@ -59,6 +68,8 @@ export default function RateAlertManager({
   const handleCreateAlert = () => {
     setEditingAlertId(null);
     setFormData({
+      fromCurrency: 'USD',
+      toCurrency: 'AMD',
       targetRate: '1.0',
       direction: 'above',
       isActive: true,
@@ -69,6 +80,8 @@ export default function RateAlertManager({
   const handleEditAlert = (alert: RateAlert) => {
     setEditingAlertId(alert.id);
     setFormData({
+      fromCurrency: alert.from_currency,
+      toCurrency: alert.to_currency,
       targetRate: alert.target_rate.toString(),
       direction: alert.condition,
       isActive: alert.is_active,
@@ -102,52 +115,12 @@ export default function RateAlertManager({
           return;
         }
       } else {
-        // Create new alert - need to select currencies first
-        Alert.alert(
-          'Select Currencies',
-          'Please select the currency pair for this alert:',
-          [
-            {
-              text: 'EUR/USD',
-              onPress: async () => {
-                const success = await createAlert('EUR', 'USD', targetRate, formData.direction);
-                if (!success) {
-                  Alert.alert('Error', 'Failed to create rate alert');
-                  return;
-                }
-                onRatesUpdate();
-              }
-            },
-            {
-              text: 'GBP/USD',
-              onPress: async () => {
-                const success = await createAlert('GBP', 'USD', targetRate, formData.direction);
-                if (!success) {
-                  Alert.alert('Error', 'Failed to create rate alert');
-                  return;
-                }
-                onRatesUpdate();
-              }
-            },
-            {
-              text: 'USD/JPY',
-              onPress: async () => {
-                const success = await createAlert('USD', 'JPY', targetRate, formData.direction);
-                if (!success) {
-                  Alert.alert('Error', 'Failed to create rate alert');
-                  return;
-                }
-                onRatesUpdate();
-              }
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel'
-            }
-          ]
-        );
-        setShowAlertModal(false);
-        return;
+        // Create new alert with selected currencies
+        const success = await createAlert(formData.fromCurrency, formData.toCurrency, targetRate, formData.direction);
+        if (!success) {
+          Alert.alert('Error', 'Failed to create rate alert');
+          return;
+        }
       }
 
       setShowAlertModal(false);
@@ -368,13 +341,47 @@ export default function RateAlertManager({
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.formGroup}>
-              <ThemedText style={styles.label}>Target Rate</ThemedText>
+              <ThemedText style={styles.label}>From Currency</ThemedText>
+              <TouchableOpacity
+                style={styles.currencySelector}
+                onPress={() => setShowFromCurrencyPicker(true)}
+              >
+                <View style={styles.currencySelectorContent}>
+                  <CurrencyFlag currency={formData.fromCurrency} size={24} />
+                  <ThemedText style={styles.currencySelectorText}>
+                    {formData.fromCurrency}
+                  </ThemedText>
+                  <ThemedText style={styles.arrowText}>▼</ThemedText>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formGroup}>
+              <ThemedText style={styles.label}>To Currency</ThemedText>
+              <TouchableOpacity
+                style={styles.currencySelector}
+                onPress={() => setShowToCurrencyPicker(true)}
+              >
+                <View style={styles.currencySelectorContent}>
+                  <CurrencyFlag currency={formData.toCurrency} size={24} />
+                  <ThemedText style={styles.currencySelectorText}>
+                    {formData.toCurrency}
+                  </ThemedText>
+                  <ThemedText style={styles.arrowText}>▼</ThemedText>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.formGroup}>
+              <ThemedText style={styles.label}>
+                Target Rate (1 {formData.fromCurrency} = X {formData.toCurrency})
+              </ThemedText>
               <TextInput
                 style={styles.input}
                 value={formData.targetRate}
                 onChangeText={(text) => setFormData({ ...formData, targetRate: text })}
                 keyboardType="numeric"
-                placeholder="Enter target rate"
+                placeholder={`Enter rate for ${formData.fromCurrency} → ${formData.toCurrency}`}
               />
             </View>
 
@@ -417,6 +424,30 @@ export default function RateAlertManager({
           </ScrollView>
         </View>
       </Modal>
+
+      {/* From Currency Picker */}
+      <CurrencyPicker
+        visible={showFromCurrencyPicker}
+        currencies={currencies}
+        selectedCurrency={formData.fromCurrency}
+        onSelect={(currency) => {
+          setFormData({ ...formData, fromCurrency: currency });
+          setShowFromCurrencyPicker(false);
+        }}
+        onClose={() => setShowFromCurrencyPicker(false)}
+      />
+
+      {/* To Currency Picker */}
+      <CurrencyPicker
+        visible={showToCurrencyPicker}
+        currencies={currencies}
+        selectedCurrency={formData.toCurrency}
+        onSelect={(currency) => {
+          setFormData({ ...formData, toCurrency: currency });
+          setShowToCurrencyPicker(false);
+        }}
+        onClose={() => setShowToCurrencyPicker(false)}
+      />
     </View>
   );
 }
@@ -662,5 +693,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  currencySelector: {
+    borderWidth: 2,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#ffffff',
+  },
+  currencySelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  currencySelectorText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginLeft: 8,
+    flex: 1,
+  },
+  arrowText: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: 'bold',
   },
 });
