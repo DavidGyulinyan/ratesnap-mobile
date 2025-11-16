@@ -1,8 +1,8 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
+import BurgerMenu from "@/components/BurgerMenu";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
-import LanguageDropdown from "@/components/LanguageDropdown";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
@@ -94,14 +94,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      Alert.alert("Success", "You have been signed out successfully.");
-    } catch (error) {
-      Alert.alert("Error", "Failed to sign out. Please try again.");
-    }
-  };
 
   const deleteSavedRate = async (id: string | number) => {
     const success = await deleteRate(id.toString());
@@ -131,15 +123,6 @@ export default function HomeScreen() {
     ]);
   };
 
-  const getAuthText = (key: string) => {
-    // For Russian, use compact versions to prevent header overflow
-    const compactKey = key + ".compact";
-    const compactText = t(compactKey);
-    if (compactText !== compactKey) {
-      return compactText;
-    }
-    return t(key);
-  };
 
   const handleCalculatorResult = (result: number): void => {
     console.log('Calculator result:', result);
@@ -216,74 +199,7 @@ export default function HomeScreen() {
               {t("app.title")} Dashboard
             </ThemedText>
           </View>
-          <View style={styles.headerActions}>
-            {/* Language Switcher - Always visible */}
-            <LanguageDropdown compact={true} style={styles.languageSwitcher} />
-
-            {/* Show sign-in/sign-up for non-authenticated users */}
-            {!user ? (
-              <>
-                <TouchableOpacity
-                  style={styles.authButton}
-                  onPress={() => router.push("/signin")}
-                >
-                  <ThemedText
-                    style={styles.authButtonText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signin")}
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.authButton, styles.authButtonPrimary]}
-                  onPress={() => router.push("/signup")}
-                >
-                  <ThemedText
-                    style={styles.authButtonPrimaryText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signup")}
-                  </ThemedText>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.converterButton}
-                  onPress={() => setCurrentView("converter")}
-                >
-                  <ThemedText
-                    style={styles.converterButtonText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("converter.title")}
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.userInfo}
-                  onPress={handleSignOut}
-                >
-                  <ThemedText
-                    style={styles.userInfoText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.welcome")}, {user.email?.split("@")[0]}
-                  </ThemedText>
-                  <ThemedText
-                    style={styles.signOutText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signout")}
-                  </ThemedText>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+          <BurgerMenu style={styles.burgerMenu} />
         </View>
 
         {/* Scrollable Dashboard Content */}
@@ -694,94 +610,8 @@ const styles = StyleSheet.create({
     elevation: 1,
     backdropFilter: "blur(8px)",
   },
-  languageSwitcher: {
-    marginRight: 2,
-  },
   burgerMenu: {
     marginLeft: 8,
-  },
-
-  // Action buttons
-  converterButton: {
-    backgroundColor: "#6366f1",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  converterButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 11,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  authButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.8)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    maxWidth: 70,
-  },
-  authButtonText: {
-    color: "#64748b",
-    fontWeight: "600",
-    fontSize: 10,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  authButtonPrimary: {
-    backgroundColor: "#6366f1",
-    borderColor: "#6366f1",
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
-    maxWidth: 75,
-    paddingHorizontal: 10,
-  },
-  authButtonPrimaryText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 10,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  userInfo: {
-    alignItems: "flex-end",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.8)",
-    maxWidth: 85,
-  },
-  userInfoText: {
-    color: "#64748b",
-    fontSize: 9,
-    textAlign: "right",
-    fontWeight: "500",
-    flexWrap: "wrap",
-  },
-  signOutText: {
-    color: "#ef4444",
-    fontSize: 9,
-    fontWeight: "600",
-    textAlign: "right",
-    flexWrap: "wrap",
   },
 
   // Scroll content

@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -122,7 +121,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
         onRequestClose={() => setIsVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <ThemedView style={styles.menuContainer}>
+          <View style={styles.menuContainer}>
             {/* Header */}
             <View style={styles.menuHeader}>
               <ThemedText style={styles.menuTitle}>
@@ -137,7 +136,11 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
             </View>
 
             {/* Menu Items */}
-            <ScrollView style={styles.menuItems} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.menuItems}
+              contentContainerStyle={styles.menuItemsContent}
+              showsVerticalScrollIndicator={false}
+            >
               {menuItems.map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -174,7 +177,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
                 </ThemedText>
               </View>
             </ScrollView>
-          </ThemedView>
+          </View>
         </View>
       </Modal>
     </>
@@ -200,10 +203,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   menuContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#ffffff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
+    height: '80%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.25,
@@ -238,13 +241,16 @@ const styles = StyleSheet.create({
   },
   menuItems: {
     flex: 1,
+  },
+  menuItemsContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   menuItem: {
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginBottom: 8,
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
+    backgroundColor: '#f8fafc',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(226, 232, 240, 0.6)',
