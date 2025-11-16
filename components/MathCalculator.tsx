@@ -10,6 +10,7 @@ interface MathCalculatorProps {
   onClose: () => void;
   onResult?: (result: number) => void;
   onAddToConverter?: (result: number) => void;
+  autoCloseAfterCalculation?: boolean;
 }
 
 export default function MathCalculator({
@@ -17,6 +18,7 @@ export default function MathCalculator({
   onClose,
   onResult,
   onAddToConverter,
+  autoCloseAfterCalculation = true,
 }: MathCalculatorProps) {
   const { user } = useAuth();
   const { saveCalculation, loading: historyLoading } = useCalculatorHistory();
@@ -160,12 +162,16 @@ export default function MathCalculator({
       // Automatically add to converter after calculation
       if (onAddToConverter) {
         onAddToConverter(result);
+        // Only close if auto-close is enabled
+        if (autoCloseAfterCalculation) {
+          onClose();
+          // Reset calculator state
+          clear();
+        }
+      } else {
+        // If no converter callback, don't close automatically
+        // This allows users to do multiple calculations
       }
-      
-      // Close calculator after adding to converter
-      onClose();
-      // Reset calculator state
-      clear();
     }
   };
 
@@ -229,7 +235,7 @@ export default function MathCalculator({
 
   // History functions
   const addToHistory = (calculation: string) => {
-    setCalculationHistory(prev => [calculation, ...prev.slice(0, 9)]); // Keep last 10 calculations
+    setCalculationHistory(prev => [calculation, ...prev.slice(0, 14)]); // Keep last 15 calculations
   };
 
   const clear = () => {
@@ -494,24 +500,39 @@ export default function MathCalculator({
 
         {/* Quick access toolbar */}
         <View style={styles.toolbar}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.toolbarButton}
             onPress={() => setShowAdvanced(!showAdvanced)}
           >
             <Text style={styles.toolbarButtonText}>{showAdvanced ? "Basic" : "Advanced"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.toolbarButton}
             onPress={() => setShowHistory(!showHistory)}
           >
             <Text style={styles.toolbarButtonText}>History</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.toolbarButton}
             onPress={() => setShowRoundingOptions(!showRoundingOptions)}
           >
             <Text style={styles.toolbarButtonText}>Rounding: {roundingDecimalPlaces}</Text>
           </TouchableOpacity>
+          {onAddToConverter && (
+            <TouchableOpacity
+              style={[styles.toolbarButton, styles.addToConverterButton]}
+              onPress={() => {
+                const result = parseFloat(display);
+                if (!isNaN(result) && result !== 0) {
+                  onAddToConverter(result);
+                  onClose();
+                  clear();
+                }
+              }}
+            >
+              <Text style={styles.addToConverterButtonText}>Add to Converter</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Conditional views */}
@@ -949,5 +970,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     includeFontPadding: false,
     textAlign: "center",
+  },
+  addToConverterButton: {
+    backgroundColor: "#10b981",
+    borderColor: "#059669",
+  },
+  addToConverterButtonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

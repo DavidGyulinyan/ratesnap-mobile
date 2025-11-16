@@ -23,7 +23,7 @@ import RateAlertManager from "./RateAlertManager";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSavedRates } from "@/hooks/useUserData";
+import { useSavedRates, useUserData } from "@/hooks/useUserData";
 
 interface AlertSettings {
   targetRate: number;
@@ -83,6 +83,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
   const { user } = useAuth();
   const { savedRates, saveRate, deleteRate, deleteAllRates } = useSavedRates();
+  const { pickedRates: { trackRate } } = useUserData();
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
@@ -587,6 +588,13 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
     const success = await saveRate(fromCurrency, toCurrency, rate);
     if (success) {
+      // Track picked rate when rate is saved
+      if (user) {
+        await trackRate(fromCurrency, toCurrency, rate, 'copied', {
+          saved: true,
+          timestamp: Date.now()
+        });
+      }
       Alert.alert('Success', user ? 'Rate saved to your account!' : 'Rate saved locally. Sign in to sync across devices!');
     } else {
       Alert.alert('Error', 'Failed to save rate. Please try again.');
@@ -702,7 +710,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     return toRate / fromRate;
   }, [currenciesData, fromCurrency, toCurrency]);
 
-  const handleConvert = useCallback((): void => {
+  const handleConvert = useCallback(async (): Promise<void> => {
     console.log('🔄 Converting currencies...', {
       hasData: !!currenciesData,
       amount,
@@ -749,6 +757,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
       setConvertedAmount(formattedResult);
       console.log(`✅ Conversion successful: ${amount} ${fromCurrency} → ${formattedResult} ${toCurrency}`);
       console.log(`📊 Calculation: (${inputAmount} / ${fromRate}) * ${toRate} = ${convertedValue}`);
+
+      // Track picked rate when conversion is performed
+      if (user) {
+        await trackRate(fromCurrency, toCurrency, convertedValue / inputAmount, 'converted', {
+          amount: inputAmount,
+          result: convertedValue,
+          timestamp: Date.now()
+        });
+      }
     } catch (error) {
       setConvertedAmount('');
       console.log('❌ Conversion error:', error);
@@ -980,9 +997,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           selectedCurrency={fromCurrency}
           onSelect={(currency) => setFromCurrency(currency)}
           onClose={() => setShowFromPicker(false)}
-          onCurrencySelected={(currency) => {
+          onCurrencySelected={async (currency) => {
             updateFrequentlyUsed(currency);
             saveLastConversion(amount, currency, toCurrency);
+
+            // Track picked rate when currency is selected
+            if (currenciesData && toCurrency) {
+              const rate = currenciesData.conversion_rates[toCurrency] / currenciesData.conversion_rates[currency];
+              await trackRate(currency, toCurrency, rate, 'viewed');
+            }
           }}
         />
 
@@ -992,9 +1015,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           selectedCurrency={toCurrency}
           onSelect={(currency) => setToCurrency(currency)}
           onClose={() => setShowToPicker(false)}
-          onCurrencySelected={(currency) => {
+          onCurrencySelected={async (currency) => {
             updateFrequentlyUsed(currency);
             saveLastConversion(amount, fromCurrency, currency);
+
+            // Track picked rate when currency is selected
+            if (currenciesData && fromCurrency) {
+              const rate = currenciesData.conversion_rates[currency] / currenciesData.conversion_rates[fromCurrency];
+              await trackRate(fromCurrency, currency, rate, 'viewed');
+            }
           }}
         />
 
@@ -1003,6 +1032,8 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           visible={showCalculator}
           onClose={() => setShowCalculator(false)}
           onResult={handleCalculatorResult}
+          onAddToConverter={handleCalculatorResult}
+          autoCloseAfterCalculation={false}
         />
 
         {/* Auth Prompt Modal */}
