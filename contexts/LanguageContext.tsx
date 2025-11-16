@@ -407,6 +407,7 @@ const translations = {
     'auth.signingIn': 'Մուտք գործում...',
     'auth.signingOut': 'Ելք գործում...',
     'auth.signoutSuccess': 'Դուք հաջողությամբ ելք գործեցիք:',
+    "auth.converter": "App guide",
 
     // Multi-Currency
     'multi.title': 'Բազմարժույթ փոխարկիչ',
@@ -701,6 +702,7 @@ const translations = {
     'auth.signingIn': 'Вхожу...',
     'auth.signingOut': 'Выхожу...',
     'auth.signoutSuccess': 'Вы успешно вышли!',
+    "auth.converter": "Руководство по приложению",
     
     'error.network': 'Ошибка сети. Проверьте подключение.',
     'error.loading': 'Не удалось загрузить данные. Попробуйте снова.',
@@ -925,6 +927,7 @@ const translations = {
     'auth.signingIn': 'Iniciando Sesión...',
     'auth.signingOut': 'Cerrando Sesión...',
     'auth.signoutSuccess': 'Cerraste sesión exitosamente!',
+    "auth.converter": "Guía de la app",
     
     'error.network': 'Error de red. Verifica tu conexión.',
     'error.loading': 'Error al cargar datos. Inténtalo de nuevo.',
@@ -1147,6 +1150,7 @@ const translations = {
     'auth.creatingAccount': '正在创建账户...',
     'auth.signingIn': '正在登录...',
     'auth.signingOut': '正在退出...',
+    "auth.converter": "应用指南",
     
     'error.network': '网络错误。请检查您的连接。',
     'error.loading': '数据加载失败。请重试。',
@@ -1371,6 +1375,7 @@ const translations = {
     'auth.creatingAccount': 'खाता बनाया जा रहा है...',
     'auth.signingIn': 'साइन इन हो रहा है...',
     'auth.signingOut': 'साइन आउट हो रहा है...',
+    "auth.converter": "अनुप्रयोग मार्गदर्शक",
     
     'error.network': 'नेटवर्क एरर। कृपया अपना कनेक्शन चेक करें।',
     'error.loading': 'डेटा लोड करने में असफल। कृपया पुनः प्रयास करें।',
