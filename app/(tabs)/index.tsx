@@ -74,13 +74,19 @@ export default function HomeScreen() {
   useEffect(() => {
     loadExchangeRates();
     checkOnboardingStatus();
-  }, []);
+  }, [user]);
 
   const checkOnboardingStatus = async () => {
     try {
       const onboardingCompleted = await AsyncStorage.getItem('onboardingCompleted');
-      if (!onboardingCompleted && user) {
-        // Show onboarding for authenticated users who haven't completed it
+
+      // Show onboarding if:
+      // 1. User hasn't completed onboarding, OR
+      // 2. User account was created very recently (within last 24 hours)
+      const shouldShowOnboarding = !onboardingCompleted ||
+        (user && user.created_at && (Date.now() - new Date(user.created_at).getTime()) < 24 * 60 * 60 * 1000);
+
+      if (shouldShowOnboarding && user) {
         setShowOnboarding(true);
       }
     } catch (error) {

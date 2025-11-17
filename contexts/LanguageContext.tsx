@@ -213,6 +213,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': 'Last update',
     'time.nextUpdate': 'Next update',
+
+    // Onboarding Guide
+    'onboarding.welcome': 'Welcome to RateSnap! 🎉',
+    'onboarding.welcomeDesc': 'Your professional currency converter with real-time rates and advanced features.',
+    'onboarding.convert': 'Convert Currencies Instantly',
+    'onboarding.convertDesc': 'Use the main converter to quickly convert between any currencies with live exchange rates.',
+    'onboarding.multi': 'Multi-Currency View',
+    'onboarding.multiDesc': 'View multiple currencies at once and compare rates across different countries.',
+    'onboarding.save': 'Save Favorite Rates',
+    'onboarding.saveDesc': 'Save your frequently used currency pairs for quick access and set up rate alerts.',
+    'onboarding.calculator': 'Built-in Calculator',
+    'onboarding.calculatorDesc': 'Use the integrated calculator for complex currency calculations and math operations.',
+    'onboarding.offline': 'Offline Mode',
+    'onboarding.offlineDesc': 'Works without internet using cached rates. Perfect for travel and remote areas.',
+    'onboarding.alerts': 'Rate Alerts',
+    'onboarding.alertsDesc': 'Get notified when your target exchange rates are reached. Never miss a good deal!',
+    'onboarding.ready': 'Ready to Start!',
+    'onboarding.readyDesc': 'You\'re all set! Explore the app and enjoy converting currencies with confidence.',
+    'onboarding.skip': 'Skip',
+    'onboarding.next': 'Next',
+    'onboarding.getStarted': 'Get Started',
     
     // Authentication
     'auth.signin': 'Sign In',
@@ -476,6 +497,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': 'Վերջին թարմացում',
     'time.nextUpdate': 'Հաջորդ թարմացում',
+
+    // Onboarding Guide
+    'onboarding.welcome': 'Բարի գալուստ RateSnap! 🎉',
+    'onboarding.welcomeDesc': 'Թարմ ու ճշգրիտ փոխարժեքներ՝ լիարժեք գործիքներով և առաջադեմ հնարավորություններով։',
+    'onboarding.convert': 'Արժույթները փոխարկեք անմիջապես',
+    'onboarding.convertDesc': 'Հիմնական փոխարկիչը թույլ է տալիս ակնթարթորեն իմանալ ներկայիս փոխարժեքներն ու կատարել արժույթների փոխարկում։',
+    'onboarding.multi': 'Բազմարժույթ դիտում',
+    'onboarding.multiDesc': 'Դիտեք մի քանի արժույթ միաժամանակ:',
+    'onboarding.save': 'Պահպանեք նախընտրած դրույքները',
+    'onboarding.saveDesc': 'Պահպանեք ձեզ անհրաժեշտ արժութային զույգերը արագ հասանելի դարձնելու համար և ակտիվացրեք փոխարժեքի ծանուցումներ:',
+    'onboarding.calculator': 'Ներկառուցված հաշվիչ',
+    'onboarding.calculatorDesc': 'Ինտեգրված հաշվիչը կօգնի հեշտությամբ կատարել բարդ փոխարկումներ և անհրաժեշտ մաթեմատիկական հաշվարկներ։',
+    'onboarding.offline': 'Անցանց ռեժիմ',
+    'onboarding.offlineDesc': 'Աշխատում է առանց ինտերնետի՝ օգտագործեք քեշավորված փոխարժեքները: Իդեալական է ճամփորդների համար:',
+    'onboarding.alerts': 'Դրույքի ծանուցումներ',
+    'onboarding.alertsDesc': 'Ստացեք ծանուցումներ, երբ ձեր սահմանած փոխարժեքները հասնեն նպատակային արժեքին․ այսպես երբեք բաց չեք թողնի լավ առաջարկները։',
+    'onboarding.ready': 'Պատրա՞ստ եք սկսել',
+    'onboarding.readyDesc': 'Ուսումնասիրեք հավելվածը և վայելեք դրա բազմաֆունկցիոնալ հնարավորությունները։',
+    'onboarding.skip': 'Բաց թողնել',
+    'onboarding.next': 'Հաջորդ',
+    'onboarding.getStarted': 'Սկսել',
     
     'error.network': 'Խնդիր ցանցում: Խնդրում ենք ստուգել կապը:',
     'error.loading': 'Չհաջողվեց բեռնել տվյալները: Խնդրում ենք կրկին փորձել:',
@@ -688,6 +730,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': 'Последнее обновление',
     'time.nextUpdate': 'Следующее обновление',
+
+    // Onboarding Guide
+    'onboarding.welcome': 'Добро пожаловать в RateSnap! 🎉',
+    'onboarding.welcomeDesc': 'Ваш профессиональный конвертер валют с курсами в реальном времени и расширенными функциями.',
+    'onboarding.convert': 'Конвертируйте валюты мгновенно',
+    'onboarding.convertDesc': 'Используйте основной конвертер для быстрого конвертирования между любыми валютами с курсами в реальном времени.',
+    'onboarding.multi': 'Мультивалютный вид',
+    'onboarding.multiDesc': 'Просматривайте несколько валют одновременно и сравнивайте курсы в разных странах.',
+    'onboarding.save': 'Сохраняйте любимые курсы',
+    'onboarding.saveDesc': 'Сохраняйте часто используемые пары валют для быстрого доступа и настройте оповещения о курсах.',
+    'onboarding.calculator': 'Встроенный калькулятор',
+    'onboarding.calculatorDesc': 'Используйте интегрированный калькулятор для сложных валютных расчетов и математических операций.',
+    'onboarding.offline': 'Автономный режим',
+    'onboarding.offlineDesc': 'Работает без интернета, используя кэшированные курсы. Идеально для путешествий и удаленных мест.',
+    'onboarding.alerts': 'Оповещения о курсах',
+    'onboarding.alertsDesc': 'Получайте уведомления, когда достигаются ваши целевые обменные курсы. Никогда не упускайте выгодную сделку!',
+    'onboarding.ready': 'Готовы начать!',
+    'onboarding.readyDesc': 'Вы готовы! Исследуйте приложение и наслаждайтесь конвертацией валют с уверенностью.',
+    'onboarding.skip': 'Пропустить',
+    'onboarding.next': 'Далее',
+    'onboarding.getStarted': 'Начать',
     
     // Authentication
     'auth.signin': 'Войти',
@@ -917,6 +980,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': 'Última Actualización',
     'time.nextUpdate': 'Próxima Actualización',
+
+    // Onboarding Guide
+    'onboarding.welcome': '¡Bienvenido a RateSnap! 🎉',
+    'onboarding.welcomeDesc': 'Tu convertidor de moneda profesional con tasas en tiempo real y funciones avanzadas.',
+    'onboarding.convert': 'Convierte Monedas Instantáneamente',
+    'onboarding.convertDesc': 'Usa el convertidor principal para convertir rápidamente entre cualquier moneda con tasas de cambio en vivo.',
+    'onboarding.multi': 'Vista Multi-Moneda',
+    'onboarding.multiDesc': 'Ve múltiples monedas a la vez y compara tasas en diferentes países.',
+    'onboarding.save': 'Guarda Tasas Favoritas',
+    'onboarding.saveDesc': 'Guarda tus pares de monedas frecuentemente usados para acceso rápido y configura alertas de tasa.',
+    'onboarding.calculator': 'Calculadora Integrada',
+    'onboarding.calculatorDesc': 'Usa la calculadora integrada para cálculos complejos de moneda y operaciones matemáticas.',
+    'onboarding.offline': 'Modo Sin Conexión',
+    'onboarding.offlineDesc': 'Funciona sin internet usando tasas en caché. Perfecto para viajes y áreas remotas.',
+    'onboarding.alerts': 'Alertas de Tasa',
+    'onboarding.alertsDesc': 'Recibe notificaciones cuando se alcanzan tus tasas de cambio objetivo. ¡Nunca pierdas una buena oferta!',
+    'onboarding.ready': '¡Listo para Empezar!',
+    'onboarding.readyDesc': '¡Estás listo! Explora la app y disfruta convirtiendo monedas con confianza.',
+    'onboarding.skip': 'Omitir',
+    'onboarding.next': 'Siguiente',
+    'onboarding.getStarted': 'Comenzar',
     
     // Authentication
     'auth.signin': 'Iniciar Sesión',
@@ -1145,6 +1229,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': '最后更新',
     'time.nextUpdate': '下次更新',
+
+    // Onboarding Guide
+    'onboarding.welcome': '欢迎来到RateSnap！🎉',
+    'onboarding.welcomeDesc': '您的专业货币转换器，具有实时汇率和高级功能。',
+    'onboarding.convert': '即时转换货币',
+    'onboarding.convertDesc': '使用主转换器快速转换任何货币之间的汇率，使用实时汇率。',
+    'onboarding.multi': '多货币视图',
+    'onboarding.multiDesc': '一次查看多种货币并比较不同国家的汇率。',
+    'onboarding.save': '保存收藏汇率',
+    'onboarding.saveDesc': '保存您经常使用的货币对以便快速访问，并设置汇率警报。',
+    'onboarding.calculator': '内置计算器',
+    'onboarding.calculatorDesc': '使用集成计算器进行复杂的货币计算和数学运算。',
+    'onboarding.offline': '离线模式',
+    'onboarding.offlineDesc': '使用缓存汇率无需互联网即可工作。非常适合旅行和偏远地区。',
+    'onboarding.alerts': '汇率警报',
+    'onboarding.alertsDesc': '当达到您的目标汇率时收到通知。永远不要错过好交易！',
+    'onboarding.ready': '准备开始！',
+    'onboarding.readyDesc': '您已经准备好了！探索应用并自信地享受货币转换。',
+    'onboarding.skip': '跳过',
+    'onboarding.next': '下一步',
+    'onboarding.getStarted': '开始使用',
     
     // Authentication
     'auth.signin': '登录',
@@ -1374,6 +1479,27 @@ const translations = {
     // Date/Time
     'time.lastUpdate': 'अंतिम अपडेट',
     'time.nextUpdate': 'अगला अपडेट',
+
+    // Onboarding Guide
+    'onboarding.welcome': 'RateSnap में आपका स्वागत है! 🎉',
+    'onboarding.welcomeDesc': 'रियल-टाइम दरों और उन्नत सुविधाओं के साथ आपका पेशेवर मुद्रा कन्वर्टर।',
+    'onboarding.convert': 'मुद्राएं तुरंत बदलें',
+    'onboarding.convertDesc': 'लाइव एक्सचेंज दरों के साथ किसी भी मुद्राओं के बीच तेजी से बदलने के लिए मुख्य कन्वर्टर का उपयोग करें।',
+    'onboarding.multi': 'मल्टी-करेंसी दृश्य',
+    'onboarding.multiDesc': 'एक साथ कई मुद्राएं देखें और विभिन्न देशों में दरों की तुलना करें।',
+    'onboarding.save': 'पसंदीदा दरें सेव करें',
+    'onboarding.saveDesc': 'तेजी से पहुंच के लिए अपनी अक्सर इस्तेमाल की जाने वाली मुद्रा जोड़ियों को सेव करें और रेट अलर्ट सेट करें।',
+    'onboarding.calculator': 'बिल्ट-इन कैलकुलेटर',
+    'onboarding.calculatorDesc': 'जटिल मुद्रा गणनाओं और गणितीय संचालन के लिए एकीकृत कैलकुलेटर का उपयोग करें।',
+    'onboarding.offline': 'ऑफलाइन मोड',
+    'onboarding.offlineDesc': 'कैश्ड दरों का उपयोग करके इंटरनेट के बिना काम करता है। यात्रा और दूरस्थ क्षेत्रों के लिए परफेक्ट।',
+    'onboarding.alerts': 'रेट अलर्ट',
+    'onboarding.alertsDesc': 'जब आपकी लक्ष्य एक्सचेंज दरें पहुंच जाएं तो सूचनाएं प्राप्त करें। कभी भी अच्छा सौदा न छोड़ें!',
+    'onboarding.ready': 'शुरू करने के लिए तैयार!',
+    'onboarding.readyDesc': 'आप तैयार हैं! ऐप का अन्वेषण करें और विश्वास के साथ मुद्राओं को बदलने का आनंद लें।',
+    'onboarding.skip': 'छोड़ें',
+    'onboarding.next': 'अगला',
+    'onboarding.getStarted': 'शुरू करें',
     
     // Authentication
     'auth.signin': 'साइन इन',

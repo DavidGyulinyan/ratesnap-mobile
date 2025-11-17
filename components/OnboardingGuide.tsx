@@ -23,43 +23,43 @@ const OnboardingGuide: React.FC<OnboardingGuideProps> = ({ onComplete }) => {
 
   const steps = [
     {
-      title: 'Welcome to RateSnap! 🎉',
-      description: 'Your professional currency converter with real-time rates and advanced features.',
+      title: t('onboarding.welcome'),
+      description: t('onboarding.welcomeDesc'),
       icon: '💱',
     },
     {
-      title: 'Convert Currencies Instantly',
-      description: 'Use the main converter to quickly convert between any currencies with live exchange rates.',
+      title: t('onboarding.convert'),
+      description: t('onboarding.convertDesc'),
       icon: '🔄',
     },
     {
-      title: 'Multi-Currency View',
-      description: 'View multiple currencies at once and compare rates across different countries.',
+      title: t('onboarding.multi'),
+      description: t('onboarding.multiDesc'),
       icon: '📊',
     },
     {
-      title: 'Save Favorite Rates',
-      description: 'Save your frequently used currency pairs for quick access and set up rate alerts.',
+      title: t('onboarding.save'),
+      description: t('onboarding.saveDesc'),
       icon: '⭐',
     },
     {
-      title: 'Built-in Calculator',
-      description: 'Use the integrated calculator for complex currency calculations and math operations.',
+      title: t('onboarding.calculator'),
+      description: t('onboarding.calculatorDesc'),
       icon: '🧮',
     },
     {
-      title: 'Offline Mode',
-      description: 'Works without internet using cached rates. Perfect for travel and remote areas.',
+      title: t('onboarding.offline'),
+      description: t('onboarding.offlineDesc'),
       icon: '📱',
     },
     {
-      title: 'Rate Alerts',
-      description: 'Get notified when your target exchange rates are reached. Never miss a good deal!',
+      title: t('onboarding.alerts'),
+      description: t('onboarding.alertsDesc'),
       icon: '🔔',
     },
     {
-      title: 'Ready to Start!',
-      description: 'You\'re all set! Explore the app and enjoy converting currencies with confidence.',
+      title: t('onboarding.ready'),
+      description: t('onboarding.readyDesc'),
       icon: '🚀',
     },
   ];
@@ -95,8 +95,8 @@ const OnboardingGuide: React.FC<OnboardingGuideProps> = ({ onComplete }) => {
           {currentStep + 1} / {steps.length}
         </Text>
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
+           <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
+         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
@@ -122,13 +122,13 @@ const OnboardingGuide: React.FC<OnboardingGuideProps> = ({ onComplete }) => {
         </View>
 
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
-          </Text>
-          {currentStep < steps.length - 1 && (
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
+           <Text style={styles.nextButtonText}>
+             {currentStep === steps.length - 1 ? t('onboarding.getStarted') : t('onboarding.next')}
+           </Text>
+           {currentStep < steps.length - 1 && (
+             <Ionicons name="arrow-forward" size={20} color="#fff" />
+           )}
+         </TouchableOpacity>
       </View>
     </View>
   );

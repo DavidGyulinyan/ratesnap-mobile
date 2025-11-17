@@ -77,16 +77,8 @@ function SignUpScreen() {
         Alert.alert(t('auth.signup'), error.message);
       } else {
 
-        Alert.alert(
-          t('signup.accountCreated') + ' 📧',
-          t('signup.checkEmail'),
-          [
-            {
-              text: t('common.ok'),
-              onPress: () => router.push('/signin')
-            }
-          ]
-        );
+        // Navigate directly to main app - onboarding will be shown automatically for new users
+        router.replace('/');
       }
     } catch (error) {
       Alert.alert(t('common.error'), t('error.loading'));
