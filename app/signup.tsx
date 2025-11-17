@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, Language } from '@/contexts/LanguageContext';
 import Logo from '@/components/Logo';
 import AuthButtons from '@/components/AuthButtons';
 import * as WebBrowser from 'expo-web-browser';
@@ -35,8 +35,12 @@ function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   
   const { signUp } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
+
+  useEffect(() => {
+    setSelectedLanguage(language);
+  }, [language]);
 
   const getLanguageDisplayName = (lang: string) => {
     const languageNames: { [key: string]: string } = {
@@ -72,13 +76,6 @@ function SignUpScreen() {
       if (error) {
         Alert.alert(t('auth.signup'), error.message);
       } else {
-        // Save the selected language preference for new users
-        try {
-          await AsyncStorage.setItem('appLanguage', selectedLanguage);
-          console.log('Language preference saved:', selectedLanguage);
-        } catch (error) {
-          console.error('Failed to save language preference:', error);
-        }
 
         Alert.alert(
           t('signup.accountCreated') + ' 📧',
@@ -251,6 +248,7 @@ function SignUpScreen() {
                     selectedLanguage === lang.code && styles.languageOptionSelected
                   ]}
                   onPress={() => {
+                    setLanguage(lang.code as Language);
                     setSelectedLanguage(lang.code);
                     setShowLanguagePicker(false);
                   }}
