@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from '@/components/Logo';
+import AuthButtons from '@/components/AuthButtons';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignInScreen() {
@@ -27,7 +28,7 @@ export default function SignInScreen() {
   const [invalidCredentials, setInvalidCredentials] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
-  const { signIn, signInWithGoogle, signInWithApple, resendConfirmationEmail } = useAuth();
+  const { signIn, resendConfirmationEmail } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -84,28 +85,6 @@ export default function SignInScreen() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      Alert.alert(t('auth.continueWithGoogle'), error instanceof Error ? error.message : t('error.loading'));
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    if (Platform.OS === 'ios') {
-      try {
-        const { error } = await signInWithApple();
-        if (error) {
-          Alert.alert(t('auth.continueWithApple'), error.message);
-        }
-      } catch (error) {
-        Alert.alert(t('common.error'), t('error.loading'));
-      }
-    } else {
-      Alert.alert(t('common.error'), t('signin.appleNotAvailable'));
-    }
-  };
 
   return (
     <KeyboardAvoidingView 
@@ -209,31 +188,7 @@ export default function SignInScreen() {
             </View>
           )}
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('signin.orContinueWith')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.googleButton]}
-              onPress={handleGoogleSignIn}
-            >
-              <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>{t('signin.continueWithGoogle')}</Text>
-            </TouchableOpacity>
-
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.button, styles.appleButton]}
-                onPress={handleAppleSignIn}
-              >
-                <Ionicons name="logo-apple" size={20} color="#000" />
-                <Text style={styles.appleButtonText}>{t('signin.continueWithApple')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <AuthButtons onSuccess={() => router.back()} />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.dontHaveAccount')} </Text>
@@ -393,56 +348,6 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  googleButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-  },
-  googleButtonText: {
-    color: '#374151',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
-    flexWrap: 'wrap',
-    flex: 1,
-    textAlign: 'center',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-  },
-  appleButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
-    flexWrap: 'wrap',
-    flex: 1,
-    textAlign: 'center',
-  },
-  
-  // Divider
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 32,
-    width: '100%',
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(226, 232, 240, 0.6)',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#64748b',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  socialButtons: {
-    width: '100%',
   },
   
   // Footer

@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Logo from '@/components/Logo';
+import AuthButtons from '@/components/AuthButtons';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -33,7 +34,7 @@ function SignUpScreen() {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { signUp, signInWithGoogle, signInWithApple } = useAuth();
+  const { signUp } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -97,31 +98,6 @@ function SignUpScreen() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        Alert.alert('Google Sign In Error', error.message);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred with Google sign in');
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    if (Platform.OS === 'ios') {
-      try {
-        const { error } = await signInWithApple();
-        if (error) {
-          Alert.alert('Apple Sign In Error', error.message);
-        }
-      } catch (error) {
-        Alert.alert('Error', 'An unexpected error occurred with Apple sign in');
-      }
-    } else {
-      Alert.alert('Not Available', 'Apple Sign In is only available on iOS');
-    }
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -233,31 +209,7 @@ function SignUpScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or continue with</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.socialButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.googleButton]}
-                onPress={handleGoogleSignIn}
-              >
-                <Ionicons name="logo-google" size={20} color="#4285F4" />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </TouchableOpacity>
-
-              {Platform.OS === 'ios' && (
-                <TouchableOpacity
-                  style={[styles.button, styles.appleButton]}
-                  onPress={handleAppleSignIn}
-                >
-                  <Ionicons name="logo-apple" size={20} color="#000" />
-                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            <AuthButtons onSuccess={() => router.push('/')} />
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
@@ -421,55 +373,6 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  googleButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  googleButtonText: {
-    color: '#374151',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
-    flexWrap: 'wrap',
-    includeFontPadding: false,
-    flex: 1,
-    textAlign: 'center',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-  },
-  appleButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
-    flexWrap: 'wrap',
-    includeFontPadding: false,
-    flex: 1,
-    textAlign: 'center',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 32,
-    width: '100%',
-    maxWidth: 400,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  socialButtons: {
-    width: '100%',
-    maxWidth: 400,
   },
   footer: {
     flexDirection: 'row',
