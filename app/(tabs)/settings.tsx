@@ -18,9 +18,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
 import { getAsyncStorage } from '@/lib/storage';
+import LanguageDropdown from '@/components/LanguageDropdown';
+import expoGoSafeNotificationService from '@/lib/expoGoSafeNotificationService';
 
 export default function SettingsScreen() {
-   const { t, language } = useLanguage();
+   const { t, language, setLanguage } = useLanguage();
    const router = useRouter();
    const { user, signOut } = useAuth();
    const { themePreference, setThemePreference } = useTheme();
@@ -548,6 +550,41 @@ export default function SettingsScreen() {
        fontSize: 14,
        lineHeight: 18,
      },
+
+     // ===========================================
+     // LANGUAGE SELECTION
+     // ===========================================
+     languageOptions: {
+       gap: 12,
+     },
+     languageOption: {
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     languageOptionContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     languageIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     languageIcon: {
+       fontSize: 18,
+     },
+     languageTextContainer: {
+       flex: 1,
+     },
+     languageTitle: {
+       fontSize: 16,
+       fontWeight: '600',
+       marginBottom: 2,
+     },
      checkmarkContainer: {
        width: 24,
        height: 24,
@@ -559,11 +596,92 @@ export default function SettingsScreen() {
        fontSize: 14,
        fontWeight: '600',
      },
+
+     // ===========================================
+     // NOTIFICATION SETTINGS
+     // ===========================================
+     notificationOptions: {
+       gap: 8,
+     },
+     notificationOption: {
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     notificationOptionContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     notificationIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     notificationIcon: {
+       fontSize: 18,
+     },
+     notificationTextContainer: {
+       flex: 1,
+     },
+     notificationTitle: {
+       fontSize: 16,
+       fontWeight: '600',
+       marginBottom: 2,
+     },
+     notificationDescription: {
+       fontSize: 14,
+       lineHeight: 18,
+     },
+     toggleButton: {
+       width: 50,
+       height: 28,
+       borderRadius: 14,
+       padding: 2,
+       justifyContent: 'center',
+     },
+     toggleButtonActive: {},
+     toggleIndicator: {
+       width: 24,
+       height: 24,
+       borderRadius: 12,
+       backgroundColor: textSecondaryColor,
+     },
+     notificationStats: {
+       marginTop: 20,
+       borderRadius: 12,
+       padding: 16,
+     },
+     statsTitle: {
+       fontSize: 16,
+       fontWeight: '600',
+       marginBottom: 12,
+     },
+     statsGrid: {
+       flexDirection: 'row',
+       justifyContent: 'space-around',
+     },
+     statItem: {
+       alignItems: 'center',
+     },
+     statValue: {
+       fontSize: 20,
+       fontWeight: '700',
+       marginBottom: 4,
+     },
+     statLabel: {
+       fontSize: 12,
+       textAlign: 'center',
+     },
    }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor, successColor, errorColor, warningColor, shadowColor]);
 
    const [showAccountInfo, setShowAccountInfo] = useState(false);
    const [showTerms, setShowTerms] = useState(false);
    const [showThemeSelection, setShowThemeSelection] = useState(false);
+   const [showLanguageSelection, setShowLanguageSelection] = useState(false);
+   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
@@ -582,6 +700,19 @@ export default function SettingsScreen() {
   const [deletionInProgress, setDeletionInProgress] = useState(false);
   const [pendingDeletion, setPendingDeletion] = useState(false);
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
+
+  // Notification settings state
+  const [notificationSettings, setNotificationSettings] = useState({
+    enabled: true,
+    sound: true,
+    vibration: true,
+    showPreview: true,
+  });
+  const [notificationStats, setNotificationStats] = useState({
+    scheduledCount: 0,
+    activeAlerts: 0,
+    triggeredAlerts: 0,
+  });
 
   // Exchange rate data state
   const [exchangeRateData, setExchangeRateData] = useState<{
@@ -1020,6 +1151,27 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     loadExchangeRateData();
   }, []);
 
+  // Load notification settings and stats on component mount
+  useEffect(() => {
+    const loadNotificationSettings = async () => {
+      try {
+        const storage = getAsyncStorage();
+        const savedSettings = await storage.getItem("notificationSettings");
+        if (savedSettings) {
+          setNotificationSettings(JSON.parse(savedSettings));
+        }
+
+        // Load notification stats
+        const stats = await expoGoSafeNotificationService.getNotificationStats();
+        setNotificationStats(stats);
+      } catch (error) {
+        console.error('Error loading notification settings:', error);
+      }
+    };
+
+    loadNotificationSettings();
+  }, []);
+
   const renderAccountInfoSection = () => {
     if (!user) {
       return (
@@ -1439,6 +1591,302 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     return null;
   };
 
+  const renderLanguageSelection = () => {
+    if (showLanguageSelection) {
+      return (
+        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
+              {t('settings.language')}
+            </ThemedText>
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor },
+                styles.closeButton,
+                closeButtonPressed && { backgroundColor: surfaceColor }
+              ]}
+              onPressIn={() => setCloseButtonPressed(true)}
+              onPressOut={() => setCloseButtonPressed(false)}
+              onPress={() => {
+                setShowLanguageSelection(false);
+                setCloseButtonPressed(false);
+              }}
+            >
+              <ThemedText style={[
+                { color: textSecondaryColor },
+                styles.closeButtonText,
+                closeButtonPressed && { color: textColor }
+              ]}>×</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.languageOptions}>
+            {[
+              { key: 'en', name: 'English', flag: '🇺🇸' },
+              { key: 'hy', name: 'Հայերեն', flag: '🇦🇲' },
+              { key: 'ru', name: 'Русский', flag: '🇷🇺' },
+              { key: 'es', name: 'Español', flag: '🇪🇸' },
+              { key: 'zh', name: '中文', flag: '🇨🇳' },
+              { key: 'hi', name: 'हिंदी', flag: '🇮🇳' }
+            ].map((lang) => (
+              <TouchableOpacity
+                key={lang.key}
+                style={[
+                  { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
+                  styles.languageOption,
+                  language === lang.key && { backgroundColor: primaryColor, borderColor: primaryColor }
+                ]}
+                onPress={() => {
+                  setLanguage(lang.key as any);
+                  setShowLanguageSelection(false);
+                }}
+              >
+                <View style={styles.languageOptionContent}>
+                  <View style={styles.languageIconContainer}>
+                    <ThemedText style={[{ color: textSecondaryColor }, styles.languageIcon]}>{lang.flag}</ThemedText>
+                  </View>
+                  <View style={styles.languageTextContainer}>
+                    <ThemedText style={[{ color: textColor }, styles.languageTitle]}>
+                      {lang.name}
+                    </ThemedText>
+                  </View>
+                  {language === lang.key && (
+                    <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
+                      <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
+  const renderNotificationSettings = () => {
+    if (showNotificationSettings) {
+      const handleSettingToggle = async (setting: keyof typeof notificationSettings) => {
+        const newSettings = {
+          ...notificationSettings,
+          [setting]: !notificationSettings[setting]
+        };
+        setNotificationSettings(newSettings);
+
+        // Save to storage
+        try {
+          const storage = getAsyncStorage();
+          await storage.setItem("notificationSettings", JSON.stringify(newSettings));
+        } catch (error) {
+          console.error('Error saving notification settings:', error);
+        }
+      };
+
+      return (
+        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
+              {t('settings.notifications')}
+            </ThemedText>
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor },
+                styles.closeButton,
+                closeButtonPressed && { backgroundColor: surfaceColor }
+              ]}
+              onPressIn={() => setCloseButtonPressed(true)}
+              onPressOut={() => setCloseButtonPressed(false)}
+              onPress={() => {
+                setShowNotificationSettings(false);
+                setCloseButtonPressed(false);
+              }}
+            >
+              <ThemedText style={[
+                { color: textSecondaryColor },
+                styles.closeButtonText,
+                closeButtonPressed && { color: textColor }
+              ]}>×</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.notificationOptions}>
+            {/* Enable/Disable Notifications */}
+            <View style={styles.notificationOption}>
+              <View style={styles.notificationOptionContent}>
+                <View style={styles.notificationIconContainer}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
+                    {notificationSettings.enabled ? '🔔' : '🔕'}
+                  </ThemedText>
+                </View>
+                <View style={styles.notificationTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
+                    Enable Notifications
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
+                    Allow the app to send rate alerts and updates
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: notificationSettings.enabled ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
+                    styles.toggleButton,
+                    notificationSettings.enabled && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleSettingToggle('enabled')}
+                >
+                  <View style={[
+                    styles.toggleIndicator,
+                    notificationSettings.enabled && { backgroundColor: textColor },
+                    !notificationSettings.enabled && { backgroundColor: textSecondaryColor }
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Sound */}
+            <View style={styles.notificationOption}>
+              <View style={styles.notificationOptionContent}>
+                <View style={styles.notificationIconContainer}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
+                    🔊
+                  </ThemedText>
+                </View>
+                <View style={styles.notificationTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
+                    Sound
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
+                    Play sound with notifications
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: notificationSettings.sound ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
+                    styles.toggleButton,
+                    notificationSettings.sound && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleSettingToggle('sound')}
+                  disabled={!notificationSettings.enabled}
+                >
+                  <View style={[
+                    styles.toggleIndicator,
+                    notificationSettings.sound && { backgroundColor: textColor },
+                    !notificationSettings.sound && { backgroundColor: textSecondaryColor }
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Vibration */}
+            <View style={styles.notificationOption}>
+              <View style={styles.notificationOptionContent}>
+                <View style={styles.notificationIconContainer}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
+                    📳
+                  </ThemedText>
+                </View>
+                <View style={styles.notificationTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
+                    Vibration
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
+                    Vibrate device with notifications
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: notificationSettings.vibration ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
+                    styles.toggleButton,
+                    notificationSettings.vibration && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleSettingToggle('vibration')}
+                  disabled={!notificationSettings.enabled}
+                >
+                  <View style={[
+                    styles.toggleIndicator,
+                    notificationSettings.vibration && { backgroundColor: textColor },
+                    !notificationSettings.vibration && { backgroundColor: textSecondaryColor }
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Show Preview */}
+            <View style={styles.notificationOption}>
+              <View style={styles.notificationOptionContent}>
+                <View style={styles.notificationIconContainer}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
+                    👁️
+                  </ThemedText>
+                </View>
+                <View style={styles.notificationTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
+                    Show Preview
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
+                    Show notification content on lock screen
+                  </ThemedText>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: notificationSettings.showPreview ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
+                    styles.toggleButton,
+                    notificationSettings.showPreview && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleSettingToggle('showPreview')}
+                  disabled={!notificationSettings.enabled}
+                >
+                  <View style={[
+                    styles.toggleIndicator,
+                    notificationSettings.showPreview && { backgroundColor: textColor },
+                    !notificationSettings.showPreview && { backgroundColor: textSecondaryColor }
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Notification Statistics */}
+          <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.notificationStats]}>
+            <ThemedText style={[{ color: textColor }, styles.statsTitle]}>
+              📊 Notification Statistics
+            </ThemedText>
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
+                  {notificationStats.scheduledCount}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
+                  Scheduled
+                </ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
+                  {notificationStats.activeAlerts}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
+                  Active
+                </ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
+                  {notificationStats.triggeredAlerts}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
+                  Triggered
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
       <ThemedView style={styles.container}>
@@ -1464,6 +1912,12 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
 
           {/* Theme Selection Section */}
           {renderThemeSelection()}
+
+          {/* Language Selection Section */}
+          {renderLanguageSelection()}
+
+          {/* Notification Settings Section */}
+          {renderNotificationSettings()}
 
           {/* Additional Settings Sections */}
           <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
@@ -1492,22 +1946,42 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
 
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Language settings feature coming soon')}
+              onPress={() => setShowLanguageSelection(true)}
             >
               <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 🌍 {t('settings.language')}
               </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+              <View style={styles.settingValueContainer}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
+                  {(() => {
+                    const languageNames = {
+                      en: 'English',
+                      hy: 'Հայերեն',
+                      ru: 'Русский',
+                      es: 'Español',
+                      zh: '中文',
+                      hi: 'हिंदी'
+                    };
+                    return languageNames[language] || 'English';
+                  })()}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Notification settings feature coming soon')}
+              onPress={() => setShowNotificationSettings(true)}
             >
               <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                {t('settings.notifications')}
+                🔔 {t('settings.notifications')}
               </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+              <View style={styles.settingValueContainer}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
+                  {notificationSettings.enabled ? 'Enabled' : 'Disabled'}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+              </View>
             </TouchableOpacity>
           </View>
 
