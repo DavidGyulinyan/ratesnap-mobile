@@ -24,6 +24,7 @@ export default function SignInScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+  const [invalidCredentials, setInvalidCredentials] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
 
   const { signIn, signInWithGoogle, signInWithApple, resendConfirmationEmail } = useAuth();
@@ -32,27 +33,31 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('signin.fillAllFields'));
       return;
     }
 
     setLoading(true);
     setEmailNotConfirmed(false);
+    setInvalidCredentials(false);
     try {
       const { error } = await signIn(email, password);
       if (error) {
         // Check if it's an email confirmation error
         if (error.name === 'EmailNotConfirmedError') {
           setEmailNotConfirmed(true);
+        } else if (error.name === 'InvalidCredentialsError') {
+          setInvalidCredentials(true);
         } else {
-          Alert.alert('Sign In Error', error.message);
+          Alert.alert(t('auth.signin'), error.message);
         }
       } else {
         // Navigation will be handled by the auth state change
         router.back();
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      console.error('Sign in error:', error);
+      Alert.alert(t('common.error'), t('error.loading'));
     } finally {
       setLoading(false);
     }
@@ -60,7 +65,7 @@ export default function SignInScreen() {
 
   const handleResendConfirmation = async () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address');
+      Alert.alert(t('common.error'), t('signup.enterEmail'));
       return;
     }
 
@@ -68,12 +73,12 @@ export default function SignInScreen() {
     try {
       const { error } = await resendConfirmationEmail(email);
       if (error) {
-        Alert.alert('Error', 'Failed to resend confirmation email. Please try again.');
+        Alert.alert(t('common.error'), t('error.loading'));
       } else {
-        Alert.alert('Success', 'Confirmation email sent! Please check your inbox and click the confirmation link.');
+        Alert.alert(t('common.ok'), t('signin.confirmationSent'));
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert(t('common.error'), t('error.loading'));
     } finally {
       setResendLoading(false);
     }
@@ -83,7 +88,7 @@ export default function SignInScreen() {
     try {
       await signInWithGoogle();
     } catch (error) {
-      Alert.alert('Google Sign In Error', error instanceof Error ? error.message : 'An unexpected error occurred with Google sign in');
+      Alert.alert(t('auth.continueWithGoogle'), error instanceof Error ? error.message : t('error.loading'));
     }
   };
 
@@ -92,13 +97,13 @@ export default function SignInScreen() {
       try {
         const { error } = await signInWithApple();
         if (error) {
-          Alert.alert('Apple Sign In Error', error.message);
+          Alert.alert(t('auth.continueWithApple'), error.message);
         }
       } catch (error) {
-        Alert.alert('Error', 'An unexpected error occurred with Apple sign in');
+        Alert.alert(t('common.error'), t('error.loading'));
       }
     } else {
-      Alert.alert('Not Available', 'Apple Sign In is only available on iOS');
+      Alert.alert(t('common.error'), t('signin.appleNotAvailable'));
     }
   };
 
@@ -111,17 +116,17 @@ export default function SignInScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
           <Logo size={48} showText={true} textSize={24} />
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to sync your data</Text>
+          <Text style={styles.title}>{t('signin.welcomeBack')}</Text>
+          <Text style={styles.subtitle}>{t('signin.subtitle')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="Enter your email"
+                placeholder={t('signin.enterEmail')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -129,13 +134,13 @@ export default function SignInScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>{t('auth.password')}</Text>
               <View style={styles.passwordInputContainer}>
                 <TextInput
                   style={styles.passwordInput}
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Enter your password"
+                  placeholder={t('signin.enterPassword')}
                   secureTextEntry={!passwordVisible}
                 />
                 <TouchableOpacity
@@ -157,17 +162,24 @@ export default function SignInScreen() {
               disabled={loading}
             >
               <Text style={styles.primaryButtonText}>
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? t('signin.signingIn') : t('signin.signIn')}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.forgotPasswordLink}
+              onPress={() => router.push('/forgot-password')}
+            >
+              <Text style={styles.forgotPasswordText}>{t('signin.forgotPassword')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Email Confirmation Error */}
           {emailNotConfirmed && (
             <View style={styles.confirmationError}>
-              <Text style={styles.confirmationErrorTitle}>📧 Email Not Confirmed</Text>
+              <Text style={styles.confirmationErrorTitle}>📧 {t('signin.emailNotConfirmed')}</Text>
               <Text style={styles.confirmationErrorText}>
-                Please check your email and click the confirmation link before signing in.
+                {t('signin.checkEmail')}
               </Text>
               <TouchableOpacity
                 style={[styles.button, styles.resendButton, resendLoading && styles.buttonDisabled]}
@@ -175,15 +187,31 @@ export default function SignInScreen() {
                 disabled={resendLoading}
               >
                 <Text style={styles.resendButtonText}>
-                  {resendLoading ? 'Sending...' : '📤 Resend Confirmation Email'}
+                  {resendLoading ? t('common.loading') : `📤 ${t('signin.resendConfirmation')}`}
                 </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Invalid Credentials Error */}
+          {invalidCredentials && (
+            <View style={styles.credentialsError}>
+              <Text style={styles.credentialsErrorTitle}>❌ {t('signin.invalidCredentials')}</Text>
+              <Text style={styles.credentialsErrorText}>
+                {t('signin.invalidCredentialsText')}
+              </Text>
+              <TouchableOpacity
+                style={[styles.button, styles.retryButton]}
+                onPress={() => setInvalidCredentials(false)}
+              >
+                <Text style={styles.retryButtonText}>{t('signin.tryAgain')}</Text>
               </TouchableOpacity>
             </View>
           )}
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with</Text>
+            <Text style={styles.dividerText}>{t('signin.orContinueWith')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -193,7 +221,7 @@ export default function SignInScreen() {
               onPress={handleGoogleSignIn}
             >
               <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t('signin.continueWithGoogle')}</Text>
             </TouchableOpacity>
 
             {Platform.OS === 'ios' && (
@@ -202,15 +230,15 @@ export default function SignInScreen() {
                 onPress={handleAppleSignIn}
               >
                 <Ionicons name="logo-apple" size={20} color="#000" />
-                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                <Text style={styles.appleButtonText}>{t('signin.continueWithApple')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.dontHaveAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/signup')}>
-              <Text style={styles.signUpLink}>Sign Up</Text>
+              <Text style={styles.signUpLink}>{t('signin.signUp')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -463,6 +491,51 @@ const styles = StyleSheet.create({
   },
   resendButtonText: {
     color: '#92400e',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Invalid Credentials Error Styles
+  credentialsError: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  credentialsErrorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#dc2626',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  credentialsErrorText: {
+    fontSize: 14,
+    color: '#b91c1c',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#dc2626',
+    borderColor: '#b91c1c',
+  },
+  retryButtonText: {
+    color: '#fee2e2',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Forgot Password Link
+  forgotPasswordLink: {
+    alignSelf: 'center',
+    marginTop: 16,
+    padding: 8,
+  },
+  forgotPasswordText: {
+    color: '#6366f1',
     fontSize: 14,
     fontWeight: '600',
   },

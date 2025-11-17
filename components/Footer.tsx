@@ -14,7 +14,7 @@ export default function Footer({ style }: FooterProps) {
     <View style={[styles.footer, style]}>
       <ThemedText style={styles.footerText}>
         {tWithParams('footer.copyright', {
-          appTitle: t('app.title'),
+          appTitle: "RateSnap",
           suiteName: t('footer.suiteName')
         })}
       </ThemedText>

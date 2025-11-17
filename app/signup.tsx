@@ -12,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -28,25 +29,39 @@ function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { signUp, signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
+  const getLanguageDisplayName = (lang: string) => {
+    const languageNames: { [key: string]: string } = {
+      'en': 'English',
+      'hy': 'Հայերեն (Armenian)',
+      'ru': 'Русский (Russian)',
+      'es': 'Español (Spanish)',
+      'zh': '中文 (Chinese)',
+      'hi': 'हिन्दी (Hindi)'
+    };
+    return languageNames[lang] || lang;
+  };
+
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('signup.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(t('common.error'), t('signup.passwordsDontMatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(t('common.error'), t('signup.passwordTooShort'));
       return;
     }
 
@@ -54,21 +69,29 @@ function SignUpScreen() {
     try {
       const { error } = await signUp(email, password, username);
       if (error) {
-        Alert.alert('Sign Up Error', error.message);
+        Alert.alert(t('auth.signup'), error.message);
       } else {
+        // Save the selected language preference for new users
+        try {
+          await AsyncStorage.setItem('appLanguage', selectedLanguage);
+          console.log('Language preference saved:', selectedLanguage);
+        } catch (error) {
+          console.error('Failed to save language preference:', error);
+        }
+
         Alert.alert(
-          'Account Created! 📧',
-          'Please check your email and click the confirmation link to activate your account. You won\'t be able to sign in until you confirm your email.',
+          t('signup.accountCreated') + ' 📧',
+          t('signup.checkEmail'),
           [
             {
-              text: 'OK',
+              text: t('common.ok'),
               onPress: () => router.push('/signin')
             }
           ]
         );
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert(t('common.error'), t('error.loading'));
     } finally {
       setLoading(false);
     }
@@ -110,28 +133,43 @@ function SignUpScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.content}>
             <Logo size={48} showText={true} textSize={24} />
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join RateSnap to sync your data</Text>
+            <Text style={styles.title}>{t('signup.createAccount')}</Text>
+            <Text style={styles.subtitle}>{t('signup.subtitle')}</Text>
 
             <View style={styles.form}>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Username (Optional)</Text>
+                <Text style={styles.label}>{t('signup.usernameOptional')}</Text>
                 <TextInput
                   style={styles.input}
                   value={username}
                   onChangeText={setUsername}
-                  placeholder="Choose a username"
+                  placeholder={t('signup.chooseUsername')}
                   autoCapitalize="none"
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={styles.label}>{t('signup.preferredLanguage')}</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowLanguagePicker(true)}
+                  >
+                    <Text style={styles.pickerButtonText}>
+                      {getLanguageDisplayName(selectedLanguage)}
+                    </Text>
+                    <Ionicons name="chevron-down" size={20} color="#64748b" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>{t('auth.email')}</Text>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="Enter your email"
+                  placeholder={t('signup.enterEmail')}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -139,13 +177,13 @@ function SignUpScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
+                <Text style={styles.label}>{t('auth.password')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={password}
                     onChangeText={setPassword}
-                    placeholder="Create a password"
+                    placeholder={t('signup.createPassword')}
                     secureTextEntry={!passwordVisible}
                   />
                   <TouchableOpacity
@@ -162,13 +200,13 @@ function SignUpScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Confirm Password</Text>
+                <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Confirm your password"
+                    placeholder={t('signup.confirmPassword')}
                     secureTextEntry={!confirmPasswordVisible}
                   />
                   <TouchableOpacity
@@ -190,7 +228,7 @@ function SignUpScreen() {
                 disabled={loading}
               >
                 <Text style={styles.primaryButtonText}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? t('signup.creatingAccount') : t('signup.createAccount')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -222,7 +260,7 @@ function SignUpScreen() {
             </View>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
               <TouchableOpacity onPress={() => router.push('/signin')}>
                 <Text style={styles.signInLink}>Sign In</Text>
               </TouchableOpacity>
@@ -230,6 +268,56 @@ function SignUpScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Language Picker Modal */}
+      {showLanguagePicker && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.languagePickerModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Language</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowLanguagePicker(false)}
+              >
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.languageList}>
+              {[
+                { code: 'en', name: 'English' },
+                { code: 'hy', name: 'Հայերեն (Armenian)' },
+                { code: 'ru', name: 'Русский (Russian)' },
+                { code: 'es', name: 'Español (Spanish)' },
+                { code: 'zh', name: '中文 (Chinese)' },
+                { code: 'hi', name: 'हिन्दी (Hindi)' }
+              ].map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    styles.languageOption,
+                    selectedLanguage === lang.code && styles.languageOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedLanguage(lang.code);
+                    setShowLanguagePicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.languageOptionText,
+                    selectedLanguage === lang.code && styles.languageOptionTextSelected
+                  ]}>
+                    {lang.name}
+                  </Text>
+                  {selectedLanguage === lang.code && (
+                    <Ionicons name="checkmark" size={20} color="#3b82f6" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -395,6 +483,86 @@ const styles = StyleSheet.create({
   signInLink: {
     color: '#3b82f6',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  pickerContainer: {
+    position: 'relative',
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f9fafb',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#1f2937',
+    flex: 1,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  languagePickerModal: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '70%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  languageList: {
+    maxHeight: 300,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  languageOptionSelected: {
+    backgroundColor: '#eff6ff',
+  },
+  languageOptionText: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  languageOptionTextSelected: {
+    color: '#1d4ed8',
     fontWeight: '600',
   },
 });

@@ -38,7 +38,7 @@ export default function Logo({ size = 24, showText = true, textSize = 18 }: Logo
             },
           ]}
         >
-          {t('app.title')}
+          RateSnap
         </Text>
       )}
     </View>
