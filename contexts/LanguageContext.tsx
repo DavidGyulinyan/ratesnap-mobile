@@ -481,7 +481,7 @@ const translations = {
 
     // Sign In Page
     'signin.welcomeBack': 'Բարի վերադարձ',
-    'signin.subtitle': 'Մուտք գործեք՝ ձեր տվյալները համաժամեցնելու համար',
+    'signin.subtitle': 'Մուտք գործեք՝ ձեր տվյալները համաժամանակեցնելու համար',
     'signin.enterEmail': 'Մուտքագրեք ձեր էլ-փոստը',
     'signin.enterPassword': 'Մուտքագրեք ձեր գաղտնաբառը',
     'signin.signingIn': 'Մուտք է գործում...',
@@ -505,7 +505,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'Ստեղծել հաշիվ',
-    'signup.subtitle': 'Միացեք RateSnap-ին՝ ձեր տվյալները համաժամեցնելու համար',
+    'signup.subtitle': 'Միացեք RateSnap-ին՝ ձեր տվյալները համաժամանակեցնելու համար',
     'signup.usernameOptional': 'Օգտանուն (ըստ ցանկության)',
     'signup.chooseUsername': 'Ընտրեք օգտանուն',
     'signup.preferredLanguage': 'Նախընտրած լեզու',
