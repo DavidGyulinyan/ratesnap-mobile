@@ -17,6 +17,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
 import { getAsyncStorage } from '@/lib/storage';
 import expoGoSafeNotificationService from '@/lib/expoGoSafeNotificationService';
+import ContactSupportModal from '@/components/ContactSupportModal';
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
   const [showAccountInfo, setShowAccountInfo] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showContactSupport, setShowContactSupport] = useState(false);
 
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
@@ -646,7 +648,7 @@ RateSnap चुनने के लिए धन्यवाद!`
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 20,
-      paddingRight: 22, // Add more padding to ensure close button stays within bounds
+      paddingRight: 2, // Add more padding to ensure close button stays within bounds
     },
     modalTitle: {
       fontSize: 20,
@@ -991,9 +993,12 @@ RateSnap चुनने के लिए धन्यवाद!`
             <ThemedText style={styles.settingValue}>1.0.0</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowContactSupport(true)}
+          >
             <ThemedText style={styles.settingItemText}>📧 {t('settings.contactSupport')}</ThemedText>
-            <ThemedText style={styles.settingValue}>support@ratesnap.app</ThemedText>
+            <ThemedText style={styles.settingValue}>Send Message</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -1002,6 +1007,10 @@ RateSnap चुनने के लिए धन्यवाद!`
       {renderThemeSelection()}
       {renderNotificationSettings()}
       {renderTerms()}
+      <ContactSupportModal
+        visible={showContactSupport}
+        onClose={() => setShowContactSupport(false)}
+      />
     </SafeAreaView>
   );
 }
