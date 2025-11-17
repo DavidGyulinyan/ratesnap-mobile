@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,12 +46,23 @@ export default function SavedRates({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { savedRates: hookSavedRates, deleteRate, deleteAllRates, loading } = useSavedRates();
-  
+
+  // Theme colors
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const borderColor = useThemeColor({}, 'border');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const errorColor = useThemeColor({}, 'error');
+  const textInverseColor = useThemeColor({}, 'textInverse');
+  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+
   // Use hook data if no prop provided and user is authenticated
   const savedRates = propSavedRates || (user ? hookSavedRates : []);
-  
+
   const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
-  
+
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDeleteRate = async (id: string) => {
@@ -120,22 +132,22 @@ export default function SavedRates({
   const renderSavedRateItem = (rate: SavedRate, index: number) => (
     <TouchableOpacity
       key={rate.id || index}
-      style={styles.savedRateItem}
+      style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.savedRateItem]}
       onPress={() => onSelectRate?.(rate.from_currency, rate.to_currency)}
     >
       <View style={styles.savedRateContent}>
         <View style={styles.savedRateHeader}>
           <CurrencyFlag currency={rate.from_currency} size={16} />
-          <ThemedText style={styles.arrow}>→</ThemedText>
+          <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
           <CurrencyFlag currency={rate.to_currency} size={16} />
-          <ThemedText style={styles.savedRateTitle}>
+          <ThemedText style={[{ color: textColor }, styles.savedRateTitle]}>
             {rate.from_currency} → {rate.to_currency}
           </ThemedText>
         </View>
-        <ThemedText style={styles.rateValue}>
+        <ThemedText style={[{ color: primaryColor }, styles.rateValue]}>
           {t('converter.rate')}: {rate.rate.toFixed(6)}
         </ThemedText>
-        <ThemedText style={styles.savedRateDate}>
+        <ThemedText style={[{ color: textSecondaryColor }, styles.savedRateDate]}>
           {t('saved.savedOn')}: {new Date(rate.created_at).toLocaleDateString()} {t('saved.at')}{" "}
           {new Date(rate.created_at).toLocaleTimeString()}
         </ThemedText>
@@ -188,23 +200,24 @@ export default function SavedRates({
         </ThemedText>
         {savedRates.length > 0 && (
           <TouchableOpacity onPress={onToggleVisibility}>
-            <ThemedText
-              style={[
-                styles.showHideText,
-                showSavedRates && styles.showHideTextActive,
-              ]}
-            >
-              {showSavedRates ? `▼ ${t('common.less')}` : `▶ ${t('common.more')}`}
-            </ThemedText>
-          </TouchableOpacity>
+          <ThemedText
+            style={[
+              { color: textColor },
+              styles.showHideText,
+              showSavedRates && { color: primaryColor, fontWeight: "600" },
+            ]}
+          >
+            {showSavedRates ? `▼ ${t('common.less')}` : `▶ ${t('common.more')}`}
+          </ThemedText>
+        </TouchableOpacity>
         )}
       </View>
 
       {showSavedRates && (
-        <View style={[styles.savedRatesList, styles.fadeIn]}>
+        <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.savedRatesList, styles.fadeIn]}>
           {savedRates.length === 0 ? (
             <View style={styles.emptySavedRates}>
-              <ThemedText style={styles.emptySavedRatesText}>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.emptySavedRatesText]}>
                 {!user
                   ? "Sign in to save and sync your currency rates across devices!"
                   : "No saved rates yet. Convert currencies and click \"Save This Rate\" to add some!"
@@ -219,10 +232,10 @@ export default function SavedRates({
 
               {showMoreEnabled && savedRates.length > maxVisibleItems && (
                 <TouchableOpacity
-                  style={styles.showMoreButton}
+                  style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.showMoreButton]}
                   onPress={onShowMore}
                 >
-                  <ThemedText style={styles.showMoreText}>
+                  <ThemedText style={[{ color: primaryColor }, styles.showMoreText]}>
                     {t('common.showMore').replace('more', `all ${savedRates.length} saved rates`)} →
                   </ThemedText>
                 </TouchableOpacity>
@@ -230,10 +243,10 @@ export default function SavedRates({
 
               {savedRates.length > 1 && (
                 <TouchableOpacity
-                  style={styles.deleteAllButton}
+                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteAllButton]}
                   onPress={handleDeleteAllRates}
                 >
-                  <ThemedText style={styles.deleteAllText}>
+                  <ThemedText style={[{ color: textInverseColor }, styles.deleteAllText]}>
                    {t('saved.deleteAll')} ({savedRates.length})
                   </ThemedText>
                 </TouchableOpacity>
@@ -259,10 +272,8 @@ const styles = StyleSheet.create({
   },
   savedRatesList: {
     borderWidth: 2,
-    borderColor: "#f59e0b",
     borderRadius: 16,
     padding: 20,
-    backgroundColor: "#ffffff",
   },
   emptySavedRates: {
     padding: 20,
@@ -270,7 +281,6 @@ const styles = StyleSheet.create({
   },
   emptySavedRatesText: {
     fontSize: 14,
-    color: "#6b7280",
     textAlign: "center",
     fontStyle: "italic",
   },
@@ -281,9 +291,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
     marginBottom: 12,
-    backgroundColor: "#fefbf3",
   },
   savedRateContent: {
     flex: 1,
@@ -296,33 +304,25 @@ const styles = StyleSheet.create({
   arrow: {
     marginHorizontal: 8,
     fontSize: 14,
-    color: "#6b7280",
     fontWeight: "bold",
   },
   savedRateTitle: {
     fontWeight: "600",
     marginLeft: 8,
-    color: "#000000",
   },
   rateValue: {
     fontSize: 14,
-    color: "#f59e0b",
     fontWeight: "600",
     marginBottom: 4,
   },
   savedRatesTitle: {
-    color: "#1e2937",
   },
   showHideText: {
-    color: "#1e2937",
   },
   showHideTextActive: {
-    color: "#7c3aed",
-    fontWeight: "600",
   },
   savedRateDate: {
     fontSize: 11,
-    color: "#6b7280",
   },
   deleteButton: {
     padding: 8,
@@ -342,26 +342,22 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1 }],
   },
   showMoreButton: {
-    backgroundColor: "#dbeafe",
     padding: 10,
     borderRadius: 6,
     alignItems: "center",
     marginTop: 12,
   },
   showMoreText: {
-    color: "#2563eb",
     fontSize: 14,
     fontWeight: "600",
   },
   deleteAllButton: {
-    backgroundColor: "#dc2626",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 12,
   },
   deleteAllText: {
-    color: "white",
     fontWeight: "bold",
     fontSize: 16,
   },

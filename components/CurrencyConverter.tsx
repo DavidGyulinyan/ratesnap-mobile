@@ -21,6 +21,7 @@ import SavedRates from "./SavedRates";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
 import notificationService from "@/lib/expoGoSafeNotificationService";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSavedRates, useUserData } from "@/hooks/useUserData";
@@ -84,6 +85,17 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const { user } = useAuth();
   const { savedRates, saveRate, deleteRate, deleteAllRates } = useSavedRates();
   const { pickedRates: { trackRate } } = useUserData();
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+  const textInverseColor = useThemeColor({}, 'textInverse');
+  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {
@@ -836,20 +848,20 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   }
 
   return (
-      <ScrollView style={styles.container}>
+      <ScrollView style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}>
         {/* Navigation Header */}
         {onNavigateToDashboard && (
-          <TouchableOpacity style={styles.navHeader} onPress={onNavigateToDashboard}>
-            <ThemedText style={styles.navHeaderText}>{t('converter.backToDashboard')}</ThemedText>
+          <TouchableOpacity style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.navHeader]} onPress={onNavigateToDashboard}>
+            <ThemedText style={[{ color: primaryColor }, styles.navHeaderText]}>{t('converter.backToDashboard')}</ThemedText>
           </TouchableOpacity>
         )}
 
         {/* Modern Currency Converter - Complete Redesign */}
-        <View style={styles.modernConverterCard}>
+        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.modernConverterCard]}>
           <View style={styles.converterHeader}>
             <ThemedText style={styles.converterTitle}>💱 Currency Converter</ThemedText>
             <TouchableOpacity
-              style={styles.calculatorHeaderButton}
+              style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.calculatorHeaderButton]}
               onPress={() => setShowCalculator(true)}
             >
               <ThemedText style={styles.calculatorHeaderText}>🧮</ThemedText>
@@ -861,12 +873,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             <ThemedText style={styles.amountLabel}>Amount</ThemedText>
             <View style={styles.amountInputWrapper}>
               <TextInput
-                style={styles.amountInput}
+                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
                 placeholder="Enter amount"
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={textSecondaryColor}
               />
             </View>
 
@@ -875,10 +887,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               {[1, 10, 100, 1000].map((preset) => (
                 <TouchableOpacity
                   key={preset}
-                  style={styles.quickAmountButton}
+                  style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.quickAmountButton]}
                   onPress={() => setAmount(preset.toString())}
                 >
-                  <ThemedText style={styles.quickAmountText}>{preset}</ThemedText>
+                  <ThemedText style={[{ color: textColor }, styles.quickAmountText]}>{preset}</ThemedText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -887,64 +899,64 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           {/* Currency Selection - Horizontal Layout */}
           <View style={styles.currencySelection}>
             <TouchableOpacity
-              style={styles.currencySelector}
+              style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencySelector]}
               onPress={() => setShowFromPicker(true)}
             >
               <View style={styles.currencyFlagContainer}>
                 <CurrencyFlag currency={fromCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={styles.currencyLabel}>From</ThemedText>
-                <ThemedText style={styles.currencyCode}>{fromCurrency}</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>From</ThemedText>
+                <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{fromCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.swapButtonModern}
+              style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.swapButtonModern]}
               onPress={handleSwap}
             >
-              <ThemedText style={styles.swapIcon}>⇄</ThemedText>
+              <ThemedText style={[{ color: textInverseColor }, styles.swapIcon]}>⇄</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.currencySelector}
+              style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencySelector]}
               onPress={() => setShowToPicker(true)}
             >
               <View style={styles.currencyFlagContainer}>
                 <CurrencyFlag currency={toCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={styles.currencyLabel}>To</ThemedText>
-                <ThemedText style={styles.currencyCode}>{toCurrency}</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>To</ThemedText>
+                <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{toCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
           </View>
 
           {/* Conversion Result - Prominent Display */}
           <View style={styles.resultSection}>
-            <View style={styles.resultCard}>
+            <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.resultCard]}>
               {amount && parseFloat(amount) > 0 && convertedAmount ? (
                 <View style={styles.conversionDisplay}>
                   <View style={styles.amountRow}>
-                    <ThemedText style={styles.inputAmount}>
+                    <ThemedText style={[{ color: textColor }, styles.inputAmount]}>
                       {parseFloat(amount).toLocaleString()} {fromCurrency}
                     </ThemedText>
-                    <ThemedText style={styles.equals}>=</ThemedText>
+                    <ThemedText style={[{ color: textSecondaryColor }, styles.equals]}>=</ThemedText>
                   </View>
                   <View style={styles.resultRow}>
-                    <ThemedText style={styles.outputAmount}>
+                    <ThemedText style={[{ color: primaryColor }, styles.outputAmount]}>
                       {parseFloat(convertedAmount).toLocaleString()} {toCurrency}
                     </ThemedText>
                   </View>
-                  <View style={styles.rateInfo}>
-                    <ThemedText style={styles.rateText}>
+                  <View style={[{ borderTopColor: borderColor }, styles.rateInfo]}>
+                    <ThemedText style={[{ color: textSecondaryColor }, styles.rateText]}>
                       1 {fromCurrency} = {getExchangeRate().toFixed(4)} {toCurrency}
                     </ThemedText>
                   </View>
                 </View>
               ) : (
                 <View style={styles.placeholderResult}>
-                  <ThemedText style={styles.placeholderText}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.placeholderText]}>
                     Enter an amount to see conversion
                   </ThemedText>
                 </View>
@@ -955,10 +967,10 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={styles.saveRateButton}
+              style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.saveRateButton]}
               onPress={handleSaveRate}
             >
-              <ThemedText style={styles.saveRateText}>⭐ Save Rate</ThemedText>
+              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>⭐ Save Rate</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
@@ -1071,7 +1083,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f8fafc",
   },
   loadingContainer: {
     flex: 1,
@@ -1080,14 +1091,11 @@ const styles = StyleSheet.create({
   },
   navHeader: {
     padding: 12,
-    backgroundColor: "#e0f2fe",
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#bae6fd",
   },
   navHeaderText: {
-    color: "#2563eb",
     fontWeight: "600",
     fontSize: 16,
     textAlign: "center",
@@ -1283,12 +1291,10 @@ const styles = StyleSheet.create({
 
   // Modern Currency Converter Styles
   modernConverterCard: {
-    backgroundColor: "#ffffff",
     borderRadius: 20,
     padding: 24,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -1304,13 +1310,11 @@ const styles = StyleSheet.create({
   converterTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#1f2937",
   },
   calculatorHeaderButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#f3f4f6",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1325,7 +1329,6 @@ const styles = StyleSheet.create({
   amountLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
     marginBottom: 12,
   },
   amountInputWrapper: {
@@ -1333,13 +1336,10 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     borderWidth: 2,
-    borderColor: "#d1d5db",
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
     fontSize: 18,
-    backgroundColor: "#ffffff",
-    color: "#1f2937",
     fontWeight: "500",
   },
 
@@ -1351,18 +1351,15 @@ const styles = StyleSheet.create({
   },
   quickAmountButton: {
     flex: 1,
-    backgroundColor: "#f8fafc",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
   },
   quickAmountText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#4b5563",
   },
 
   // Currency Selection
@@ -1375,12 +1372,10 @@ const styles = StyleSheet.create({
   },
   currencySelector: {
     flex: 1,
-    backgroundColor: "#f8fafc",
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
   },
   currencyFlagContainer: {
     marginBottom: 8,
@@ -1390,24 +1385,20 @@ const styles = StyleSheet.create({
   },
   currencyLabel: {
     fontSize: 12,
-    color: "#6b7280",
     fontWeight: "500",
     marginBottom: 4,
   },
   currencyCode: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1f2937",
   },
   swapButtonModern: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#6366f1",
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 12,
-    shadowColor: "#6366f1",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1415,7 +1406,6 @@ const styles = StyleSheet.create({
   },
   swapIcon: {
     fontSize: 18,
-    color: "#ffffff",
     fontWeight: "bold",
   },
 
@@ -1424,11 +1414,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   resultCard: {
-    backgroundColor: "#f0f9ff",
     borderRadius: 16,
     padding: 20,
     borderWidth: 2,
-    borderColor: "#3b82f6",
     alignItems: "center",
   },
   conversionDisplay: {
@@ -1444,12 +1432,10 @@ const styles = StyleSheet.create({
   inputAmount: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1f2937",
   },
   equals: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#6b7280",
     marginHorizontal: 12,
   },
   resultRow: {
@@ -1458,16 +1444,13 @@ const styles = StyleSheet.create({
   outputAmount: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#1d4ed8",
   },
   rateInfo: {
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#dbeafe",
   },
   rateText: {
     fontSize: 14,
-    color: "#64748b",
     fontWeight: "500",
   },
   placeholderResult: {
@@ -1476,7 +1459,6 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 16,
-    color: "#9ca3af",
     fontStyle: "italic",
   },
 
@@ -1485,19 +1467,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveRateButton: {
-    backgroundColor: "#f59e0b",
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: "center",
-    shadowColor: "#f59e0b",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
   saveRateText: {
-    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
   },

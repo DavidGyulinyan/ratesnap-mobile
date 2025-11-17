@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { ThemedText } from "./themed-text";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface FooterProps {
@@ -9,10 +10,12 @@ interface FooterProps {
 
 export default function Footer({ style }: FooterProps) {
   const { t, tWithParams } = useLanguage();
+  const backgroundColor = useThemeColor({}, 'surface');
+  const borderColor = useThemeColor({}, 'border');
 
   return (
-    <View style={[styles.footer, style]}>
-      <ThemedText style={styles.footerText}>
+    <View style={[{ backgroundColor, borderTopWidth: 1, borderTopColor: borderColor, padding: 20, paddingBottom: 40, alignItems: "center" }, style]}>
+      <ThemedText style={{ fontSize: 12, textAlign: "center" }}>
         {tWithParams('footer.copyright', {
           appTitle: "RateSnap",
           suiteName: t('footer.suiteName')
@@ -21,19 +24,3 @@ export default function Footer({ style }: FooterProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  footer: {
-    padding: 20,
-    paddingBottom: 40,
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
-  },
-  footerText: {
-    fontSize: 12,
-    color: "#1f2937",
-    textAlign: "center",
-  },
-});

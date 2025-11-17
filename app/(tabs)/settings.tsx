@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,18 +11,559 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
 import { getAsyncStorage } from '@/lib/storage';
 
 export default function SettingsScreen() {
-  const { t, language } = useLanguage();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-  const [showAccountInfo, setShowAccountInfo] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
+   const { t, language } = useLanguage();
+   const router = useRouter();
+   const { user, signOut } = useAuth();
+   const { themePreference, setThemePreference } = useTheme();
+
+   // Theme colors
+   const backgroundColor = useThemeColor({}, 'background');
+   const surfaceColor = useThemeColor({}, 'surface');
+   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+   const primaryColor = useThemeColor({}, 'primary');
+   const textColor = useThemeColor({}, 'text');
+   const textSecondaryColor = useThemeColor({}, 'textSecondary');
+   const borderColor = useThemeColor({}, 'border');
+   const successColor = useThemeColor({}, 'success');
+   const errorColor = useThemeColor({}, 'error');
+   const warningColor = useThemeColor({}, 'warning');
+   const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+
+   const styles = useMemo(() => StyleSheet.create({
+     // ===========================================
+     // LAYOUT & CONTAINER STYLES
+     // ===========================================
+     container: {
+       flex: 1,
+       backgroundColor: 'transparent',
+     },
+     scrollView: {
+       flex: 1,
+     },
+     bottomSpacer: {
+       height: 40,
+     },
+
+     // ===========================================
+     // HEADER STYLES
+     // ===========================================
+     header: {
+       padding: 20,
+       paddingBottom: 10,
+     },
+     title: {
+       fontSize: 24,
+       fontWeight: '700',
+       marginBottom: 8,
+     },
+     subtitle: {
+       fontSize: 14,
+     },
+
+     // ===========================================
+     // SECTION STYLES
+     // ===========================================
+     section: {
+       margin: 16,
+       marginBottom: 8,
+       padding: 20,
+       borderRadius: 16,
+       shadowOffset: { width: 2, height: 4 },
+       shadowOpacity: 0.04,
+       shadowRadius: 3,
+       elevation: 1,
+     },
+     touchableSection: {
+       padding: 0,
+       paddingVertical: 0,
+       backgroundColor: 'transparent',
+       borderWidth: 0,
+       shadowOpacity: 0,
+       elevation: 0,
+       marginBottom: 0,
+     },
+     sectionHeader: {
+       flexDirection: 'row',
+       justifyContent: 'space-between',
+       alignItems: 'center',
+       marginBottom: 12,
+     },
+     sectionTitle: {
+       fontSize: 18,
+       fontWeight: '700',
+     },
+     sectionDescription: {
+       fontSize: 14,
+       lineHeight: 20,
+     },
+
+     // ===========================================
+     // FORM ELEMENTS
+     // ===========================================
+     form: {
+       gap: 16,
+     },
+     inputGroup: {
+       gap: 8,
+     },
+     inputLabel: {
+       fontSize: 14,
+       fontWeight: '600',
+     },
+     input: {
+       borderRadius: 10,
+       padding: 12,
+       fontSize: 14,
+     },
+
+     // ===========================================
+     // INFO CARDS & DISPLAY
+     // ===========================================
+     infoCard: {
+       borderRadius: 12,
+       padding: 16,
+     },
+     infoRow: {
+       flexDirection: 'row',
+       justifyContent: 'space-between',
+       alignItems: 'center',
+       marginBottom: 8,
+     },
+     infoLabel: {
+       fontSize: 14,
+       fontWeight: '500',
+     },
+     infoValue: {
+       fontSize: 14,
+       fontWeight: '600',
+       flex: 1,
+       textAlign: 'right',
+     },
+
+     // ===========================================
+     // BUTTONS
+     // ===========================================
+     editButton: {
+       paddingHorizontal: 12,
+       paddingVertical: 6,
+       borderRadius: 8,
+     },
+     editButtonText: {
+       fontSize: 12,
+       fontWeight: '600',
+     },
+     buttonGroup: {
+       flexDirection: 'row',
+       gap: 12,
+       marginTop: 8,
+     },
+     button: {
+       flex: 1,
+       padding: 14,
+       borderRadius: 10,
+       alignItems: 'center',
+     },
+     buttonPrimary: {},
+     buttonPrimaryText: {
+       fontSize: 15,
+       fontWeight: '600',
+     },
+     buttonSecondary: {},
+     buttonSecondaryText: {
+       fontSize: 15,
+       fontWeight: '600',
+     },
+
+     // ===========================================
+     // SETTINGS ITEMS
+     // ===========================================
+     settingItem: {
+       flexDirection: 'row',
+       justifyContent: 'space-between',
+       alignItems: 'center',
+       paddingVertical: 16,
+       paddingHorizontal: 20,
+       marginHorizontal: -20,
+     },
+     settingItemText: {
+       fontSize: 15,
+       fontWeight: '500',
+     },
+     settingValueContainer: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       gap: 8,
+     },
+     settingValue: {
+       fontSize: 14,
+       fontWeight: '400',
+     },
+     arrowText: {
+       fontSize: 18,
+       fontWeight: '300',
+     },
+
+     // ===========================================
+     // MODAL & OVERLAY ELEMENTS
+     // ===========================================
+     closeButton: {
+       width: 32,
+       height: 32,
+       borderRadius: '50%',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     closeButtonActive: {},
+     closeButtonText: {
+       fontSize: 16,
+       fontWeight: '500',
+       lineHeight: 16,
+     },
+     closeButtonTextActive: {},
+
+     // ===========================================
+     // TERMS & LEGAL CONTENT
+     // ===========================================
+     termsContent: {
+       marginTop: 16,
+       flexGrow: 1,
+     },
+     termsText: {
+       fontSize: 14,
+       lineHeight: 22,
+     },
+     termsFullView: {
+       margin: 16,
+       marginBottom: 8,
+       borderRadius: 16,
+       shadowOffset: { width: 0, height: 1 },
+       shadowOpacity: 0.04,
+       shadowRadius: 3,
+       elevation: 1,
+       maxHeight: '70%',
+     },
+     termsScrollView: {
+       flex: 1,
+       padding: 20,
+       paddingTop: 0,
+     },
+     termsContainer: {
+       paddingBottom: 20,
+     },
+
+     // ===========================================
+     // DANGER ZONE & DELETION
+     // ===========================================
+     dangerSection: {
+       borderColor: errorColor + '4d',
+       backgroundColor: errorColor + '1a',
+     },
+     dangerHeader: {
+       marginBottom: 16,
+     },
+     dangerTitle: {
+       color: errorColor,
+       fontSize: 18,
+       fontWeight: '700',
+       marginBottom: 4,
+     },
+     dangerSubtitle: {
+       fontSize: 14,
+       color: errorColor,
+       opacity: 0.8,
+     },
+     dangerItem: {
+       backgroundColor: errorColor + '0d',
+       marginHorizontal: -20,
+       paddingHorizontal: 20,
+       borderRadius: 12,
+     },
+
+     // Delete confirmation styles
+     deleteConfirmContainer: {
+       gap: 20,
+     },
+     deleteWarningCard: {
+       flexDirection: 'row',
+       padding: 16,
+       backgroundColor: errorColor + '26',
+       borderRadius: 12,
+       alignItems: 'flex-start',
+       gap: 12,
+     },
+     warningIconContainer: {
+       width: 32,
+       height: 32,
+       borderRadius: 16,
+       backgroundColor: errorColor + '1a',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     warningIcon: {
+       fontSize: 16,
+     },
+     warningContent: {
+       flex: 1,
+     },
+     deleteWarningTitle: {
+       fontSize: 16,
+       fontWeight: '700',
+       color: errorColor,
+       marginBottom: 4,
+     },
+     deleteWarningDescription: {
+       fontSize: 14,
+       color: errorColor,
+       opacity: 0.9,
+       lineHeight: 20,
+     },
+
+     // Credential inputs
+     credentialInputsContainer: {
+       gap: 16,
+     },
+     credentialInput: {
+       borderRadius: 10,
+       padding: 14,
+       fontSize: 16,
+       backgroundColor: surfaceColor,
+       color: textColor,
+     },
+
+     // Action buttons
+     deleteActionButtons: {
+       flexDirection: 'row',
+       gap: 12,
+     },
+     actionButton: {
+       flex: 1,
+       padding: 14,
+       borderRadius: 10,
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     cancelButton: {
+       backgroundColor: surfaceSecondaryColor,
+     },
+     cancelButtonText: {
+       color: textSecondaryColor,
+       fontSize: 15,
+       fontWeight: '600',
+     },
+     deleteButton: {
+       backgroundColor: errorColor,
+     },
+     deleteButtonText: {
+       color: 'white',
+       fontSize: 15,
+       fontWeight: '600',
+     },
+
+     // Delete account button
+     deleteAccountButton: {
+       backgroundColor: errorColor + '0d',
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     deleteButtonContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     deleteIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       backgroundColor: errorColor + '1a',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     deleteIcon: {
+       fontSize: 18,
+     },
+     deleteButtonTextContainer: {
+       flex: 1,
+     },
+     deleteButtonTitle: {
+       fontSize: 16,
+       fontWeight: '600',
+       color: errorColor,
+       marginBottom: 2,
+     },
+     deleteButtonSubtitle: {
+       fontSize: 14,
+       color: errorColor,
+       opacity: 0.8,
+     },
+     deleteArrowIcon: {
+       fontSize: 18,
+       color: errorColor,
+       opacity: 0.6,
+     },
+
+     // ===========================================
+     // SIGN OUT & ACCOUNT ACTIONS
+     // ===========================================
+     signOutButton: {
+       backgroundColor: surfaceSecondaryColor,
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     signOutContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     signOutIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       backgroundColor: primaryColor + '1a',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     signOutIcon: {
+       fontSize: 18,
+     },
+     signOutText: {
+       fontSize: 16,
+       fontWeight: '600',
+       color: primaryColor,
+     },
+
+     // ===========================================
+     // PENDING DELETION STATUS
+     // ===========================================
+     pendingDeletionSection: {
+       borderColor: warningColor + '4d',
+       backgroundColor: warningColor + '1a',
+     },
+     pendingDeletionHeader: {
+       flexDirection: 'row',
+       alignItems: 'flex-start',
+       marginBottom: 16,
+       gap: 12,
+     },
+     pendingIconContainer: {
+       width: 32,
+       height: 32,
+       borderRadius: 16,
+       backgroundColor: warningColor + '1a',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     pendingIcon: {
+       fontSize: 16,
+     },
+     pendingContent: {
+       flex: 1,
+     },
+     pendingTitle: {
+       fontSize: 16,
+       fontWeight: '700',
+       color: warningColor,
+       marginBottom: 4,
+     },
+     pendingDescription: {
+       fontSize: 14,
+       color: warningColor,
+       opacity: 0.9,
+       lineHeight: 20,
+     },
+     cancelDeletionButton: {
+       backgroundColor: warningColor + '0d',
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     cancelDeletionContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     cancelIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       backgroundColor: warningColor + '1a',
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     cancelIcon: {
+       fontSize: 18,
+     },
+     cancelDeletionText: {
+       fontSize: 16,
+       fontWeight: '600',
+       color: warningColor,
+     },
+
+     // ===========================================
+     // THEME SELECTION
+     // ===========================================
+     themeOptions: {
+       gap: 12,
+     },
+     themeOption: {
+       borderRadius: 12,
+       overflow: 'hidden',
+     },
+     themeOptionSelected: {},
+     themeOptionContent: {
+       flexDirection: 'row',
+       alignItems: 'center',
+       padding: 16,
+       gap: 12,
+     },
+     themeIconContainer: {
+       width: 40,
+       height: 40,
+       borderRadius: 20,
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     themeIcon: {
+       fontSize: 18,
+     },
+     themeTextContainer: {
+       flex: 1,
+     },
+     themeTitle: {
+       fontSize: 16,
+       fontWeight: '600',
+       marginBottom: 2,
+     },
+     themeDescription: {
+       fontSize: 14,
+       lineHeight: 18,
+     },
+     checkmarkContainer: {
+       width: 24,
+       height: 24,
+       borderRadius: 12,
+       alignItems: 'center',
+       justifyContent: 'center',
+     },
+     checkmark: {
+       fontSize: 14,
+       fontWeight: '600',
+     },
+   }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor, successColor, errorColor, warningColor, shadowColor]);
+
+   const [showAccountInfo, setShowAccountInfo] = useState(false);
+   const [showTerms, setShowTerms] = useState(false);
+   const [showThemeSelection, setShowThemeSelection] = useState(false);
   
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
@@ -495,15 +1036,16 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
 
     if (showAccountInfo) {
       return (
-        <View style={styles.section}>
+        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
           <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>
+            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
               {t('settings.updateAccountInfo')}
             </ThemedText>
             <TouchableOpacity
               style={[
+                { backgroundColor: surfaceSecondaryColor },
                 styles.closeButton,
-                closeButtonPressed && styles.closeButtonActive
+                closeButtonPressed && { backgroundColor: surfaceColor }
               ]}
               onPressIn={() => setCloseButtonPressed(true)}
               onPressOut={() => setCloseButtonPressed(false)}
@@ -513,33 +1055,35 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
               }}
             >
               <ThemedText style={[
+                { color: textSecondaryColor },
                 styles.closeButtonText,
-                closeButtonPressed && styles.closeButtonTextActive
+                closeButtonPressed && { color: textColor }
               ]}>×</ThemedText>
             </TouchableOpacity>
           </View>
           
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <ThemedText style={styles.inputLabel}>
+              <ThemedText style={[{ color: textColor }, styles.inputLabel]}>
                 {t('auth.username')} *
               </ThemedText>
               <TextInput
-                style={styles.input}
+                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
                 value={accountInfo.username}
                 onChangeText={(text: string) =>
                   setAccountInfo({ ...accountInfo, username: text })
                 }
                 placeholder={t('auth.username')}
+                placeholderTextColor={textSecondaryColor}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <ThemedText style={styles.inputLabel}>
+              <ThemedText style={[{ color: textColor }, styles.inputLabel]}>
                 {t('auth.email')} *
               </ThemedText>
               <TextInput
-                style={styles.input}
+                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
                 value={accountInfo.email}
                 onChangeText={(text: string) =>
                   setAccountInfo({ ...accountInfo, email: text })
@@ -547,26 +1091,27 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
                 placeholder={t('auth.email')}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                placeholderTextColor={textSecondaryColor}
               />
             </View>
 
             <View style={styles.buttonGroup}>
               <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
+                style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.button, styles.buttonSecondary]}
                 onPress={() => {
                   console.log('Cancel account info edit');
                   setShowAccountInfo(false);
                 }}
               >
-                <ThemedText style={styles.buttonSecondaryText}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.buttonSecondaryText]}>
                   {t('common.cancel')}
                 </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary]}
+                style={[{ backgroundColor: primaryColor }, styles.button, styles.buttonPrimary]}
                 onPress={handleUpdateAccountInfo}
               >
-                <ThemedText style={styles.buttonPrimaryText}>
+                <ThemedText style={[{ color: textColor }, styles.buttonPrimaryText]}>
                   {t('common.save')}
                 </ThemedText>
               </TouchableOpacity>
@@ -577,43 +1122,43 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     }
 
     return (
-      <View style={styles.section}>
+      <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>
+          <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
             {t('settings.accountInfo')}
           </ThemedText>
           <TouchableOpacity
-            style={styles.editButton}
+            style={[{ backgroundColor: primaryColor }, styles.editButton]}
             onPress={() => {
               console.log('Edit account info clicked');
               setShowAccountInfo(true);
             }}
           >
-            <ThemedText style={styles.editButtonText}>
+            <ThemedText style={[{ color: textColor }, styles.editButtonText]}>
               {t('common.edit')}
             </ThemedText>
           </TouchableOpacity>
         </View>
         <TouchableOpacity
-          style={styles.infoCard}
+          style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.infoCard]}
           onPress={() => {
             console.log('Edit account info clicked');
             setShowAccountInfo(true);
           }}
         >
           <View style={styles.infoRow}>
-            <ThemedText style={styles.infoLabel}>
+            <ThemedText style={[{ color: textSecondaryColor }, styles.infoLabel]}>
               {t('auth.username')}:
             </ThemedText>
-            <ThemedText style={styles.infoValue}>
+            <ThemedText style={[{ color: textColor }, styles.infoValue]}>
               {user?.user_metadata?.username || user?.email?.split('@')[0]}
             </ThemedText>
           </View>
           <View style={styles.infoRow}>
-            <ThemedText style={styles.infoLabel}>
+            <ThemedText style={[{ color: textSecondaryColor }, styles.infoLabel]}>
               {t('auth.email')}:
             </ThemedText>
-            <ThemedText style={styles.infoValue}>
+            <ThemedText style={[{ color: textColor }, styles.infoValue]}>
               {user?.email}
             </ThemedText>
           </View>
@@ -687,21 +1232,21 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     }
 
     return (
-      <View style={styles.section}>
+      <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
         <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>
+          <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
             {t('settings.password')}
           </ThemedText>
           <TouchableOpacity
-            style={styles.editButton}
+            style={[{ backgroundColor: primaryColor }, styles.editButton]}
             onPress={() => setShowPasswordForm(true)}
           >
-            <ThemedText style={styles.editButtonText}>
+            <ThemedText style={[{ color: textColor }, styles.editButtonText]}>
               {t('common.change')}
             </ThemedText>
           </TouchableOpacity>
         </View>
-        <ThemedText style={styles.sectionDescription}>
+        <ThemedText style={[{ color: textSecondaryColor }, styles.sectionDescription]}>
           {t('settings.passwordUpdateDescription')}
         </ThemedText>
       </View>
@@ -764,16 +1309,146 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     );
   };
 
+  const renderThemeSelection = () => {
+    if (showThemeSelection) {
+      return (
+        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
+              {t('settings.theme')}
+            </ThemedText>
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor },
+                styles.closeButton,
+                closeButtonPressed && { backgroundColor: surfaceColor }
+              ]}
+              onPressIn={() => setCloseButtonPressed(true)}
+              onPressOut={() => setCloseButtonPressed(false)}
+              onPress={() => {
+                setShowThemeSelection(false);
+                setCloseButtonPressed(false);
+              }}
+            >
+              <ThemedText style={[
+                { color: textSecondaryColor },
+                styles.closeButtonText,
+                closeButtonPressed && { color: textColor }
+              ]}>×</ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.themeOptions}>
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
+                styles.themeOption,
+                themePreference === 'system' && { backgroundColor: primaryColor, borderColor: primaryColor }
+              ]}
+              onPress={() => {
+                setThemePreference('system');
+                setShowThemeSelection(false);
+              }}
+            >
+              <View style={styles.themeOptionContent}>
+                <View style={[{ backgroundColor: surfaceColor }, styles.themeIconContainer]}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>📱</ThemedText>
+                </View>
+                <View style={styles.themeTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
+                    {t('settings.system')}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
+                    {t('settings.systemThemeDescription')}
+                  </ThemedText>
+                </View>
+                {themePreference === 'system' && (
+                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
+                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
+                styles.themeOption,
+                themePreference === 'light' && { backgroundColor: primaryColor, borderColor: primaryColor }
+              ]}
+              onPress={() => {
+                setThemePreference('light');
+                setShowThemeSelection(false);
+              }}
+            >
+              <View style={styles.themeOptionContent}>
+                <View style={[{ backgroundColor: surfaceColor }, styles.themeIconContainer]}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>☀️</ThemedText>
+                </View>
+                <View style={styles.themeTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
+                    {t('settings.light')}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
+                    {t('settings.lightThemeDescription')}
+                  </ThemedText>
+                </View>
+                {themePreference === 'light' && (
+                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
+                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
+                styles.themeOption,
+                themePreference === 'dark' && { backgroundColor: primaryColor, borderColor: primaryColor }
+              ]}
+              onPress={() => {
+                setThemePreference('dark');
+                setShowThemeSelection(false);
+              }}
+            >
+              <View style={styles.themeOptionContent}>
+                <View style={styles.themeIconContainer}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>🌙</ThemedText>
+                </View>
+                <View style={styles.themeTextContainer}>
+                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
+                    {t('settings.dark')}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
+                    {t('settings.darkThemeDescription')}
+                  </ThemedText>
+                </View>
+                {themePreference === 'dark' && (
+                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
+                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f6f7f9' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
       <ThemedView style={styles.container}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={true}>
           {/* Header */}
           <View style={styles.header}>
-            <ThemedText style={styles.title}>
+            <ThemedText style={[{ color: textColor }, styles.title]}>
               ⚙️ {t('settings.title')}
             </ThemedText>
-            <ThemedText style={styles.subtitle}>
+            <ThemedText style={[{ color: textSecondaryColor }, styles.subtitle]}>
               {t('settings.subtitle')}
             </ThemedText>
           </View>
@@ -787,42 +1462,52 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
           {/* Terms of Use Section */}
           {renderTermsSection()}
 
+          {/* Theme Selection Section */}
+          {renderThemeSelection()}
+
           {/* Additional Settings Sections */}
-          <View style={styles.section}>
+          <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
             <View style={styles.sectionHeader}>
-              <ThemedText style={styles.sectionTitle}>
+              <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
                 {t('settings.preferences')}
               </ThemedText>
             </View>
-            
+
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Theme settings feature coming soon')}
+              onPress={() => setShowThemeSelection(true)}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 🎨 {t('settings.theme')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <View style={styles.settingValueContainer}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
+                  {themePreference === 'system' ? t('settings.system') :
+                   themePreference === 'light' ? t('settings.light') :
+                   t('settings.dark')}
+                </ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Language settings feature coming soon')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 🌍 {t('settings.language')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Notification settings feature coming soon')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 {t('settings.notifications')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -836,20 +1521,20 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Cache cleared successfully')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 🗑️ {t('settings.clearCache')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Export feature coming soon')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 📊 {t('settings.exportData')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -893,10 +1578,10 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
                 '• Updates occur automatically in the background\n' +
                 '• All rates are displayed in real-time when online')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 ℹ️ {t('settings.aboutExchangeRates')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -910,30 +1595,30 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
               style={styles.settingItem}
               onPress={() => Alert.alert('About', 'RateSnap v1.0.0\n\nA currency converter app with real-time exchange rates.\n\nDeveloped with ❤️ for global travelers and businesses.')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 ℹ️ {t('settings.about')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Info', 'Email: support@ratesnap.app')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 📧 {t('settings.contactSupport')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => Alert.alert('Help', 'For assistance, please:\n\n1. Check our FAQ section\n2. Contact support@ratesnap.app\n3. Visit our website for more resources')}
             >
-              <ThemedText style={styles.settingItemText}>
+              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
                 ❓ {t('settings.help')}
               </ThemedText>
-              <ThemedText style={styles.arrowText}>›</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -1107,466 +1792,3 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    padding: 20,
-    paddingBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  section: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    margin: 16,
-    marginBottom: 8,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.6)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  touchableSection: {
-    padding: 0,
-    paddingVertical: 0,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    shadowOpacity: 0,
-    elevation: 0,
-    marginBottom: 0,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-  },
-  editButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#6366f1',
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  infoCard: {
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.6)',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    color: '#1e293b',
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  buttonPrimary: {
-    backgroundColor: '#6366f1',
-  },
-  buttonPrimaryText: {
-    color: 'white',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  buttonSecondary: {
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-  },
-  buttonSecondaryText: {
-    color: '#64748b',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginHorizontal: -20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 232, 240, 0.4)',
-  },
-  settingItemText: {
-    fontSize: 15,
-    color: '#1e293b',
-    fontWeight: '500',
-  },
-  arrowText: {
-    fontSize: 18,
-    color: '#94a3b8',
-    fontWeight: '300',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#f3f4f6',
-    borderRadius: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButtonActive: {
-    backgroundColor: '#e5e7eb',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  closeButtonTextActive: {
-    color: '#4b5563',
-  },
-  termsContent: {
-    marginTop: 16,
-    flexGrow: 1,
-  },
-  termsText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 22,
-  },
-  termsFullView: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    margin: 16,
-    marginBottom: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.6)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    maxHeight: '70%',
-  },
-  termsScrollView: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 0,
-  },
-  termsContainer: {
-    paddingBottom: 20,
-  },
-  dangerSection: {
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    backgroundColor: 'rgba(254, 242, 242, 0.1)',
-  },
-  dangerHeader: {
-    marginBottom: 16,
-  },
-  dangerTitle: {
-    color: '#dc2626',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  dangerSubtitle: {
-    fontSize: 14,
-    color: '#dc2626',
-    opacity: 0.8,
-  },
-  dangerItem: {
-    backgroundColor: 'rgba(239, 68, 68, 0.05)',
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  deleteConfirmContainer: {
-    gap: 20,
-  },
-  deleteWarningCard: {
-    flexDirection: 'row',
-    padding: 16,
-    backgroundColor: 'rgba(254, 242, 242, 0.6)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  warningIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  warningIcon: {
-    fontSize: 16,
-  },
-  warningContent: {
-    flex: 1,
-  },
-  deleteWarningTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#dc2626',
-    marginBottom: 4,
-  },
-  deleteWarningDescription: {
-    fontSize: 14,
-    color: '#dc2626',
-    opacity: 0.9,
-    lineHeight: 20,
-  },
-  credentialInputsContainer: {
-    gap: 16,
-  },
-  credentialInput: {
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: 'white',
-    color: '#1e293b',
-  },
-  deleteActionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-  },
-  cancelButtonText: {
-    color: '#64748b',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    backgroundColor: '#dc2626',
-  },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  deleteAccountButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-    overflow: 'hidden',
-  },
-  deleteButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  deleteIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteIcon: {
-    fontSize: 18,
-  },
-  deleteButtonTextContainer: {
-    flex: 1,
-  },
-  deleteButtonTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#dc2626',
-    marginBottom: 2,
-  },
-  deleteButtonSubtitle: {
-    fontSize: 14,
-    color: '#dc2626',
-    opacity: 0.8,
-  },
-  deleteArrowIcon: {
-    fontSize: 18,
-    color: '#dc2626',
-    opacity: 0.6,
-  },
-  signOutButton: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    overflow: 'hidden',
-  },
-  signOutContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  signOutIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signOutIcon: {
-    fontSize: 18,
-  },
-  signOutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6366f1',
-  },
-  pendingDeletionSection: {
-    borderColor: 'rgba(251, 191, 36, 0.3)',
-    backgroundColor: 'rgba(254, 249, 195, 0.1)',
-  },
-  pendingDeletionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-    gap: 12,
-  },
-  pendingIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pendingIcon: {
-    fontSize: 16,
-  },
-  pendingContent: {
-    flex: 1,
-  },
-  pendingTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#d97706',
-    marginBottom: 4,
-  },
-  pendingDescription: {
-    fontSize: 14,
-    color: '#d97706',
-    opacity: 0.9,
-    lineHeight: 20,
-  },
-  cancelDeletionButton: {
-    backgroundColor: 'rgba(251, 191, 36, 0.05)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.2)',
-    overflow: 'hidden',
-  },
-  cancelDeletionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  cancelIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelIcon: {
-    fontSize: 18,
-  },
-  cancelDeletionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#d97706',
-  },
-  bottomSpacer: {
-    height: 40,
-  },
-});

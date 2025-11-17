@@ -297,7 +297,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
   closeButton: {
@@ -355,7 +354,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
   overviewLabel: {

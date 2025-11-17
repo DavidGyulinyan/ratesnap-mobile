@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CurrencyPickerProps {
@@ -176,6 +177,16 @@ export default function CurrencyPicker({
   const [search, setSearch] = useState("");
   const [frequentlyUsedCurrencies, setFrequentlyUsedCurrencies] = useState<{[key: string]: number}>({});
 
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+
   // Load frequently used currencies from storage
   const loadFrequentlyUsedCurrencies = async () => {
     try {
@@ -281,25 +292,26 @@ export default function CurrencyPicker({
             {t('picker.selectCurrency')}
           </ThemedText>
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.closeButton]}
             onPress={onClose}
           >
-            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+            <ThemedText style={[{ color: textColor }, styles.closeButtonText]}>×</ThemedText>
           </TouchableOpacity>
         </View>
         
         {/* Search Input */}
         <TextInput
-          style={styles.searchInput}
+          style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.searchInput]}
           placeholder={t('picker.searchCurrencies')}
           value={search}
           onChangeText={setSearch}
+          placeholderTextColor={textSecondaryColor}
         />
 
         {/* Frequently Used Section */}
         {Object.keys(frequentlyUsedCurrencies).length > 0 && !search.trim() && (
-          <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>{t('picker.frequentlyUsed')}</ThemedText>
+          <View style={[{ backgroundColor: surfaceSecondaryColor, borderBottomColor: primaryColor }, styles.sectionHeader]}>
+            <ThemedText style={[{ color: primaryColor }, styles.sectionTitle]}>{t('picker.frequentlyUsed')}</ThemedText>
           </View>
         )}
         
@@ -309,9 +321,10 @@ export default function CurrencyPicker({
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
+                { backgroundColor: surfaceColor, borderBottomColor: borderColor },
                 styles.currencyItem,
-                item.code === selectedCurrency && styles.selectedItem,
-                item.usageCount > 0 && !search.trim() && styles.frequentlyUsedItem,
+                item.code === selectedCurrency && { backgroundColor: surfaceSecondaryColor, borderBottomColor: primaryColor },
+                item.usageCount > 0 && !search.trim() && { backgroundColor: surfaceSecondaryColor, borderBottomColor: primaryColor },
               ]}
               onPress={() => handleSelect(item.code)}
             >
@@ -322,26 +335,26 @@ export default function CurrencyPicker({
                     <View style={styles.currencyHeader}>
                       <ThemedText
                         style={
-                          item.code === selectedCurrency ? styles.selectedText : styles.currencyCode
+                          item.code === selectedCurrency ? [{ color: primaryColor, fontWeight: "600" }] : [{ color: textColor }, styles.currencyCode]
                         }
                       >
                         {item.code}
                       </ThemedText>
                       {item.usageCount > 0 && (
-                        <View style={styles.usageIndicator}>
-                          <ThemedText style={styles.usageCount}>
+                        <View style={[{ backgroundColor: primaryColor }, styles.usageIndicator]}>
+                          <ThemedText style={[{ color: textColor }, styles.usageCount]}>
                             {item.usageCount}
                           </ThemedText>
                         </View>
                       )}
                     </View>
                     {item.countries.length > 0 && (
-                      <ThemedText style={styles.countryNames}>
+                      <ThemedText style={[{ color: textSecondaryColor }, styles.countryNames]}>
                         {(() => {
                           // Format as "Country, Full Currency Name" for better readability
                           const countryName = item.countries[0] || '';
                           const currencyFullName = CURRENCY_TO_FULL_NAMES[item.code] || '';
-                          
+
                           if (currencyFullName) {
                             return `${countryName}, ${currencyFullName}`;
                           } else {
@@ -367,7 +380,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 50,
-    backgroundColor: "#fafbfc",
   },
   header: {
     flexDirection: "row",
@@ -378,32 +390,26 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 20,
-    color: "#374151",
     paddingRight: 16,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: '#f3f4f6',
     borderRadius: '50%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 16,
-    color: '#6b7280',
     fontWeight: '500',
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    backgroundColor: "#ffffff",
     marginHorizontal: 20,
     marginBottom: 20,
-    color: "#374151",
   },
   list: {
     flex: 1,
@@ -412,8 +418,6 @@ const styles = StyleSheet.create({
   currencyItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-    backgroundColor: "#ffffff",
   },
   selectedItem: {
     backgroundColor: "#f0fdf4",
@@ -435,16 +439,13 @@ const styles = StyleSheet.create({
   currencyCode: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
   },
   countryNames: {
     fontSize: 12,
-    color: "#6b7280",
     marginTop: 2,
   },
   selectedText: {
     fontWeight: "600",
-    color: "#059669",
   },
   frequentlyUsedItem: {
     backgroundColor: "#fefce8",
@@ -456,7 +457,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   usageIndicator: {
-    backgroundColor: "#fbbf24",
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -464,20 +464,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   usageCount: {
-    color: "#92400e",
     fontSize: 10,
     fontWeight: "bold",
   },
   sectionHeader: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: "#fffbeb",
     borderBottomWidth: 1,
-    borderBottomColor: "#fbbf24",
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#92400e",
   },
 });

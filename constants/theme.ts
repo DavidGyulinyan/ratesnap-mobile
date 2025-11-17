@@ -27,7 +27,6 @@ export const Colors = {
     surface: "#ffffff",
     surfaceSecondary: "#f8fafc",
     cardBackground: "#ffffff",
-    modalBackground: "rgba(0, 0, 0, 0.5)",
     
     // Text colors
     text: "#1e293b",

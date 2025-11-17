@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import Logo from '@/components/Logo';
 
 export default function ForgotPasswordScreen() {
@@ -25,6 +26,160 @@ export default function ForgotPasswordScreen() {
   const { resetPassword } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 60,
+      paddingBottom: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    title: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: textColor,
+      marginBottom: 8,
+      textAlign: 'center',
+      letterSpacing: 0.3,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: textSecondaryColor,
+      textAlign: 'center',
+      marginBottom: 32,
+      lineHeight: 24,
+      paddingHorizontal: 20,
+    },
+
+    form: {
+      width: '100%',
+      marginBottom: 32,
+    },
+    inputContainer: {
+      marginBottom: 20,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: textColor,
+      marginBottom: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: borderColor,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      backgroundColor: surfaceSecondaryColor,
+      color: textColor,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 12,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      marginBottom: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    primaryButton: {
+      backgroundColor: primaryColor,
+      shadowColor: primaryColor,
+      shadowOpacity: 0.3,
+    },
+    primaryButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+
+    successCard: {
+      backgroundColor: surfaceColor,
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 32,
+      borderWidth: 1,
+      borderColor: borderColor,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      alignItems: 'center',
+    },
+    successIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    successTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: textColor,
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    successText: {
+      fontSize: 14,
+      color: textSecondaryColor,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+
+    backLink: {
+      padding: 8,
+    },
+    backText: {
+      color: primaryColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+
+    resendLink: {
+      padding: 8,
+      marginTop: 16,
+    },
+    resendText: {
+      color: primaryColor,
+      fontSize: 14,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+  }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor]);
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -118,6 +273,7 @@ export default function ForgotPasswordScreen() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="Enter your email address"
+                placeholderTextColor={textSecondaryColor}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -146,148 +302,3 @@ export default function ForgotPasswordScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fafbff',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 8,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-    paddingHorizontal: 20,
-  },
-
-  form: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    color: '#1e293b',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  primaryButton: {
-    backgroundColor: '#6366f1',
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.3,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-
-  successCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    alignItems: 'center',
-  },
-  successIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  successText: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-
-  backLink: {
-    padding: 8,
-  },
-  backText: {
-    color: '#6366f1',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  resendLink: {
-    padding: 8,
-    marginTop: 16,
-  },
-  resendText: {
-    color: '#6366f1',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import Logo from '@/components/Logo';
 import AuthButtons from '@/components/AuthButtons';
 import * as WebBrowser from 'expo-web-browser';
@@ -37,6 +38,209 @@ function SignUpScreen() {
   const { signUp } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 40, // Reduced top padding since SafeAreaView handles safe area
+      paddingBottom: 40,
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: textColor,
+      marginTop: 24,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: textSecondaryColor,
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    form: {
+      width: '100%',
+      maxWidth: 400,
+    },
+    inputContainer: {
+      marginBottom: 20,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: textColor,
+      marginBottom: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: borderColor,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      backgroundColor: surfaceSecondaryColor,
+    },
+    passwordInputContainer: {
+      position: 'relative',
+    },
+    passwordInput: {
+      borderWidth: 1,
+      borderColor: borderColor,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingRight: 50, // Make room for the eye button
+      fontSize: 16,
+      backgroundColor: surfaceSecondaryColor,
+    },
+    eyeButton: {
+      position: 'absolute',
+      right: 12,
+      top: '50%',
+      transform: [{ translateY: -10 }],
+      padding: 4,
+    },
+    button: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 12,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      marginBottom: 12,
+      flexWrap: 'wrap',
+    },
+    primaryButton: {
+      backgroundColor: primaryColor,
+    },
+    primaryButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      textAlign: 'center',
+      flexWrap: 'wrap',
+      includeFontPadding: false,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 24,
+    },
+    footerText: {
+      color: textSecondaryColor,
+      fontSize: 14,
+    },
+    signInLink: {
+      color: primaryColor,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    pickerContainer: {
+      position: 'relative',
+    },
+    pickerButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: borderColor,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: surfaceSecondaryColor,
+    },
+    pickerButtonText: {
+      fontSize: 16,
+      color: textColor,
+      flex: 1,
+    },
+    modalOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    languagePickerModal: {
+      backgroundColor: surfaceColor,
+      borderRadius: 20,
+      width: '90%',
+      maxWidth: 400,
+      maxHeight: '70%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: borderColor,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: textColor,
+    },
+    closeButton: {
+      padding: 4,
+    },
+    languageList: {
+      maxHeight: 300,
+    },
+    languageOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: borderColor,
+    },
+    languageOptionSelected: {
+      backgroundColor: primaryColor + '1a',
+    },
+    languageOptionText: {
+      fontSize: 16,
+      color: textColor,
+    },
+    languageOptionTextSelected: {
+      color: primaryColor,
+      fontWeight: '600',
+    },
+  }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor]);
 
   useEffect(() => {
     setSelectedLanguage(language);
@@ -109,6 +313,7 @@ function SignUpScreen() {
                   value={username}
                   onChangeText={setUsername}
                   placeholder={t('signup.chooseUsername')}
+                  placeholderTextColor={textSecondaryColor}
                   autoCapitalize="none"
                 />
               </View>
@@ -123,7 +328,7 @@ function SignUpScreen() {
                     <Text style={styles.pickerButtonText}>
                       {getLanguageDisplayName(selectedLanguage)}
                     </Text>
-                    <Ionicons name="chevron-down" size={20} color="#64748b" />
+                    <Ionicons name="chevron-down" size={20} color={textSecondaryColor} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -135,6 +340,7 @@ function SignUpScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder={t('signup.enterEmail')}
+                  placeholderTextColor={textSecondaryColor}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -149,6 +355,7 @@ function SignUpScreen() {
                     value={password}
                     onChangeText={setPassword}
                     placeholder={t('signup.createPassword')}
+                    placeholderTextColor={textSecondaryColor}
                     secureTextEntry={!passwordVisible}
                   />
                   <TouchableOpacity
@@ -158,7 +365,7 @@ function SignUpScreen() {
                     <Ionicons
                       name={passwordVisible ? "eye-off" : "eye"}
                       size={20}
-                      color="#64748b"
+                      color={textSecondaryColor}
                     />
                   </TouchableOpacity>
                 </View>
@@ -172,6 +379,7 @@ function SignUpScreen() {
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     placeholder={t('signup.confirmPassword')}
+                    placeholderTextColor={textSecondaryColor}
                     secureTextEntry={!confirmPasswordVisible}
                   />
                   <TouchableOpacity
@@ -181,7 +389,7 @@ function SignUpScreen() {
                     <Ionicons
                       name={confirmPasswordVisible ? "eye-off" : "eye"}
                       size={20}
-                      color="#64748b"
+                      color={textSecondaryColor}
                     />
                   </TouchableOpacity>
                 </View>
@@ -220,7 +428,7 @@ function SignUpScreen() {
                 style={styles.closeButton}
                 onPress={() => setShowLanguagePicker(false)}
               >
-                <Ionicons name="close" size={24} color="#64748b" />
+                <Ionicons name="close" size={24} color={textSecondaryColor} />
               </TouchableOpacity>
             </View>
 
@@ -252,7 +460,7 @@ function SignUpScreen() {
                     {lang.name}
                   </Text>
                   {selectedLanguage === lang.code && (
-                    <Ionicons name="checkmark" size={20} color="#3b82f6" />
+                    <Ionicons name="checkmark" size={20} color={primaryColor} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -265,197 +473,3 @@ function SignUpScreen() {
 }
 
 export default SignUpScreen;
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40, // Reduced top padding since SafeAreaView handles safe area
-    paddingBottom: 40,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  form: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  passwordInputContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingRight: 50, // Make room for the eye button
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-    padding: 4,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    flexWrap: 'wrap',
-  },
-  primaryButton: {
-    backgroundColor: '#3b82f6',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    flexWrap: 'wrap',
-    includeFontPadding: false,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  footerText: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  signInLink: {
-    color: '#3b82f6',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  pickerContainer: {
-    position: 'relative',
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#f9fafb',
-  },
-  pickerButtonText: {
-    fontSize: 16,
-    color: '#1f2937',
-    flex: 1,
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  languagePickerModal: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    width: '90%',
-    maxWidth: 400,
-    maxHeight: '70%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  languageList: {
-    maxHeight: 300,
-  },
-  languageOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  languageOptionSelected: {
-    backgroundColor: '#eff6ff',
-  },
-  languageOptionText: {
-    fontSize: 16,
-    color: '#374151',
-  },
-  languageOptionTextSelected: {
-    color: '#1d4ed8',
-    fontWeight: '600',
-  },
-});
