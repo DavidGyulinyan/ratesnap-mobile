@@ -384,6 +384,8 @@ const translations = {
     'common.update': 'Թարմացնել',
     'common.more': 'Ավելի',
     'common.less': 'Ավելի քիչ',
+    'common.showMore': 'Ցուցադրել ավելին',
+    'common.showLess': 'Ցուցադրել քիչ',
     'common.ok': 'OK',
     
     // Authentication
@@ -444,6 +446,7 @@ const translations = {
     'saved.rates': 'պահպանված դրույքներ',
     'alerts.activeAlert': 'ակտիվ ծանուցում',
     'alerts.activeAlerts': 'ակտիվ ծանուցումներ',
+    'saved.deleteAll': 'Հեռացնել բոլորը',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Կրկնվող արժույթ',
@@ -617,6 +620,8 @@ const translations = {
     'common.update': 'Обновить',
     'common.more': 'Больше',
     'common.less': 'Меньше',
+    'common.showMore': 'Показать больше',
+    'common.showLess': 'Показать меньше',
     'common.ok': 'OK',
 
     // Multi-Currency
@@ -654,6 +659,7 @@ const translations = {
     'saved.rates': 'сохраненные курсы',
     'alerts.activeAlert': 'активное уведомление',
     'alerts.activeAlerts': 'активные уведомления',
+    'saved.deleteAll': 'Удалить все',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Дубликат валюты',
@@ -842,6 +848,8 @@ const translations = {
     'common.update': 'Actualizar',
     'common.more': 'Más',
     'common.less': 'Menos',
+    'common.showMore': 'Mostrar Más',
+    'common.showLess': 'Mostrar Menos',
     'common.ok': 'OK',
 
     // Multi-Currency
@@ -879,6 +887,7 @@ const translations = {
     'saved.rates': 'tasas guardadas',
     'alerts.activeAlert': 'alerta activa',
     'alerts.activeAlerts': 'alertas activas',
+    'saved.deleteAll': 'Eliminar Todo',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Moneda Duplicada',
@@ -1066,6 +1075,8 @@ const translations = {
     'common.update': '更新',
     'common.more': '更多',
     'common.less': '更少',
+    'common.showMore': '显示更多',
+    'common.showLess': '显示更少',
     'common.ok': 'OK',
 
     // Multi-Currency
@@ -1103,6 +1114,7 @@ const translations = {
     'saved.rates': '已保存汇率',
     'alerts.activeAlert': '活跃提醒',
     'alerts.activeAlerts': '活跃提醒',
+    'saved.deleteAll': '删除全部',
 
     // Errors & Messages
     'error.duplicateCurrency': '重复货币',
@@ -1291,6 +1303,8 @@ const translations = {
     'common.update': 'अपडेट करें',
     'common.more': 'और',
     'common.less': 'कम',
+    'common.showMore': 'और दिखाएं',
+    'common.showLess': 'कम दिखाएं',
     'common.ok': 'OK',
 
     // Multi-Currency
@@ -1328,6 +1342,7 @@ const translations = {
     'saved.rates': 'सेव्ड रेट्स',
     'alerts.activeAlert': 'एक्टिव अलर्ट',
     'alerts.activeAlerts': 'एक्टिव अलर्ट्स',
+    'saved.deleteAll': 'सभी हटाएं',
 
     // Errors & Messages
     'error.duplicateCurrency': 'डुप्लिकेट करेंसी',
