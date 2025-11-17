@@ -38,7 +38,7 @@ export interface MultiCurrencyConverterHistory {
 export interface MathCalculatorHistory {
   id: string;
   user_id: string;
-  expression: string;
+  calculation_expression: string;
   result: number;
   created_at: string;
 }
@@ -465,12 +465,12 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Insert the new record (using the actual column name 'expression')
+      // Insert the new record (using the actual column name 'calculation_expression')
       const { data, error } = await supabase
         .from('math_calculator_history')
         .insert({
           user_id: user.id,
-          expression: expression,
+          calculation_expression: expression,
           result: result
         })
         .select()
@@ -533,7 +533,7 @@ export class UserDataService {
 
       const { data, error } = await supabase
         .from('math_calculator_history')
-        .select('*')
+        .select('id, user_id, calculation_expression, result, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit);

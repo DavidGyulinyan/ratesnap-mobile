@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Dimensions, useWindowDimensions, ScrollView } from "react-native";
 import { ThemedView } from "./themed-view";
-import { ThemedText } from "./themed-text";
 import { useCalculatorHistory } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,7 +20,7 @@ export default function MathCalculator({
   autoCloseAfterCalculation = true,
 }: MathCalculatorProps) {
   const { user } = useAuth();
-  const { saveCalculation, loading: historyLoading } = useCalculatorHistory();
+  const { calculatorHistory: supabaseHistory, saveCalculation, loading: historyLoading } = useCalculatorHistory();
   
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
@@ -41,6 +40,35 @@ export default function MathCalculator({
   const { width, height } = useWindowDimensions();
   const isSmallScreen = height < 700;
   const isMediumScreen = height >= 700 && height < 800;
+
+  // Initialize local history with Supabase history when component becomes visible
+  useEffect(() => {
+    if (visible && user && supabaseHistory.length > 0) {
+      const formattedHistory = supabaseHistory.map(record => {
+        // Handle both old 'expression' field and new 'calculation_expression' field
+        const expression = record.calculation_expression || record.expression || 'Unknown calculation';
+        // If expression already contains "= result", use it as-is, otherwise add result
+        if (expression.includes('=')) {
+          return expression;
+        } else {
+          return `${expression} = ${record.result}`;
+        }
+      });
+      setCalculationHistory(prev => {
+        // Merge Supabase history with any existing local history, avoiding duplicates
+        const merged = [...formattedHistory];
+        prev.forEach(localCalc => {
+          if (!merged.includes(localCalc)) {
+            merged.push(localCalc);
+          }
+        });
+        return merged.slice(0, 15); // Keep only 15 most recent
+      });
+    } else if (visible && !user) {
+      // For non-authenticated users, keep local history
+      setCalculationHistory(prev => prev);
+    }
+  }, [visible, user, supabaseHistory]);
 
   const getResponsiveValue = (small: number, medium: number, large: number) => {
     if (isSmallScreen) return small;
@@ -435,22 +463,38 @@ export default function MathCalculator({
     </View>
   );
 
-  const HistoryView = () => (
-    <View style={styles.historyContainer}>
-      <Text style={styles.historyTitle}>Calculation History</Text>
-      <ScrollView style={styles.historyList}>
-        {calculationHistory.length === 0 ? (
-          <Text style={styles.historyEmpty}>No calculations yet</Text>
-        ) : (
-          calculationHistory.map((calc, index) => (
-            <View key={index}>
-              <Text style={styles.historyItem}>{calc}</Text>
-            </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
-  );
+  const HistoryView = () => {
+    // Combine Supabase history with local history for display
+    const displayHistory = user && supabaseHistory.length > 0
+      ? supabaseHistory.map(record => {
+          // Handle both old 'expression' field and new 'calculation_expression' field
+          const expression = record.calculation_expression || record.expression || 'Unknown calculation';
+          // If expression already contains "= result", use it as-is, otherwise add result
+          if (expression.includes('=')) {
+            return expression;
+          } else {
+            return `${expression} = ${record.result}`;
+          }
+        })
+      : calculationHistory;
+
+    return (
+      <View style={styles.historyContainer}>
+        <Text style={styles.historyTitle}>Calculation History</Text>
+        <ScrollView style={styles.historyList}>
+          {displayHistory.length === 0 ? (
+            <Text style={styles.historyEmpty}>No calculations yet</Text>
+          ) : (
+            displayHistory.map((calc, index) => (
+              <View key={index}>
+                <Text style={styles.historyItem}>{calc}</Text>
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    );
+  };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -561,7 +605,7 @@ export default function MathCalculator({
                   gap: getResponsiveValue(6, 8, 12),
                 }
               ]}>
-                {renderButton("C", clearAll, "clear")}
+                {renderButton("C", clear, "clear")}
                 {renderButton("⌫", deleteLastDigit, "delete")}
                 {renderButton("%", inputPercentage)}
                 {renderButton("÷", () => inputOperation("/"), "operation")}
@@ -668,7 +712,7 @@ export default function MathCalculator({
                   gap: getResponsiveValue(6, 8, 12),
                 }
               ]}>
-                {renderButton("C", clearAll, "clear")}
+                {renderButton("C", clear, "clear")}
                 {renderButton("⌫", deleteLastDigit, "delete")}
                 {renderButton("%", inputPercentage)}
                 {renderButton("÷", () => inputOperation("/"), "operation")}
