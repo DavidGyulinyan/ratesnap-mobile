@@ -62,7 +62,7 @@ export default function RateAlertManager({
   const borderColor = useThemeColor({}, 'border');
   const successColor = useThemeColor({}, 'success');
   const errorColor = useThemeColor({}, 'error');
-  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  const shadowColor = '#000000'; // Use black for shadows
 
   // Extract currencies list from currenciesData
   const currencies = currenciesData?.conversion_rates ? Object.keys(currenciesData.conversion_rates) : [];

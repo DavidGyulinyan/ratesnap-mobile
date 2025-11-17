@@ -7,699 +7,39 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedView } from '@/components/themed-view';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
 import { getAsyncStorage } from '@/lib/storage';
-import LanguageDropdown from '@/components/LanguageDropdown';
 import expoGoSafeNotificationService from '@/lib/expoGoSafeNotificationService';
 
 export default function SettingsScreen() {
-   const { t, language, setLanguage } = useLanguage();
-   const router = useRouter();
-   const { user, signOut } = useAuth();
-   const { themePreference, setThemePreference } = useTheme();
+  const { user, signOut } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
+  const router = useRouter();
+  const { themePreference, setThemePreference } = useTheme();
 
-   // Theme colors
-   const backgroundColor = useThemeColor({}, 'background');
-   const surfaceColor = useThemeColor({}, 'surface');
-   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-   const primaryColor = useThemeColor({}, 'primary');
-   const textColor = useThemeColor({}, 'text');
-   const textSecondaryColor = useThemeColor({}, 'textSecondary');
-   const borderColor = useThemeColor({}, 'border');
-   const successColor = useThemeColor({}, 'success');
-   const errorColor = useThemeColor({}, 'error');
-   const warningColor = useThemeColor({}, 'warning');
-   const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  // State for modals and forms
+  const [showThemeSelection, setShowThemeSelection] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showAccountInfo, setShowAccountInfo] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
-   const styles = useMemo(() => StyleSheet.create({
-     // ===========================================
-     // LAYOUT & CONTAINER STYLES
-     // ===========================================
-     container: {
-       flex: 1,
-       backgroundColor: 'transparent',
-     },
-     scrollView: {
-       flex: 1,
-     },
-     bottomSpacer: {
-       height: 40,
-     },
-
-     // ===========================================
-     // HEADER STYLES
-     // ===========================================
-     header: {
-       padding: 20,
-       paddingBottom: 10,
-     },
-     title: {
-       fontSize: 24,
-       fontWeight: '700',
-       marginBottom: 8,
-     },
-     subtitle: {
-       fontSize: 14,
-     },
-
-     // ===========================================
-     // SECTION STYLES
-     // ===========================================
-     section: {
-       margin: 16,
-       marginBottom: 8,
-       padding: 20,
-       borderRadius: 16,
-       shadowOffset: { width: 2, height: 4 },
-       shadowOpacity: 0.04,
-       shadowRadius: 3,
-       elevation: 1,
-     },
-     touchableSection: {
-       padding: 0,
-       paddingVertical: 0,
-       backgroundColor: 'transparent',
-       borderWidth: 0,
-       shadowOpacity: 0,
-       elevation: 0,
-       marginBottom: 0,
-     },
-     sectionHeader: {
-       flexDirection: 'row',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       marginBottom: 12,
-     },
-     sectionTitle: {
-       fontSize: 18,
-       fontWeight: '700',
-     },
-     sectionDescription: {
-       fontSize: 14,
-       lineHeight: 20,
-     },
-
-     // ===========================================
-     // FORM ELEMENTS
-     // ===========================================
-     form: {
-       gap: 16,
-     },
-     inputGroup: {
-       gap: 8,
-     },
-     inputLabel: {
-       fontSize: 14,
-       fontWeight: '600',
-     },
-     input: {
-       borderRadius: 10,
-       padding: 12,
-       fontSize: 14,
-     },
-
-     // ===========================================
-     // INFO CARDS & DISPLAY
-     // ===========================================
-     infoCard: {
-       borderRadius: 12,
-       padding: 16,
-     },
-     infoRow: {
-       flexDirection: 'row',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       marginBottom: 8,
-     },
-     infoLabel: {
-       fontSize: 14,
-       fontWeight: '500',
-     },
-     infoValue: {
-       fontSize: 14,
-       fontWeight: '600',
-       flex: 1,
-       textAlign: 'right',
-     },
-
-     // ===========================================
-     // BUTTONS
-     // ===========================================
-     editButton: {
-       paddingHorizontal: 12,
-       paddingVertical: 6,
-       borderRadius: 8,
-     },
-     editButtonText: {
-       fontSize: 12,
-       fontWeight: '600',
-     },
-     buttonGroup: {
-       flexDirection: 'row',
-       gap: 12,
-       marginTop: 8,
-     },
-     button: {
-       flex: 1,
-       padding: 14,
-       borderRadius: 10,
-       alignItems: 'center',
-     },
-     buttonPrimary: {},
-     buttonPrimaryText: {
-       fontSize: 15,
-       fontWeight: '600',
-     },
-     buttonSecondary: {},
-     buttonSecondaryText: {
-       fontSize: 15,
-       fontWeight: '600',
-     },
-
-     // ===========================================
-     // SETTINGS ITEMS
-     // ===========================================
-     settingItem: {
-       flexDirection: 'row',
-       justifyContent: 'space-between',
-       alignItems: 'center',
-       paddingVertical: 16,
-       paddingHorizontal: 20,
-       marginHorizontal: -20,
-     },
-     settingItemText: {
-       fontSize: 15,
-       fontWeight: '500',
-     },
-     settingValueContainer: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       gap: 8,
-     },
-     settingValue: {
-       fontSize: 14,
-       fontWeight: '400',
-     },
-     arrowText: {
-       fontSize: 18,
-       fontWeight: '300',
-     },
-
-     // ===========================================
-     // MODAL & OVERLAY ELEMENTS
-     // ===========================================
-     closeButton: {
-       width: 32,
-       height: 32,
-       borderRadius: '50%',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     closeButtonActive: {},
-     closeButtonText: {
-       fontSize: 16,
-       fontWeight: '500',
-       lineHeight: 16,
-     },
-     closeButtonTextActive: {},
-
-     // ===========================================
-     // TERMS & LEGAL CONTENT
-     // ===========================================
-     termsContent: {
-       marginTop: 16,
-       flexGrow: 1,
-     },
-     termsText: {
-       fontSize: 14,
-       lineHeight: 22,
-     },
-     termsFullView: {
-       margin: 16,
-       marginBottom: 8,
-       borderRadius: 16,
-       shadowOffset: { width: 0, height: 1 },
-       shadowOpacity: 0.04,
-       shadowRadius: 3,
-       elevation: 1,
-       maxHeight: '70%',
-     },
-     termsScrollView: {
-       flex: 1,
-       padding: 20,
-       paddingTop: 0,
-     },
-     termsContainer: {
-       paddingBottom: 20,
-     },
-
-     // ===========================================
-     // DANGER ZONE & DELETION
-     // ===========================================
-     dangerSection: {
-       borderColor: errorColor + '4d',
-       backgroundColor: errorColor + '1a',
-     },
-     dangerHeader: {
-       marginBottom: 16,
-     },
-     dangerTitle: {
-       color: errorColor,
-       fontSize: 18,
-       fontWeight: '700',
-       marginBottom: 4,
-     },
-     dangerSubtitle: {
-       fontSize: 14,
-       color: errorColor,
-       opacity: 0.8,
-     },
-     dangerItem: {
-       backgroundColor: errorColor + '0d',
-       marginHorizontal: -20,
-       paddingHorizontal: 20,
-       borderRadius: 12,
-     },
-
-     // Delete confirmation styles
-     deleteConfirmContainer: {
-       gap: 20,
-     },
-     deleteWarningCard: {
-       flexDirection: 'row',
-       padding: 16,
-       backgroundColor: errorColor + '26',
-       borderRadius: 12,
-       alignItems: 'flex-start',
-       gap: 12,
-     },
-     warningIconContainer: {
-       width: 32,
-       height: 32,
-       borderRadius: 16,
-       backgroundColor: errorColor + '1a',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     warningIcon: {
-       fontSize: 16,
-     },
-     warningContent: {
-       flex: 1,
-     },
-     deleteWarningTitle: {
-       fontSize: 16,
-       fontWeight: '700',
-       color: errorColor,
-       marginBottom: 4,
-     },
-     deleteWarningDescription: {
-       fontSize: 14,
-       color: errorColor,
-       opacity: 0.9,
-       lineHeight: 20,
-     },
-
-     // Credential inputs
-     credentialInputsContainer: {
-       gap: 16,
-     },
-     credentialInput: {
-       borderRadius: 10,
-       padding: 14,
-       fontSize: 16,
-       backgroundColor: surfaceColor,
-       color: textColor,
-     },
-
-     // Action buttons
-     deleteActionButtons: {
-       flexDirection: 'row',
-       gap: 12,
-     },
-     actionButton: {
-       flex: 1,
-       padding: 14,
-       borderRadius: 10,
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     cancelButton: {
-       backgroundColor: surfaceSecondaryColor,
-     },
-     cancelButtonText: {
-       color: textSecondaryColor,
-       fontSize: 15,
-       fontWeight: '600',
-     },
-     deleteButton: {
-       backgroundColor: errorColor,
-     },
-     deleteButtonText: {
-       color: 'white',
-       fontSize: 15,
-       fontWeight: '600',
-     },
-
-     // Delete account button
-     deleteAccountButton: {
-       backgroundColor: errorColor + '0d',
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     deleteButtonContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     deleteIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       backgroundColor: errorColor + '1a',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     deleteIcon: {
-       fontSize: 18,
-     },
-     deleteButtonTextContainer: {
-       flex: 1,
-     },
-     deleteButtonTitle: {
-       fontSize: 16,
-       fontWeight: '600',
-       color: errorColor,
-       marginBottom: 2,
-     },
-     deleteButtonSubtitle: {
-       fontSize: 14,
-       color: errorColor,
-       opacity: 0.8,
-     },
-     deleteArrowIcon: {
-       fontSize: 18,
-       color: errorColor,
-       opacity: 0.6,
-     },
-
-     // ===========================================
-     // SIGN OUT & ACCOUNT ACTIONS
-     // ===========================================
-     signOutButton: {
-       backgroundColor: surfaceSecondaryColor,
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     signOutContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     signOutIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       backgroundColor: primaryColor + '1a',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     signOutIcon: {
-       fontSize: 18,
-     },
-     signOutText: {
-       fontSize: 16,
-       fontWeight: '600',
-       color: primaryColor,
-     },
-
-     // ===========================================
-     // PENDING DELETION STATUS
-     // ===========================================
-     pendingDeletionSection: {
-       borderColor: warningColor + '4d',
-       backgroundColor: warningColor + '1a',
-     },
-     pendingDeletionHeader: {
-       flexDirection: 'row',
-       alignItems: 'flex-start',
-       marginBottom: 16,
-       gap: 12,
-     },
-     pendingIconContainer: {
-       width: 32,
-       height: 32,
-       borderRadius: 16,
-       backgroundColor: warningColor + '1a',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     pendingIcon: {
-       fontSize: 16,
-     },
-     pendingContent: {
-       flex: 1,
-     },
-     pendingTitle: {
-       fontSize: 16,
-       fontWeight: '700',
-       color: warningColor,
-       marginBottom: 4,
-     },
-     pendingDescription: {
-       fontSize: 14,
-       color: warningColor,
-       opacity: 0.9,
-       lineHeight: 20,
-     },
-     cancelDeletionButton: {
-       backgroundColor: warningColor + '0d',
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     cancelDeletionContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     cancelIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       backgroundColor: warningColor + '1a',
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     cancelIcon: {
-       fontSize: 18,
-     },
-     cancelDeletionText: {
-       fontSize: 16,
-       fontWeight: '600',
-       color: warningColor,
-     },
-
-     // ===========================================
-     // THEME SELECTION
-     // ===========================================
-     themeOptions: {
-       gap: 12,
-     },
-     themeOption: {
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     themeOptionSelected: {},
-     themeOptionContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     themeIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     themeIcon: {
-       fontSize: 18,
-     },
-     themeTextContainer: {
-       flex: 1,
-     },
-     themeTitle: {
-       fontSize: 16,
-       fontWeight: '600',
-       marginBottom: 2,
-     },
-     themeDescription: {
-       fontSize: 14,
-       lineHeight: 18,
-     },
-
-     // ===========================================
-     // LANGUAGE SELECTION
-     // ===========================================
-     languageOptions: {
-       gap: 12,
-     },
-     languageOption: {
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     languageOptionContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     languageIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     languageIcon: {
-       fontSize: 18,
-     },
-     languageTextContainer: {
-       flex: 1,
-     },
-     languageTitle: {
-       fontSize: 16,
-       fontWeight: '600',
-       marginBottom: 2,
-     },
-     checkmarkContainer: {
-       width: 24,
-       height: 24,
-       borderRadius: 12,
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     checkmark: {
-       fontSize: 14,
-       fontWeight: '600',
-     },
-
-     // ===========================================
-     // NOTIFICATION SETTINGS
-     // ===========================================
-     notificationOptions: {
-       gap: 8,
-     },
-     notificationOption: {
-       borderRadius: 12,
-       overflow: 'hidden',
-     },
-     notificationOptionContent: {
-       flexDirection: 'row',
-       alignItems: 'center',
-       padding: 16,
-       gap: 12,
-     },
-     notificationIconContainer: {
-       width: 40,
-       height: 40,
-       borderRadius: 20,
-       alignItems: 'center',
-       justifyContent: 'center',
-     },
-     notificationIcon: {
-       fontSize: 18,
-     },
-     notificationTextContainer: {
-       flex: 1,
-     },
-     notificationTitle: {
-       fontSize: 16,
-       fontWeight: '600',
-       marginBottom: 2,
-     },
-     notificationDescription: {
-       fontSize: 14,
-       lineHeight: 18,
-     },
-     toggleButton: {
-       width: 50,
-       height: 28,
-       borderRadius: 14,
-       padding: 2,
-       justifyContent: 'center',
-     },
-     toggleButtonActive: {},
-     toggleIndicator: {
-       width: 24,
-       height: 24,
-       borderRadius: 12,
-       backgroundColor: textSecondaryColor,
-     },
-     notificationStats: {
-       marginTop: 20,
-       borderRadius: 12,
-       padding: 16,
-     },
-     statsTitle: {
-       fontSize: 16,
-       fontWeight: '600',
-       marginBottom: 12,
-     },
-     statsGrid: {
-       flexDirection: 'row',
-       justifyContent: 'space-around',
-     },
-     statItem: {
-       alignItems: 'center',
-     },
-     statValue: {
-       fontSize: 20,
-       fontWeight: '700',
-       marginBottom: 4,
-     },
-     statLabel: {
-       fontSize: 12,
-       textAlign: 'center',
-     },
-   }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor, successColor, errorColor, warningColor, shadowColor]);
-
-   const [showAccountInfo, setShowAccountInfo] = useState(false);
-   const [showTerms, setShowTerms] = useState(false);
-   const [showThemeSelection, setShowThemeSelection] = useState(false);
-   const [showLanguageSelection, setShowLanguageSelection] = useState(false);
-   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
     username: user?.user_metadata?.username || user?.email?.split('@')[0] || '',
     email: user?.email || '',
   });
   const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [confirmEmail, setConfirmEmail] = useState('');
-  const [showDeletePassword, setShowDeletePassword] = useState(false);
-  const [deletionInProgress, setDeletionInProgress] = useState(false);
-  const [pendingDeletion, setPendingDeletion] = useState(false);
-  const [closeButtonPressed, setCloseButtonPressed] = useState(false);
 
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -708,11 +48,6 @@ export default function SettingsScreen() {
     vibration: true,
     showPreview: true,
   });
-  const [notificationStats, setNotificationStats] = useState({
-    scheduledCount: 0,
-    activeAlerts: 0,
-    triggeredAlerts: 0,
-  });
 
   // Exchange rate data state
   const [exchangeRateData, setExchangeRateData] = useState<{
@@ -720,124 +55,67 @@ export default function SettingsScreen() {
     time_next_update_utc?: string;
   } | null>(null);
 
-  // Terms of use - moved to external file for better performance
-  const getCurrentTerms = () => {
-    try {
-      // This will be replaced with actual terms content from external file
-      // For now, using a simplified version to avoid large inline text
-      const simplifiedTerms = {
-        en: `RateSnap Terms of Use
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
 
-Effective Date: 10.01.2025
+  // Load notification settings and exchange rate data on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const storage = getAsyncStorage();
+        const savedSettings = await storage.getItem("notificationSettings");
+        if (savedSettings) {
+          setNotificationSettings(JSON.parse(savedSettings));
+        }
 
-Welcome to RateSnap. By using this application, you agree to our Terms of Use.
+        const cachedData = await storage.getItem("cachedExchangeRates");
+        if (cachedData) {
+          const data = JSON.parse(cachedData);
+          setExchangeRateData({
+            time_last_update_utc: data.time_last_update_utc,
+            time_next_update_utc: data.time_next_update_utc,
+          });
+        } else {
+          // Provide estimated times when no cached data is available
+          const now = new Date();
+          const lastUpdate = new Date(now.getTime() - (30 * 60 * 1000)); // 30 minutes ago
+          const nextUpdate = new Date(now.getTime() + (30 * 60 * 1000)); // 30 minutes from now
 
-1. Service Description: RateSnap provides currency conversion tools for personal use.
+          setExchangeRateData({
+            time_last_update_utc: lastUpdate.toISOString(),
+            time_next_update_utc: nextUpdate.toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        // Fallback to estimated times
+        const now = new Date();
+        const lastUpdate = new Date(now.getTime() - (60 * 60 * 1000)); // 1 hour ago
+        const nextUpdate = new Date(now.getTime() + (60 * 60 * 1000)); // 1 hour from now
 
-2. Personal Use Only: This app is for personal, non-commercial use only.
+        setExchangeRateData({
+          time_last_update_utc: lastUpdate.toISOString(),
+          time_next_update_utc: nextUpdate.toISOString(),
+        });
+      }
+    };
 
-3. Accuracy Disclaimer: Exchange rates may vary. We don't guarantee accuracy.
+    loadSettings();
+  }, []);
 
-4. Limitation of Liability: Use at your own risk. We're not liable for damages.
-
-5. Changes: We may update these terms at any time.
-
-Thank you for choosing RateSnap!`,
-        es: `Términos de Uso de RateSnap
-
-Fecha: 10.01.2025
-
-Bienvenido a RateSnap. Al usar esta aplicación, aceptas nuestros Términos de Uso.
-
-1. Descripción: RateSnap proporciona herramientas de conversión personal.
-
-2. Uso Personal: Esta app es solo para uso personal, no comercial.
-
-3. Descargo: Las tasas pueden variar. No garantizamos exactitud.
-
-4. Limitación: Usa bajo tu propio riesgo. No somos responsables.
-
-5. Cambios: Podemos actualizar estos términos en cualquier momento.
-
-¡Gracias por elegir RateSnap!`,
-        ru: `Условия использования RateSnap
-
-Дата: 10.01.2025
-
-Добро пожаловать в RateSnap. Используя это приложение, вы соглашаетесь с нашими условиями.
-
-1. Описание: RateSnap предоставляет инструменты конвертации для личного использования.
-
-2. Личное использование: Это приложение только для личного, некоммерческого использования.
-
-3. Отказ: Курсы могут варьироваться. Мы не гарантируем точность.
-
-4. Ограничение: Используйте на свой риск. Мы не несем ответственности.
-
-5. Изменения: Мы можем обновлять эти условия в любое время.
-
-Спасибо, что выбрали RateSnap!`,
-        zh: `RateSnap 使用条款
-
-日期: 2025年1月10日
-
-欢迎使用RateSnap。使用此应用程序即表示您同意我们的使用条款。
-
-1. 服务说明：RateSnap提供个人货币转换工具。
-
-2. 仅限个人使用：此应用程序仅供个人非商业使用。
-
-3. 免责声明：汇率可能会有所变动。我们不保证准确性。
-
-4. 责任限制：使用风险自负。我们不承担责任。
-
-5. 变更：我们可能会随时更新这些条款。
-
-感谢选择RateSnap！`,
-        hi: `RateSnap उपयोग की शर्तें
-
-दिनांक: 10.01.2025
-
-RateSnap में आपका स्वागत है। इस एप्लिकेशन का उपयोग करके, आप हमारी उपयोग की शर्तों से सहमत होते हैं।
-
-1. सेवा विवरण: RateSnap व्यक्तिगत मुद्रा रूपांतरण उपकरण प्रदान करता है।
-
-2. केवल व्यक्तिगत उपयोग: यह एप्लिकेशन केवल व्यक्तिगत, गैर-व्यावसायिक उपयोग के लिए है।
-
-3. अस्वीकरण: विनिमय दरें भिन्न हो सकती हैं। हम सटीकता की गारंटी नहीं देते।
-
-4. सीमित देयता: अपने जोखिम पर उपयोग करें। हम जिम्मेदार नहीं हैं।
-
-5. परिवर्तन: हम इन शर्तों को कभी भी अपडेट कर सकते हैं।
-
-RateSnap चुनने के लिए धन्यवाद!`,
-        hy: `RateSnap-ի օգտագործման պայմանները
-
-Ամսաթիվ: 10.01.2025
-
-Բարի գալուստ RateSnap: Այս հավելվածն օգտագործելով՝ դուք համաձայնում եք մեր Օգտագործման Պայմանների հետ:
-
-1. Ծառայության նկարագրություն: RateSnap-ը անհատական արժույթի փոխարկման գործիքներ է տրամադրում:
-
-2. Միայն անհատական օգտագործում: Այս հավելվածը միայն անհատական, ոչ առևտրական օգտագործման համար է:
-
-3. Հրաժարում: Փոխարժեքները կարող են տարբերվել: Մենք չենք երաշխավորում ճշտությունը:
-
-4. Սահմանափակում: Օգտագործեք ձեր ռիսկով: Մենք պատասխանատվություն չենք կրում:
-
-5. Փոփոխություններ: Մենք կարող ենք թարմացնել այս պայմանները ցանկացած պահի:
-
-RateSnap-ն ընտրելու համար շնորհակալություն!`
-      };
-
-      const currentTerms = simplifiedTerms[language as keyof typeof simplifiedTerms];
-      return currentTerms || simplifiedTerms.en; // Fallback to English
-    } catch (error) {
-      console.error('Error loading terms of use:', error);
-      return 'Terms of use are temporarily unavailable. Please try again later.';
-    }
+  // Helper function to add opacity to hex colors
+  const addOpacity = (hexColor: string, opacity: number) => {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
+  // Handle sign out
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -848,1421 +126,882 @@ RateSnap-ն ընտրելու համար շնորհակալություն!`
     }
   };
 
-  const handleUpdateAccountInfo = async () => {
-    if (!accountInfo.username.trim() || !accountInfo.email.trim()) {
-      Alert.alert('Error', 'Please fill in all required fields.');
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(accountInfo.email)) {
-      Alert.alert('Error', 'Please enter a valid email address.');
-      return;
-    }
+  // Handle notification setting toggle
+  const handleNotificationToggle = async (setting: keyof typeof notificationSettings) => {
+    const newSettings = {
+      ...notificationSettings,
+      [setting]: !notificationSettings[setting]
+    };
+    setNotificationSettings(newSettings);
 
     try {
-      const supabase = getSupabaseClient();
-      if (!supabase || !user) {
-        throw new Error('Authentication service not available');
-      }
+      const storage = getAsyncStorage();
+      await storage.setItem("notificationSettings", JSON.stringify(newSettings));
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+    }
+  };
 
-      // Check if email is being changed
-      const emailChanged = accountInfo.email !== user.email;
-      
-      const updateData: any = {
-        data: {
-          username: accountInfo.username,
+  // Handle clear cache
+  const handleClearCache = async () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will clear all cached exchange rates and temporary data.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          onPress: async () => {
+            try {
+              const storage = getAsyncStorage();
+              await storage.removeItem('cachedExchangeRates');
+              await storage.removeItem('lastApiCall');
+              setExchangeRateData(null);
+              Alert.alert('Success', 'Cache cleared successfully.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to clear cache.');
+            }
+          }
         }
+      ]
+    );
+  };
+
+  // Handle export data
+  const handleExportData = async () => {
+    try {
+      const storage = getAsyncStorage();
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        userInfo: user ? { email: user.email } : null,
+        settings: { themePreference, language, notificationSettings },
+        cachedRates: await storage.getItem('cachedExchangeRates'),
       };
 
-      // Only update email if it changed
-      if (emailChanged) {
-        updateData.email = accountInfo.email;
-      }
-
-      // Update user metadata
-      const { error } = await supabase.auth.updateUser(updateData);
-
-      if (error) {
-        // Handle specific Supabase errors
-        if (error.message.includes('already registered')) {
-          Alert.alert('Error', 'This email address is already in use by another account.');
-        } else if (error.message.includes('Invalid email')) {
-          Alert.alert('Error', 'Please enter a valid email address.');
-        } else {
-          Alert.alert('Error', error.message || 'Failed to update account information.');
-        }
-      } else {
-        Alert.alert('Success', emailChanged
-          ? 'Account information updated successfully. You may need to verify your new email address.'
-          : 'Account information updated successfully.'
-        );
-        setShowAccountInfo(false);
-      }
-    } catch (error: any) {
-      console.error('Account update error:', error);
       Alert.alert(
-        'Error',
-        error.message || 'Failed to update account information. Please check your connection and try again.'
+        'Data Export',
+        `Data prepared for export. User: ${user?.email || 'Not logged in'}`,
+        [{ text: 'OK' }]
       );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to export data.');
     }
   };
 
-  const handleUpdatePassword = async () => {
-    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
-      Alert.alert('Error', 'Please fill in all password fields.');
-      return;
-    }
+  // Get terms of use content
+  const getCurrentTerms = () => {
+    const terms = {
+      en: `RateSnap Terms of Use
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match.');
-      return;
-    }
+Effective Date: January 10, 2025
 
-    if (passwordForm.newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long.');
-      return;
-    }
+Welcome to RateSnap! By downloading, installing, or using our mobile application ("App"), you agree to be bound by these Terms of Use ("Terms"). If you do not agree to these Terms, please do not use the App.
 
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase || !user) {
-        throw new Error('Authentication service not available');
-      }
+1. SERVICE DESCRIPTION
+RateSnap provides real-time currency conversion tools and exchange rate information for personal and informational purposes. Our services include:
+• Live currency conversion between different currencies
+• Historical exchange rate data
+• Rate alerts and notifications
+• Offline currency conversion capabilities
 
-      const { error } = await supabase.auth.updateUser({
-        password: passwordForm.newPassword,
-      });
+2. ACCEPTANCE OF TERMS
+By accessing and using RateSnap, you accept and agree to be bound by the terms and provision of this agreement. These Terms apply to all users of the App.
 
-      if (error) {
-        Alert.alert('Error', error.message);
-      } else {
-        Alert.alert('Success', 'Password updated successfully.');
-        setPasswordForm({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
-        setShowPasswordForm(false);
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update password.');
-    }
-  };
+3. USE LICENSE
+Subject to your compliance with these Terms, we grant you a limited, non-exclusive, non-transferable, non-sublicensable license to:
+• Download and install the App on your mobile device
+• Access and use the App for personal, non-commercial purposes
+• Access currency conversion features and exchange rate data
 
-  const handleDeleteAccount = () => {
-    setDeletePassword('');
-    setShowDeletePassword(true);
-  };
+4. USER RESPONSIBILITIES
+You agree to:
+• Use the App only for lawful purposes
+• Not use the App for any commercial activities without prior written consent
+• Not attempt to reverse engineer, modify, or create derivative works of the App
+• Not interfere with the proper functioning of the App
+• Provide accurate information when required
 
-  const verifyPasswordAndDelete = async () => {
-    // Validate inputs
-    if (!deletePassword.trim()) {
-      Alert.alert('Error', 'Please enter your password to confirm account deletion.');
-      return;
-    }
+5. ACCURACY DISCLAIMER
+Exchange rates and conversion calculations are provided for informational purposes only. While we strive for accuracy, we do not guarantee that:
+• Exchange rates are real-time or accurate
+• Conversion calculations are error-free
+• The App will be available at all times
+• Currency data is up-to-date
 
-    if (!confirmEmail.trim()) {
-      Alert.alert('Error', 'Please enter your email address to confirm account deletion.');
-      return;
-    }
+6. LIMITATION OF LIABILITY
+To the maximum extent permitted by applicable law, RateSnap and its developers shall not be liable for:
+• Any direct, indirect, incidental, or consequential damages
+• Loss of profits, data, or business opportunities
+• Inaccuracies in exchange rate information
+• Service interruptions or unavailability
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(confirmEmail)) {
-      Alert.alert('Error', 'Please enter a valid email address.');
-      return;
-    }
+7. DATA PRIVACY
+Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the App, to understand our practices.
 
-    // Verify email matches user's email
-    if (confirmEmail.toLowerCase() !== user?.email?.toLowerCase()) {
-      Alert.alert('Error', 'The email address does not match your account. Please try again.');
-      return;
-    }
+8. MODIFICATIONS TO TERMS
+We reserve the right to modify these Terms at any time. We will notify users of significant changes through the App or email. Continued use of the App after changes constitutes acceptance of the new Terms.
 
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase || !user) {
-        throw new Error('Authentication service not available');
-      }
+9. TERMINATION
+We may terminate or suspend your access to the App immediately, without prior notice, for any reason. Upon termination, your right to use the App will cease immediately.
 
-      // Verify password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email || '',
-        password: deletePassword,
-      });
+10. GOVERNING LAW
+These Terms shall be governed by and construed in accordance with applicable local laws, without regard to conflict of law provisions.
 
-      if (signInError) {
-        Alert.alert('Error', 'Incorrect password. Please try again.');
-        return;
-      }
+11. CONTACT INFORMATION
+If you have any questions about these Terms, please contact us at support@ratesnap.app.
 
-      // Both password and email verified, proceed with account deletion
-      await confirmDeleteAccount();
-      setShowDeletePassword(false);
-      setDeletePassword('');
-      setConfirmEmail('');
-    } catch (error: any) {
-      console.error('Verification error:', error);
-      Alert.alert('Error', 'Failed to verify credentials. Please try again.');
-    }
-  };
+Thank you for choosing RateSnap!`,
 
-  const confirmDeleteAccount = async () => {
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase || !user) {
-        throw new Error('Authentication service not available');
-      }
+      hy: `RateSnap-ի օգտագործման պայմանները
 
-      // Set deletion in progress
-      setDeletionInProgress(true);
+Ուժի մեջ մտնելու ամսաթիվը. հունվարի 10, 2025
 
-      // Create a pending deletion record to track this request
-      const { error: deletionError } = await supabase
-        .from('account_deletions')
-        .upsert({
-          user_id: user.id,
-          email: user.email,
-          requested_at: new Date().toISOString(),
-          status: 'pending'
-        });
+Բարի գալուստ RateSnap: Մեր բջջային հավելվածը ("Հավելված") ներբեռնելով, տեղադրելով կամ օգտագործելով՝ դուք համաձայնում եք կապված լինել այս Օգտագործման Պայմաններով ("Պայմաններ"): Եթե դուք համաձայն չեք այս Պայմաններին, խնդրում ենք չօգտագործել Հավելվածը:
 
-      if (deletionError) {
-        console.warn('Failed to create deletion record:', deletionError);
-      }
+1. ԾԱՌԱՅՈՒԹՅԱՆ ՆԿԱՐԱԳՐՈՒԹՅՈՒՆ
+RateSnap-ը ապահովում է իրական ժամանակի արժույթի փոխարկման գործիքներ և փոխարժեքների տեղեկատվություն անհատական և տեղեկատվական նպատակների համար: Մեր ծառայությունները ներառում են.
+• Իրական ժամանակի արժույթի փոխարկում տարբեր արժույթների միջև
+• Պատմական փոխարժեքների տվյալներ
+• Դրույքաչափերի ազդանշաններ և ծանուցումներ
+• Անցանց արժույթի փոխարկման հնարավորություններ
 
-      // Clean up user data from custom tables
-      const { error: savedRatesError } = await supabase
-        .from('saved_rates')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (savedRatesError) {
-        console.warn('Failed to delete saved rates:', savedRatesError);
-      }
+2. ՊԱՅՄԱՆՆԵՐԻ ՀԱՄԱՁԱՅՆՈՒԹՅՈՒՆ
+RateSnap-ին մուտք գործելով և օգտագործելով՝ դուք ընդունում եք և համաձայնում եք կապված լինել այս համաձայնագրի պայմաններով և դրույթներով: Այս Պայմաններն առնչվում են Հավելվածի բոլոր օգտատերերին:
 
-      const { error: rateAlertsError } = await supabase
-        .from('rate_alerts')
-        .delete()
-        .eq('user_id', user.id);
-      
-      if (rateAlertsError) {
-        console.warn('Failed to delete rate alerts:', rateAlertsError);
-      }
-      
-      // Sign out the user
-      await signOut();
-      
-      // Set pending deletion flag
-      setPendingDeletion(true);
-      setDeletionInProgress(false);
-      
-      Alert.alert(
-        'Account Deletion Scheduled',
-        'Your account deletion has been scheduled. You have been signed out.\n\nThe deletion will be completed within 24 hours. If you sign back in during this time, the deletion will be automatically cancelled.',
-        [{ text: 'OK', onPress: () => router.replace('/') }]
-      );
-    } catch (error: any) {
-      console.error('Account deletion error:', error);
-      setDeletionInProgress(false);
-      Alert.alert(
-        'Error',
-        error.message || 'An error occurred while processing your request. Please contact support if the problem persists.'
-      );
-    }
-  };
+3. ՕԳՏԱԳՈՐԾՄԱՆ ԼԻՑԵՆԶԻԱ
+Ձեր համապատասխանության պայմաններով այս Պայմաններին՝ մենք ձեզ շնորհում ենք սահմանափակ, ոչ բացառիկ, ոչ փոխանցելի, ոչ ենթալիցենզավորվող լիցենզիա՝
+• Հավելվածը ներբեռնելու և տեղադրելու համար ձեր բջջային սարքում
+• Մուտք գործելու և օգտագործելու Հավելվածը անհատական, ոչ առևտրային նպատակների համար
+• Մուտք գործելու արժույթի փոխարկման առանձնահատկություններին և փոխարժեքների տվյալներին
 
-  const cancelPendingDeletion = async () => {
-    try {
-      const supabase = getSupabaseClient();
-      if (!supabase || !user) return;
+4. ՕԳՏԱՏԵՐԻ ՊԱՏԱՍԽԱՆԱՏՎՈՒԹՅՈՒՆՆԵՐ
+Դուք համաձայնում եք՝
+• Հավելվածն օգտագործել միայն օրինական նպատակների համար
+• Հավելվածն օգտագործել առևտրային գործունեության համար առանց նախկին գրավոր համաձայնության
+• Չփորձել հետադարձ ինժեներական աշխատանքներ կատարել, փոփոխել կամ ստեղծել Հավելվածի ածանցյալ աշխատանքներ
+• Չխանգարել Հավելվածի պատշաճ գործունեությանը
+• Տրամադրել ճշգրիտ տեղեկատվություն, երբ պահանջվում է
 
-      // Remove the pending deletion record
-      const { error } = await supabase
-        .from('account_deletions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('status', 'pending');
+5. ՃՇՏՈՒԹՅԱՆ ԵՐԱՇԽԻՔ
+Փոխարժեքներն ու փոխարկման հաշվարկները տրամադրվում են միայն տեղեկատվական նպատակների համար: Մինչդեռ մենք ջանում ենք ճշտության համար, մենք երաշխավորում չենք տալիս, որ.
+• Փոխարժեքներն իրական ժամանակի կամ ճշգրիտ են
+• Փոխարկման հաշվարկներն առանց սխալների են
+• Հավելվածը հասանելի կլինի միշտ
+• Արժույթի տվյալները թարմացված են
 
-      if (error) {
-        console.warn('Failed to cancel deletion:', error);
-      }
+6. ՊԱՏԱՍԽԱՆԱՏՎՈՒԹՅԱՆ ՍԱՀՄԱՆԱՓԱԿՈՒՄ
+Կիրառելի օրենսդրության առավելագույն չափով, RateSnap-ը և նրա մշակողները չեն կրի պատասխանատվություն՝
+• Որևէ անմիջական, անուղղակի, պատահական կամ հետևանքային վնասների համար
+• Շահույթների, տվյալների կամ բիզնես հնարավորությունների կորստի համար
+• Փոխարժեքների տեղեկատվության անճշտությունների համար
+• Ծառայության ընդհատումների կամ անհասանելիության համար
 
-      setPendingDeletion(false);
-      setDeletionInProgress(false);
-      
-      Alert.alert(
-        'Deletion Cancelled',
-        'Your account deletion request has been cancelled. Your account remains active.'
-      );
-    } catch (error: any) {
-      console.error('Error cancelling deletion:', error);
-      Alert.alert('Error', 'Failed to cancel deletion. Please contact support.');
-    }
-  };
+7. ՏՎՅԱԼՆԵՐԻ ԳԱՂՏՆԱՊԱՏԻԿՈՒԹՅՈՒՆ
+Ձեր գաղտնիությունը կարևոր է մեզ համար: Խնդրում ենք վերանայել մեր Գաղտնիության Քաղաքականությունը, որը նույնպես կարգավորում է Հավելվածի ձեր օգտագործումը՝ հասկանալու մեր պրակտիկան:
 
-  // Check for pending deletion on component mount
-  useEffect(() => {
-    const checkPendingDeletion = async () => {
-      if (!user) return;
+8. ՊԱՅՄԱՆՆԵՐԻ ՓՈՓՈԽՈՒԹՅՈՒՆՆԵՐ
+Մենք իրավունք ենք վերապահում փոփոխելու այս Պայմանները ցանկացած ժամանակ: Մենք կտեղեկացնենք օգտատերերին էական փոփոխությունների մասին Հավելվածի կամ էլեկտրոնային փոստի միջոցով: Փոփոխություններից հետո Հավելվածի շարունակական օգտագործումը կազմում է նոր Պայմանների ընդունում:
 
-      try {
-        const supabase = getSupabaseClient();
-        if (!supabase) return;
+9. ԴԱԴԱՐՈՒՄ
+Մենք կարող ենք դադարեցնել կամ կասեցնել ձեր մուտքը Հավելված առանց նախկին ծանուցման, որևէ պատճառով: Դադարեցման դեպքում ձեր իրավունքը օգտագործել Հավելվածը կդադարի անմիջապես:
 
-        const { data, error } = await supabase
-          .from('account_deletions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .single();
+10. ԿԱՐԳԱՎՈՐՈՒՄ ԻՐԱՎՈՒՆՔ
+Այս Պայմանները պետք է կարգավորվեն և մեկնաբանվեն կիրառելի տեղական օրենքների համաձայն, անկախ օրենքների կոնֆլիկտի դրույթներից:
 
-        if (data && !error) {
-          setPendingDeletion(true);
-        }
-      } catch (error) {
-        console.error('Error checking pending deletion:', error);
-      }
+11. ԿԱՊ ՄԱՆ ԻՆՖՈՐՄԱՑԻԱ
+Եթե ունեք հարցեր այս Պայմանների վերաբերյալ, խնդրում ենք կապվել մեզ հետ support@ratesnap.app հասցեով:
+
+Շնորհակալություն RateSnap-ն ընտրելու համար!`,
+
+      ru: `Условия использования RateSnap
+
+Дата вступления в силу: 10 января 2025 года
+
+Добро пожаловать в RateSnap! Загружая, устанавливая или используя наше мобильное приложение ("Приложение"), вы соглашаетесь соблюдать настоящие Условия использования ("Условия"). Если вы не согласны с настоящими Условиями, пожалуйста, не используйте Приложение.
+
+1. ОПИСАНИЕ СЕРВИСА
+RateSnap предоставляет инструменты конвертации валюты и информацию о курсах обмена в реальном времени для личного и информационного использования. Наши услуги включают:
+• Конвертацию валюты в реальном времени между различными валютами
+• Исторические данные курсов обмена
+• Оповещения о курсах и уведомления
+• Возможности оффлайн-конвертации валюты
+
+2. ПРИНЯТИЕ УСЛОВИЙ
+Получая доступ к RateSnap и используя его, вы принимаете и соглашаетесь соблюдать условия и положения настоящего соглашения. Настоящие Условия применяются ко всем пользователям Приложения.
+
+3. ЛИЦЕНЗИЯ НА ИСПОЛЬЗОВАНИЕ
+При условии вашего соблюдения настоящих Условий, мы предоставляем вам ограниченную, неисключительную, непередаваемую, не подлежащую сублицензированию лицензию на:
+• Загрузку и установку Приложения на ваше мобильное устройство
+• Доступ и использование Приложения для личных, некоммерческих целей
+• Доступ к функциям конвертации валюты и данным курсов обмена
+
+4. ОБЯЗАННОСТИ ПОЛЬЗОВАТЕЛЯ
+Вы соглашаетесь:
+• Использовать Приложение только в законных целях
+• Не использовать Приложение для какой-либо коммерческой деятельности без предварительного письменного согласия
+• Не пытаться проводить обратное проектирование, модифицировать или создавать производные работы Приложения
+• Не вмешиваться в надлежащее функционирование Приложения
+• Предоставлять точную информацию при необходимости
+
+5. ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ ЗА ТОЧНОСТЬ
+Курсы обмена и расчеты конвертации предоставляются только в информационных целях. Хотя мы стремимся к точности, мы не гарантируем, что:
+• Курсы обмена являются актуальными или точными
+• Расчеты конвертации не содержат ошибок
+• Приложение будет доступно в любое время
+• Данные валюты обновлены
+
+6. ОГРАНИЧЕНИЕ ОТВЕТСТВЕННОСТИ
+В максимально допустимой степени, разрешенной применимым законодательством, RateSnap и его разработчики не несут ответственности за:
+• Любые прямые, косвенные, случайные или последующие убытки
+• Потерю прибыли, данных или бизнес-возможностей
+• Неточности в информации о курсах обмена
+• Прерывания обслуживания или недоступность
+
+7. КОНФИДЕНЦИАЛЬНОСТЬ ДАННЫХ
+Ваша конфиденциальность важна для нас. Пожалуйста, ознакомьтесь с нашей Политикой конфиденциальности, которая также регулирует ваше использование Приложения, чтобы понять наши практики.
+
+8. ИЗМЕНЕНИЯ УСЛОВИЙ
+Мы оставляем за собой право изменять настоящие Условия в любое время. Мы будем уведомлять пользователей о существенных изменениях через Приложение или по электронной почте. Продолжение использования Приложения после изменений означает принятие новых Условий.
+
+9. ПРЕКРАЩЕНИЕ
+Мы можем прекратить или приостановить ваш доступ к Приложению немедленно, без предварительного уведомления, по любой причине. После прекращения ваше право на использование Приложения прекратится немедленно.
+
+10. ПРИМЕНИМОЕ ЗАКОНОДАТЕЛЬСТВО
+Настоящие Условия регулируются и толкуются в соответствии с применимым местным законодательством, без учета положений о конфликте законов.
+
+11. КОНТАКТНАЯ ИНФОРМАЦИЯ
+Если у вас есть вопросы по настоящим Условиям, пожалуйста, свяжитесь с нами по адресу support@ratesnap.app.
+
+Спасибо за выбор RateSnap!`,
+
+      es: `Términos de Uso de RateSnap
+
+Fecha de entrada en vigor: 10 de enero de 2025
+
+¡Bienvenido a RateSnap! Al descargar, instalar o usar nuestra aplicación móvil ("Aplicación"), aceptas estar sujeto a estos Términos de Uso ("Términos"). Si no aceptas estos Términos, por favor no uses la Aplicación.
+
+1. DESCRIPCIÓN DEL SERVICIO
+RateSnap proporciona herramientas de conversión de divisas e información de tipos de cambio en tiempo real para uso personal e informativo. Nuestros servicios incluyen:
+• Conversión de divisas en tiempo real entre diferentes monedas
+• Datos históricos de tipos de cambio
+• Alertas de tipos y notificaciones
+• Capacidades de conversión de divisas sin conexión
+
+2. ACEPTACIÓN DE TÉRMINOS
+Al acceder y usar RateSnap, aceptas y acuerdas estar sujeto a los términos y disposiciones de este acuerdo. Estos Términos se aplican a todos los usuarios de la Aplicación.
+
+3. LICENCIA DE USO
+Sujeto a tu cumplimiento de estos Términos, te otorgamos una licencia limitada, no exclusiva, no transferible, no sublicenciable para:
+• Descargar e instalar la Aplicación en tu dispositivo móvil
+• Acceder y usar la Aplicación para fines personales, no comerciales
+• Acceder a las funciones de conversión de divisas y datos de tipos de cambio
+
+4. RESPONSABILIDADES DEL USUARIO
+Aceptas:
+• Usar la Aplicación solo para fines legales
+• No usar la Aplicación para actividades comerciales sin consentimiento previo por escrito
+• No intentar realizar ingeniería inversa, modificar o crear obras derivadas de la Aplicación
+• No interferir con el funcionamiento adecuado de la Aplicación
+• Proporcionar información precisa cuando sea requerida
+
+5. DESCARGO DE RESPONSABILIDAD DE PRECISIÓN
+Los tipos de cambio y cálculos de conversión se proporcionan solo con fines informativos. Aunque nos esforzamos por la precisión, no garantizamos que:
+• Los tipos de cambio sean en tiempo real o precisos
+• Los cálculos de conversión estén libres de errores
+• La Aplicación esté disponible en todo momento
+• Los datos de divisas estén actualizados
+
+6. LIMITACIÓN DE RESPONSABILIDAD
+En la medida máxima permitida por la ley aplicable, RateSnap y sus desarrolladores no serán responsables de:
+• Cualquier daño directo, indirecto, incidental o consecuente
+• Pérdida de ganancias, datos u oportunidades de negocio
+• Imprecisiones en la información de tipos de cambio
+• Interrupciones del servicio o indisponibilidad
+
+7. PRIVACIDAD DE DATOS
+Tu privacidad es importante para nosotros. Por favor revisa nuestra Política de Privacidad, que también rige tu uso de la Aplicación, para entender nuestras prácticas.
+
+8. MODIFICACIONES A LOS TÉRMINOS
+Nos reservamos el derecho de modificar estos Términos en cualquier momento. Notificaremos a los usuarios sobre cambios significativos a través de la Aplicación o correo electrónico. El uso continuado de la Aplicación después de los cambios constituye aceptación de los nuevos Términos.
+
+9. TERMINACIÓN
+Podemos terminar o suspender tu acceso a la Aplicación inmediatamente, sin previo aviso, por cualquier razón. Tras la terminación, tu derecho a usar la Aplicación cesará inmediatamente.
+
+10. LEY APLICABLE
+Estos Términos se regirán e interpretarán de acuerdo con las leyes locales aplicables, sin tener en cuenta las disposiciones de conflicto de leyes.
+
+11. INFORMACIÓN DE CONTACTO
+Si tienes preguntas sobre estos Términos, por favor contáctanos en support@ratesnap.app.
+
+¡Gracias por elegir RateSnap!`,
+
+      zh: `RateSnap 使用条款
+
+生效日期：2025年1月10日
+
+欢迎使用 RateSnap！通过下载、安装或使用我们的移动应用程序（"应用程序"），您同意受本使用条款（"条款"）的约束。如果您不同意这些条款，请不要使用应用程序。
+
+1. 服务描述
+RateSnap 为个人和信息用途提供实时货币转换工具和汇率信息。我们的服务包括：
+• 不同货币之间的实时货币转换
+• 历史汇率数据
+• 汇率警报和通知
+• 离线货币转换功能
+
+2. 条款接受
+通过访问和使用 RateSnap，您接受并同意受本协议条款和规定的约束。这些条款适用于应用程序的所有用户。
+
+3. 使用许可
+在您遵守这些条款的前提下，我们授予您有限的、非独占的、不可转让的、不可再许可的许可，以：
+• 在您的移动设备上下载和安装应用程序
+• 出于个人、非商业目的访问和使用应用程序
+• 访问货币转换功能和汇率数据
+
+4. 用户责任
+您同意：
+• 仅将应用程序用于合法目的
+• 未经事先书面同意，不将应用程序用于任何商业活动
+• 不尝试对应用程序进行逆向工程、修改或创建衍生作品
+• 不干扰应用程序的正常运行
+• 在需要时提供准确信息
+
+5. 准确性免责声明
+汇率和转换计算仅供参考。虽然我们力求准确，但我们不保证：
+• 汇率是实时的或准确的
+• 转换计算没有错误
+• 应用程序始终可用
+• 货币数据是最新的
+
+6. 责任限制
+在适用法律允许的最大范围内，RateSnap 及其开发者不对以下内容承担责任：
+• 任何直接、间接、偶然或后果性损害
+• 利润、数据或商业机会的损失
+• 汇率信息的不准确
+• 服务中断或不可用
+
+7. 数据隐私
+您的隐私对我们很重要。请查看我们的隐私政策，该政策也管理您对应用程序的使用，以了解我们的做法。
+
+8. 条款修改
+我们保留随时修改这些条款的权利。我们将通过应用程序或电子邮件通知用户重大变更。变更后继续使用应用程序即构成对新条款的接受。
+
+9. 终止
+我们可能因任何原因立即终止或暂停您对应用程序的访问，恕不另行通知。终止后，您使用应用程序的权利将立即终止。
+
+10. 适用法律
+这些条款应受适用当地法律管辖并据其解释，不考虑法律冲突条款。
+
+11. 联系信息
+如果您对这些条款有任何疑问，请通过 support@ratesnap.app 与我们联系。
+
+感谢您选择 RateSnap！`,
+
+      hi: `RateSnap उपयोग की शर्तें
+
+प्रभावी दिनांक: 10 जनवरी, 2025
+
+RateSnap में आपका स्वागत है! हमारे मोबाइल एप्लिकेशन ("एप्लिकेशन") को डाउनलोड, इंस्टॉल या उपयोग करके, आप इन उपयोग की शर्तों ("शर्तें") से बाध्य होने पर सहमत होते हैं। यदि आप इन शर्तों से सहमत नहीं हैं, तो कृपया एप्लिकेशन का उपयोग न करें।
+
+1. सेवा विवरण
+RateSnap व्यक्तिगत और सूचनात्मक उपयोग के लिए वास्तविक समय मुद्रा रूपांतरण उपकरण और विनिमय दर जानकारी प्रदान करता है। हमारी सेवाएं शामिल हैं:
+• विभिन्न मुद्राओं के बीच वास्तविक समय मुद्रा रूपांतरण
+• ऐतिहासिक विनिमय दर डेटा
+• दर अलर्ट और अधिसूचनाएं
+• ऑफलाइन मुद्रा रूपांतरण क्षमताएं
+
+2. शर्तों की स्वीकृति
+RateSnap तक पहुंचकर और इसका उपयोग करके, आप इस समझौते की शर्तों और प्रावधानों से बाध्य होने पर सहमत होते हैं। ये शर्तें एप्लिकेशन के सभी उपयोगकर्ताओं पर लागू होती हैं।
+
+3. उपयोग लाइसेंस
+इन शर्तों के आपके अनुपालन के अधीन, हम आपको एक सीमित, गैर-अनन्य, गैर-हस्तांतरणीय, गैर-उपलाइसेंस योग्य लाइसेंस प्रदान करते हैं:
+• अपने मोबाइल डिवाइस पर एप्लिकेशन डाउनलोड और इंस्टॉल करने के लिए
+• व्यक्तिगत, गैर-व्यावसायिक उद्देश्यों के लिए एप्लिकेशन तक पहुंच और उपयोग करने के लिए
+• मुद्रा रूपांतरण सुविधाओं और विनिमय दर डेटा तक पहुंच के लिए
+
+4. उपयोगकर्ता की जिम्मेदारियां
+आप सहमत हैं:
+• एप्लिकेशन का उपयोग केवल वैध उद्देश्यों के लिए करें
+• पूर्व लिखित सहमति के बिना किसी भी व्यावसायिक गतिविधि के लिए एप्लिकेशन का उपयोग न करें
+• एप्लिकेशन के रिवर्स इंजीनियरिंग, संशोधन या व्युत्पन्न कार्य बनाने का प्रयास न करें
+• एप्लिकेशन के उचित कार्य में हस्तक्षेप न करें
+• आवश्यक होने पर सटीक जानकारी प्रदान करें
+
+5. सटीकता अस्वीकरण
+विनिमय दरें और रूपांतरण गणना केवल सूचनात्मक उद्देश्यों के लिए प्रदान की जाती हैं। हालांकि हम सटीकता के लिए प्रयास करते हैं, हम गारंटी नहीं देते कि:
+• विनिमय दरें वास्तविक समय या सटीक हैं
+• रूपांतरण गणना त्रुटि मुक्त हैं
+• एप्लिकेशन हमेशा उपलब्ध होगा
+• मुद्रा डेटा अद्यतित है
+
+6. देयता की सीमा
+लागू कानून द्वारा अनुमत अधिकतम सीमा तक, RateSnap और इसके डेवलपर्स उत्तरदायी नहीं होंगे:
+• किसी भी प्रत्यक्ष, अप्रत्यक्ष, आकस्मिक या परिणामी हानियों के लिए
+• लाभ, डेटा या व्यावसायिक अवसरों के नुकसान के लिए
+• विनिमय दर जानकारी में अशुद्धियों के लिए
+• सेवा व्यवधान या अनुपलब्धता के लिए
+
+7. डेटा गोपनीयता
+आपकी गोपनीयता हमारे लिए महत्वपूर्ण है। कृपया हमारी गोपनीयता नीति की समीक्षा करें, जो आपके एप्लिकेशन के उपयोग को भी नियंत्रित करती है, ताकि हमारी प्रथाओं को समझा जा सके।
+
+8. शर्तों में संशोधन
+हम किसी भी समय इन शर्तों को संशोधित करने का अधिकार सुरक्षित रखते हैं। हम एप्लिकेशन या ईमेल के माध्यम से महत्वपूर्ण परिवर्तनों के बारे में उपयोगकर्ताओं को सूचित करेंगे। परिवर्तनों के बाद एप्लिकेशन का निरंतर उपयोग नए शर्तों की स्वीकृति का गठन करता है।
+
+9. समाप्ति
+हम किसी भी कारण से, पूर्व सूचना के बिना, तुरंत आपके एप्लिकेशन तक पहुंच को समाप्त या निलंबित कर सकते हैं। समाप्ति के बाद, आपके एप्लिकेशन का उपयोग करने का अधिकार तुरंत समाप्त हो जाएगा।
+
+10. लागू कानून
+ये शर्तें कानूनों के संघर्ष के प्रावधानों की परवाह किए बिना, लागू स्थानीय कानूनों द्वारा शासित और समझी जाएंगी।
+
+11. संपर्क जानकारी
+यदि आपके पास इन शर्तों के बारे में कोई प्रश्न हैं, तो कृपया support@ratesnap.app पर हमसे संपर्क करें।
+
+RateSnap चुनने के लिए धन्यवाद!`
     };
+    return terms[language as keyof typeof terms] || terms.en;
+  };
 
-    checkPendingDeletion();
-  }, [user]);
+  const styles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    scrollView: {
+      flex: 1,
+      padding: 20,
+    },
+    header: {
+      marginBottom: 24,
+      paddingBottom: 16,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: textColor,
+      marginBottom: 8,
+      paddingVertical: 5,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: textSecondaryColor,
+      opacity: 0.8,
+    },
+    section: {
+      backgroundColor: surfaceColor,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: textColor,
+      marginBottom: 16,
+    },
+    settingItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      marginVertical: 4,
+      borderRadius: 8,
+    },
+    settingItemText: {
+      fontSize: 16,
+      color: textColor,
+      fontWeight: '500',
+    },
+    settingValue: {
+      fontSize: 15,
+      color: textSecondaryColor,
+    },
+    button: {
+      backgroundColor: primaryColor,
+      borderRadius: 8,
+      padding: 14,
+      alignItems: 'center',
+      marginVertical: 8,
+    },
+    buttonText: {
+      color: textColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    secondaryButton: {
+      backgroundColor: surfaceColor,
+      borderWidth: 1,
+      borderColor: textSecondaryColor + '30',
+    },
+    secondaryButtonText: {
+      color: textSecondaryColor,
+    },
+    modalContainer: {
+      backgroundColor: surfaceColor,
+      borderRadius: 12,
+      padding: 20,
+      margin: 20,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+      paddingRight: 22, // Add more padding to ensure close button stays within bounds
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: textColor,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: textSecondaryColor + '20',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeButtonText: {
+      fontSize: 18,
+      color: textSecondaryColor,
+      fontWeight: '600',
+    },
+    form: {
+      gap: 16,
+    },
+    inputGroup: {
+      gap: 8,
+    },
+    inputLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: textColor,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: textSecondaryColor + '30',
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: textColor,
+      backgroundColor: backgroundColor,
+    },
+    toggleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    toggleButton: {
+      width: 50,
+      height: 28,
+      borderRadius: 14,
+      padding: 2,
+      justifyContent: 'center',
+    },
+    toggleIndicator: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: textSecondaryColor,
+    },
+    languageOption: {
+      padding: 16,
+      marginVertical: 4,
+      borderRadius: 8,
+      backgroundColor: backgroundColor,
+    },
+    checkmark: {
+      fontSize: 18,
+      color: primaryColor,
+      fontWeight: 'bold',
+    },
+  }), [backgroundColor, surfaceColor, primaryColor, textColor, textSecondaryColor]);
 
-  // Load exchange rate data on component mount
-  useEffect(() => {
-    const loadExchangeRateData = async () => {
-      try {
-        const storage = getAsyncStorage();
-        const cachedData = await storage.getItem("cachedExchangeRates");
-        if (cachedData) {
-          const data = JSON.parse(cachedData);
-          setExchangeRateData({
-            time_last_update_utc: data.time_last_update_utc,
-            time_next_update_utc: data.time_next_update_utc,
-          });
-        }
-      } catch (error) {
-        console.error('Error loading exchange rate data:', error);
-      }
-    };
-
-    loadExchangeRateData();
-  }, []);
-
-  // Load notification settings and stats on component mount
-  useEffect(() => {
-    const loadNotificationSettings = async () => {
-      try {
-        const storage = getAsyncStorage();
-        const savedSettings = await storage.getItem("notificationSettings");
-        if (savedSettings) {
-          setNotificationSettings(JSON.parse(savedSettings));
-        }
-
-        // Load notification stats
-        const stats = await expoGoSafeNotificationService.getNotificationStats();
-        setNotificationStats(stats);
-      } catch (error) {
-        console.error('Error loading notification settings:', error);
-      }
-    };
-
-    loadNotificationSettings();
-  }, []);
-
-  const renderAccountInfoSection = () => {
-    if (!user) {
-      return (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            {t('settings.accountInfo')}
-          </ThemedText>
-          <ThemedText style={styles.sectionDescription}>
-            {t('settings.loginRequired')}
-          </ThemedText>
-        </View>
-      );
-    }
-
-    if (showAccountInfo) {
-      return (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-              {t('settings.updateAccountInfo')}
-            </ThemedText>
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: surfaceColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                setShowAccountInfo(false);
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textSecondaryColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <ThemedText style={[{ color: textColor }, styles.inputLabel]}>
-                {t('auth.username')} *
-              </ThemedText>
-              <TextInput
-                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
-                value={accountInfo.username}
-                onChangeText={(text: string) =>
-                  setAccountInfo({ ...accountInfo, username: text })
-                }
-                placeholder={t('auth.username')}
-                placeholderTextColor={textSecondaryColor}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <ThemedText style={[{ color: textColor }, styles.inputLabel]}>
-                {t('auth.email')} *
-              </ThemedText>
-              <TextInput
-                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
-                value={accountInfo.email}
-                onChangeText={(text: string) =>
-                  setAccountInfo({ ...accountInfo, email: text })
-                }
-                placeholder={t('auth.email')}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor={textSecondaryColor}
-              />
-            </View>
-
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.button, styles.buttonSecondary]}
-                onPress={() => {
-                  console.log('Cancel account info edit');
-                  setShowAccountInfo(false);
-                }}
-              >
-                <ThemedText style={[{ color: textSecondaryColor }, styles.buttonSecondaryText]}>
-                  {t('common.cancel')}
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[{ backgroundColor: primaryColor }, styles.button, styles.buttonPrimary]}
-                onPress={handleUpdateAccountInfo}
-              >
-                <ThemedText style={[{ color: textColor }, styles.buttonPrimaryText]}>
-                  {t('common.save')}
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      );
-    }
+  // Render theme selection modal
+  const renderThemeSelection = () => {
+    if (!showThemeSelection) return null;
 
     return (
-      <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-        <View style={styles.sectionHeader}>
-          <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-            {t('settings.accountInfo')}
-          </ThemedText>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <ThemedText style={styles.modalTitle}>{t('settings.theme')}</ThemedText>
           <TouchableOpacity
-            style={[{ backgroundColor: primaryColor }, styles.editButton]}
+            style={styles.closeButton}
+            onPress={() => setShowThemeSelection(false)}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {[
+          { key: 'system', name: t('settings.system'), icon: '📱' },
+          { key: 'light', name: t('settings.light'), icon: '☀️' },
+          { key: 'dark', name: t('settings.dark'), icon: '🌙' },
+        ].map((theme) => (
+          <TouchableOpacity
+            key={theme.key}
+            style={[
+              styles.languageOption,
+              themePreference === theme.key && { backgroundColor: primaryColor + '20' }
+            ]}
             onPress={() => {
-              console.log('Edit account info clicked');
-              setShowAccountInfo(true);
+              setThemePreference(theme.key as any);
+              setShowThemeSelection(false);
             }}
           >
-            <ThemedText style={[{ color: textColor }, styles.editButtonText]}>
-              {t('common.edit')}
-            </ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <ThemedText style={{ fontSize: 20 }}>{theme.icon}</ThemedText>
+              <ThemedText style={styles.settingItemText}>{theme.name}</ThemedText>
+              {themePreference === theme.key && (
+                <ThemedText style={styles.checkmark}>✓</ThemedText>
+              )}
+            </View>
           </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.infoCard]}
-          onPress={() => {
-            console.log('Edit account info clicked');
-            setShowAccountInfo(true);
-          }}
-        >
-          <View style={styles.infoRow}>
-            <ThemedText style={[{ color: textSecondaryColor }, styles.infoLabel]}>
-              {t('auth.username')}:
-            </ThemedText>
-            <ThemedText style={[{ color: textColor }, styles.infoValue]}>
-              {user?.user_metadata?.username || user?.email?.split('@')[0]}
-            </ThemedText>
-          </View>
-          <View style={styles.infoRow}>
-            <ThemedText style={[{ color: textSecondaryColor }, styles.infoLabel]}>
-              {t('auth.email')}:
-            </ThemedText>
-            <ThemedText style={[{ color: textColor }, styles.infoValue]}>
-              {user?.email}
-            </ThemedText>
-          </View>
-        </TouchableOpacity>
+        ))}
       </View>
     );
   };
 
-  const renderPasswordSection = () => {
-    if (!user) return null;
 
-    if (showPasswordForm) {
-      return (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            {t('settings.changePassword')}
-          </ThemedText>
-          
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <ThemedText style={styles.inputLabel}>
-                {t('settings.newPassword')} *
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                value={passwordForm.newPassword}
-                onChangeText={(text: string) =>
-                  setPasswordForm({ ...passwordForm, newPassword: text })
-                }
-                placeholder={t('settings.newPassword')}
-                secureTextEntry
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <ThemedText style={styles.inputLabel}>
-                {t('settings.confirmNewPassword')} *
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                value={passwordForm.confirmPassword}
-                onChangeText={(text: string) =>
-                  setPasswordForm({ ...passwordForm, confirmPassword: text })
-                }
-                placeholder={t('settings.confirmNewPassword')}
-                secureTextEntry
-              />
-            </View>
-
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonSecondary]}
-                onPress={() => setShowPasswordForm(false)}
-              >
-                <ThemedText style={styles.buttonSecondaryText}>
-                  {t('common.cancel')}
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary]}
-                onPress={handleUpdatePassword}
-              >
-                <ThemedText style={styles.buttonPrimaryText}>
-                  {t('common.update')}
-                </ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      );
-    }
-
-    return (
-      <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-        <View style={styles.sectionHeader}>
-          <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-            {t('settings.password')}
-          </ThemedText>
-          <TouchableOpacity
-            style={[{ backgroundColor: primaryColor }, styles.editButton]}
-            onPress={() => setShowPasswordForm(true)}
-          >
-            <ThemedText style={[{ color: textColor }, styles.editButtonText]}>
-              {t('common.change')}
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-        <ThemedText style={[{ color: textSecondaryColor }, styles.sectionDescription]}>
-          {t('settings.passwordUpdateDescription')}
-        </ThemedText>
-      </View>
-    );
-  };
-
-  const renderTermsSection = () => {
-    if (showTerms) {
-      return (
-        <View style={styles.termsFullView}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={styles.sectionTitle}>
-              {t('settings.termsOfUse')}
-            </ThemedText>
-            <TouchableOpacity
-              style={[
-                styles.closeButton,
-                closeButtonPressed && styles.closeButtonActive
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                setShowTerms(false);
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                styles.closeButtonText,
-                closeButtonPressed && styles.closeButtonTextActive
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            style={styles.termsScrollView}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled={true}
-          >
-            <View style={styles.termsContainer}>
-              <ThemedText style={styles.termsText}>
-                {getCurrentTerms()}
-              </ThemedText>
-            </View>
-          </ScrollView>
-        </View>
-      );
-    }
-
-    return (
-      <TouchableOpacity
-        style={[styles.section, styles.touchableSection]}
-        onPress={() => setShowTerms(true)}
-      >
-        <View style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>
-            {t('settings.termsOfUse')}
-          </ThemedText>
-          <ThemedText style={styles.arrowText}>›</ThemedText>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderThemeSelection = () => {
-    if (showThemeSelection) {
-      return (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-              {t('settings.theme')}
-            </ThemedText>
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: surfaceColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                setShowThemeSelection(false);
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textSecondaryColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.themeOptions}>
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
-                styles.themeOption,
-                themePreference === 'system' && { backgroundColor: primaryColor, borderColor: primaryColor }
-              ]}
-              onPress={() => {
-                setThemePreference('system');
-                setShowThemeSelection(false);
-              }}
-            >
-              <View style={styles.themeOptionContent}>
-                <View style={[{ backgroundColor: surfaceColor }, styles.themeIconContainer]}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>📱</ThemedText>
-                </View>
-                <View style={styles.themeTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
-                    {t('settings.system')}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
-                    {t('settings.systemThemeDescription')}
-                  </ThemedText>
-                </View>
-                {themePreference === 'system' && (
-                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
-                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
-                styles.themeOption,
-                themePreference === 'light' && { backgroundColor: primaryColor, borderColor: primaryColor }
-              ]}
-              onPress={() => {
-                setThemePreference('light');
-                setShowThemeSelection(false);
-              }}
-            >
-              <View style={styles.themeOptionContent}>
-                <View style={[{ backgroundColor: surfaceColor }, styles.themeIconContainer]}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>☀️</ThemedText>
-                </View>
-                <View style={styles.themeTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
-                    {t('settings.light')}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
-                    {t('settings.lightThemeDescription')}
-                  </ThemedText>
-                </View>
-                {themePreference === 'light' && (
-                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
-                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
-                styles.themeOption,
-                themePreference === 'dark' && { backgroundColor: primaryColor, borderColor: primaryColor }
-              ]}
-              onPress={() => {
-                setThemePreference('dark');
-                setShowThemeSelection(false);
-              }}
-            >
-              <View style={styles.themeOptionContent}>
-                <View style={styles.themeIconContainer}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeIcon]}>🌙</ThemedText>
-                </View>
-                <View style={styles.themeTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.themeTitle]}>
-                    {t('settings.dark')}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.themeDescription]}>
-                    {t('settings.darkThemeDescription')}
-                  </ThemedText>
-                </View>
-                {themePreference === 'dark' && (
-                  <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
-                    <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-
-    return null;
-  };
-
-  const renderLanguageSelection = () => {
-    if (showLanguageSelection) {
-      return (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-              {t('settings.language')}
-            </ThemedText>
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: surfaceColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                setShowLanguageSelection(false);
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textSecondaryColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.languageOptions}>
-            {[
-              { key: 'en', name: 'English', flag: '🇺🇸' },
-              { key: 'hy', name: 'Հայերեն', flag: '🇦🇲' },
-              { key: 'ru', name: 'Русский', flag: '🇷🇺' },
-              { key: 'es', name: 'Español', flag: '🇪🇸' },
-              { key: 'zh', name: '中文', flag: '🇨🇳' },
-              { key: 'hi', name: 'हिंदी', flag: '🇮🇳' }
-            ].map((lang) => (
-              <TouchableOpacity
-                key={lang.key}
-                style={[
-                  { backgroundColor: surfaceSecondaryColor, borderColor: borderColor },
-                  styles.languageOption,
-                  language === lang.key && { backgroundColor: primaryColor, borderColor: primaryColor }
-                ]}
-                onPress={() => {
-                  setLanguage(lang.key as any);
-                  setShowLanguageSelection(false);
-                }}
-              >
-                <View style={styles.languageOptionContent}>
-                  <View style={styles.languageIconContainer}>
-                    <ThemedText style={[{ color: textSecondaryColor }, styles.languageIcon]}>{lang.flag}</ThemedText>
-                  </View>
-                  <View style={styles.languageTextContainer}>
-                    <ThemedText style={[{ color: textColor }, styles.languageTitle]}>
-                      {lang.name}
-                    </ThemedText>
-                  </View>
-                  {language === lang.key && (
-                    <View style={[{ backgroundColor: textColor }, styles.checkmarkContainer]}>
-                      <ThemedText style={[{ color: surfaceColor }, styles.checkmark]}>✓</ThemedText>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      );
-    }
-
-    return null;
-  };
-
+  // Render notification settings modal
   const renderNotificationSettings = () => {
-    if (showNotificationSettings) {
-      const handleSettingToggle = async (setting: keyof typeof notificationSettings) => {
-        const newSettings = {
-          ...notificationSettings,
-          [setting]: !notificationSettings[setting]
-        };
-        setNotificationSettings(newSettings);
+    if (!showNotificationSettings) return null;
 
-        // Save to storage
-        try {
-          const storage = getAsyncStorage();
-          await storage.setItem("notificationSettings", JSON.stringify(newSettings));
-        } catch (error) {
-          console.error('Error saving notification settings:', error);
-        }
-      };
-
-      return (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-              {t('settings.notifications')}
-            </ThemedText>
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: surfaceColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                setShowNotificationSettings(false);
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textSecondaryColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.notificationOptions}>
-            {/* Enable/Disable Notifications */}
-            <View style={styles.notificationOption}>
-              <View style={styles.notificationOptionContent}>
-                <View style={styles.notificationIconContainer}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
-                    {notificationSettings.enabled ? '🔔' : '🔕'}
-                  </ThemedText>
-                </View>
-                <View style={styles.notificationTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
-                    Enable Notifications
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
-                    Allow the app to send rate alerts and updates
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    { backgroundColor: notificationSettings.enabled ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
-                    styles.toggleButton,
-                    notificationSettings.enabled && styles.toggleButtonActive
-                  ]}
-                  onPress={() => handleSettingToggle('enabled')}
-                >
-                  <View style={[
-                    styles.toggleIndicator,
-                    notificationSettings.enabled && { backgroundColor: textColor },
-                    !notificationSettings.enabled && { backgroundColor: textSecondaryColor }
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Sound */}
-            <View style={styles.notificationOption}>
-              <View style={styles.notificationOptionContent}>
-                <View style={styles.notificationIconContainer}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
-                    🔊
-                  </ThemedText>
-                </View>
-                <View style={styles.notificationTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
-                    Sound
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
-                    Play sound with notifications
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    { backgroundColor: notificationSettings.sound ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
-                    styles.toggleButton,
-                    notificationSettings.sound && styles.toggleButtonActive
-                  ]}
-                  onPress={() => handleSettingToggle('sound')}
-                  disabled={!notificationSettings.enabled}
-                >
-                  <View style={[
-                    styles.toggleIndicator,
-                    notificationSettings.sound && { backgroundColor: textColor },
-                    !notificationSettings.sound && { backgroundColor: textSecondaryColor }
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Vibration */}
-            <View style={styles.notificationOption}>
-              <View style={styles.notificationOptionContent}>
-                <View style={styles.notificationIconContainer}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
-                    📳
-                  </ThemedText>
-                </View>
-                <View style={styles.notificationTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
-                    Vibration
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
-                    Vibrate device with notifications
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    { backgroundColor: notificationSettings.vibration ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
-                    styles.toggleButton,
-                    notificationSettings.vibration && styles.toggleButtonActive
-                  ]}
-                  onPress={() => handleSettingToggle('vibration')}
-                  disabled={!notificationSettings.enabled}
-                >
-                  <View style={[
-                    styles.toggleIndicator,
-                    notificationSettings.vibration && { backgroundColor: textColor },
-                    !notificationSettings.vibration && { backgroundColor: textSecondaryColor }
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Show Preview */}
-            <View style={styles.notificationOption}>
-              <View style={styles.notificationOptionContent}>
-                <View style={styles.notificationIconContainer}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationIcon]}>
-                    👁️
-                  </ThemedText>
-                </View>
-                <View style={styles.notificationTextContainer}>
-                  <ThemedText style={[{ color: textColor }, styles.notificationTitle]}>
-                    Show Preview
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.notificationDescription]}>
-                    Show notification content on lock screen
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    { backgroundColor: notificationSettings.showPreview ? primaryColor : surfaceSecondaryColor, borderColor: borderColor },
-                    styles.toggleButton,
-                    notificationSettings.showPreview && styles.toggleButtonActive
-                  ]}
-                  onPress={() => handleSettingToggle('showPreview')}
-                  disabled={!notificationSettings.enabled}
-                >
-                  <View style={[
-                    styles.toggleIndicator,
-                    notificationSettings.showPreview && { backgroundColor: textColor },
-                    !notificationSettings.showPreview && { backgroundColor: textSecondaryColor }
-                  ]} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Notification Statistics */}
-          <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.notificationStats]}>
-            <ThemedText style={[{ color: textColor }, styles.statsTitle]}>
-              📊 Notification Statistics
-            </ThemedText>
-            <View style={styles.statsGrid}>
-              <View style={styles.statItem}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
-                  {notificationStats.scheduledCount}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
-                  Scheduled
-                </ThemedText>
-              </View>
-              <View style={styles.statItem}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
-                  {notificationStats.activeAlerts}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
-                  Active
-                </ThemedText>
-              </View>
-              <View style={styles.statItem}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statValue]}>
-                  {notificationStats.triggeredAlerts}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.statLabel]}>
-                  Triggered
-                </ThemedText>
-              </View>
-            </View>
-          </View>
+    return (
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <ThemedText style={styles.modalTitle}>{t('settings.notifications')}</ThemedText>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowNotificationSettings(false)}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
         </View>
-      );
-    }
 
-    return null;
+        <View style={{ gap: 16 }}>
+          {[
+            { key: 'enabled', label: t('settings.enableNotifications'), icon: notificationSettings.enabled ? '🔔' : '🔕' },
+            { key: 'sound', label: t('settings.sound'), icon: '🔊' },
+            { key: 'vibration', label: t('settings.vibration'), icon: '📳' },
+            { key: 'showPreview', label: t('settings.showPreview'), icon: '👁️' },
+          ].map((setting) => (
+            <View key={setting.key} style={styles.toggleContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <ThemedText style={{ fontSize: 20 }}>{setting.icon}</ThemedText>
+                <ThemedText style={styles.settingItemText}>{setting.label}</ThemedText>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  notificationSettings[setting.key as keyof typeof notificationSettings]
+                    ? { backgroundColor: primaryColor }
+                    : { backgroundColor: textSecondaryColor + '30' }
+                ]}
+                onPress={() => handleNotificationToggle(setting.key as keyof typeof notificationSettings)}
+                disabled={setting.key !== 'enabled' && !notificationSettings.enabled}
+              >
+                <View
+                  style={[
+                    styles.toggleIndicator,
+                    notificationSettings[setting.key as keyof typeof notificationSettings] && {
+                      backgroundColor: textColor,
+                      marginLeft: 22
+                    }
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  // Render terms of use modal
+  const renderTerms = () => {
+    if (!showTerms) return null;
+
+    return (
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <ThemedText style={styles.modalTitle}>{t('settings.termsOfUse')}</ThemedText>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowTerms(false)}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={{ maxHeight: 300 }}>
+          <ThemedText style={{ fontSize: 14, lineHeight: 20, color: textColor }}>
+            {getCurrentTerms()}
+          </ThemedText>
+        </ScrollView>
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={true}>
-          {/* Header */}
-          <View style={styles.header}>
-            <ThemedText style={[{ color: textColor }, styles.title]}>
-              ⚙️ {t('settings.title')}
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        {/* Header */}
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>⚙️ {t('settings.title')}</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            {t('settings.subtitle')}
+          </ThemedText>
+        </View>
+
+        {/* Preferences Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>{t('settings.preferences')}</ThemedText>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowThemeSelection(true)}
+          >
+            <ThemedText style={styles.settingItemText}>🎨 {t('settings.theme')}</ThemedText>
+            <ThemedText style={styles.settingValue}>
+              {themePreference === 'system' ? t('settings.system') :
+               themePreference === 'light' ? t('settings.light') : t('settings.dark')}
             </ThemedText>
-            <ThemedText style={[{ color: textSecondaryColor }, styles.subtitle]}>
-              {t('settings.subtitle')}
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowNotificationSettings(true)}
+          >
+            <ThemedText style={styles.settingItemText}>🔔 {t('settings.notifications')}</ThemedText>
+            <ThemedText style={styles.settingValue}>
+              {notificationSettings.enabled ? t('common.enabled') : t('common.disabled')}
             </ThemedText>
-          </View>
+          </TouchableOpacity>
+        </View>
 
-          {/* Account Information Section */}
-          {renderAccountInfoSection()}
+        {/* Data Management Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>{t('settings.dataManagement')}</ThemedText>
 
-          {/* Password Section */}
-          {renderPasswordSection()}
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={handleClearCache}
+          >
+            <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+              🗑️ {t('settings.clearCache')}
+            </ThemedText>
+          </TouchableOpacity>
 
-          {/* Terms of Use Section */}
-          {renderTermsSection()}
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={handleExportData}
+          >
+            <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+              📊 {t('settings.exportData')}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
 
-          {/* Theme Selection Section */}
-          {renderThemeSelection()}
-
-          {/* Language Selection Section */}
-          {renderLanguageSelection()}
-
-          {/* Notification Settings Section */}
-          {renderNotificationSettings()}
-
-          {/* Additional Settings Sections */}
-          <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.section]}>
-            <View style={styles.sectionHeader}>
-              <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
-                {t('settings.preferences')}
-              </ThemedText>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => setShowThemeSelection(true)}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                🎨 {t('settings.theme')}
-              </ThemedText>
-              <View style={styles.settingValueContainer}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
-                  {themePreference === 'system' ? t('settings.system') :
-                   themePreference === 'light' ? t('settings.light') :
-                   t('settings.dark')}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => setShowLanguageSelection(true)}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                🌍 {t('settings.language')}
-              </ThemedText>
-              <View style={styles.settingValueContainer}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
-                  {(() => {
-                    const languageNames = {
-                      en: 'English',
-                      hy: 'Հայերեն',
-                      ru: 'Русский',
-                      es: 'Español',
-                      zh: '中文',
-                      hi: 'हिंदी'
-                    };
-                    return languageNames[language] || 'English';
-                  })()}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => setShowNotificationSettings(true)}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                🔔 {t('settings.notifications')}
-              </ThemedText>
-              <View style={styles.settingValueContainer}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.settingValue]}>
-                  {notificationSettings.enabled ? 'Enabled' : 'Disabled'}
-                </ThemedText>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Data Management Section */}
+        {/* Account Section */}
+        {user && (
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>
-              {t('settings.dataManagement')}
-            </ThemedText>
+            <ThemedText style={styles.sectionTitle}>{t('settings.accountInfo')}</ThemedText>
 
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Cache cleared successfully')}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                🗑️ {t('settings.clearCache')}
+            <TouchableOpacity style={styles.settingItem}>
+              <ThemedText style={styles.settingItemText}>👤 {t('auth.username')}</ThemedText>
+              <ThemedText style={styles.settingValue}>
+                {user.user_metadata?.username || user.email?.split('@')[0]}
               </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.settingItem}>
+              <ThemedText style={styles.settingItemText}>📧 {t('auth.email')}</ThemedText>
+              <ThemedText style={styles.settingValue}>{user.email}</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Export feature coming soon')}
+              style={[styles.button, styles.secondaryButton]}
+              onPress={handleSignOut}
             >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                📊 {t('settings.exportData')}
+              <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+                🚪 {t('auth.signout')}
               </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-          {/* Exchange Rate Information Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>
-              📈{t('settings.exchangeRateInfo')}
-            </ThemedText>
-            <ThemedText style={styles.sectionDescription}>
-              {t('settings.exchangeRateInfoDescription')}
-            </ThemedText>
-
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>
-                  🕒 {t('time.lastUpdate')}:
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {exchangeRateData?.time_last_update_utc
-                    ? new Date(exchangeRateData.time_last_update_utc).toLocaleString()
-                    : 'Not available'}
-                </ThemedText>
-              </View>
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>
-                  ⏰ {t('time.nextUpdate')}:
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {exchangeRateData?.time_next_update_utc
-                    ? new Date(exchangeRateData.time_next_update_utc).toLocaleString()
-                    : 'Not available'}
-                </ThemedText>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('Exchange Rate Info',
-                'Exchange rates are provided by CurrencyFreaks API and updated hourly.\n\n' +
-                '• Rates are cached locally for offline use\n' +
-                '• Updates occur automatically in the background\n' +
-                '• All rates are displayed in real-time when online')}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                ℹ️ {t('settings.aboutExchangeRates')}
-              </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
             </TouchableOpacity>
           </View>
+        )}
 
-          {/* About & Support Section */}
-          <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>
-              {t('settings.aboutSupport')}
-            </ThemedText>
-            
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('About', 'RateSnap v1.0.0\n\nA currency converter app with real-time exchange rates.\n\nDeveloped with ❤️ for global travelers and businesses.')}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                ℹ️ {t('settings.about')}
-              </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-            </TouchableOpacity>
+        {/* Exchange Rate Info Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>📈{t('settings.exchangeRateInfo')}</ThemedText>
+          <ThemedText style={[styles.settingValue, { fontSize: 14, marginBottom: 16, lineHeight: 20 }]}>
+            {t('settings.exchangeRateInfoDescription')}
+          </ThemedText>
 
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('Info', 'Email: support@ratesnap.app')}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                📧 {t('settings.contactSupport')}
+          <View style={[styles.settingItem, { marginBottom: 12 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ThemedText style={{ fontSize: 16 }}>🕒</ThemedText>
+              <ThemedText style={styles.settingItemText}>{t('time.lastUpdate')}</ThemedText>
+            </View>
+            <View style={{ alignItems: 'flex-end', flex: 1 }}>
+              <ThemedText style={[styles.settingValue, { textAlign: 'right', fontSize: 14, lineHeight: 18 }]}>
+                {exchangeRateData?.time_last_update_utc
+                  ? new Date(exchangeRateData.time_last_update_utc).toLocaleString()
+                  : 'Loading...'}
               </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => Alert.alert('Help', 'For assistance, please:\n\n1. Check our FAQ section\n2. Contact support@ratesnap.app\n3. Visit our website for more resources')}
-            >
-              <ThemedText style={[{ color: textColor }, styles.settingItemText]}>
-                ❓ {t('settings.help')}
-              </ThemedText>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.arrowText]}>›</ThemedText>
-            </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Pending Deletion Status */}
-          {user && pendingDeletion && (
-            <View style={[styles.section, styles.pendingDeletionSection]}>
-              <View style={styles.pendingDeletionHeader}>
-                <View style={styles.pendingIconContainer}>
-                  <ThemedText style={styles.pendingIcon}>⏳</ThemedText>
-                </View>
-                <View style={styles.pendingContent}>
-                  <ThemedText style={styles.pendingTitle}>
-                    Account Deletion Pending
-                  </ThemedText>
-                  <ThemedText style={styles.pendingDescription}>
-                    Your account deletion has been scheduled and will be completed within 24 hours.
-                    If you wish to cancel this process, you can do so below.
-                  </ThemedText>
-                </View>
-              </View>
-              
-              <TouchableOpacity
-                style={styles.cancelDeletionButton}
-                onPress={cancelPendingDeletion}
-              >
-                <View style={styles.cancelDeletionContent}>
-                  <View style={styles.cancelIconContainer}>
-                    <ThemedText style={styles.cancelIcon}>↩️</ThemedText>
-                  </View>
-                  <ThemedText style={styles.cancelDeletionText}>
-                    Cancel Account Deletion
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+          <View style={styles.settingItem}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ThemedText style={{ fontSize: 16 }}>⏰</ThemedText>
+              <ThemedText style={styles.settingItemText}>{t('time.nextUpdate')}</ThemedText>
             </View>
-          )}
-
-          {/* Sign Out Section */}
-          {user && !pendingDeletion && (
-            <View style={styles.section}>
-              <TouchableOpacity
-                style={styles.signOutButton}
-                onPress={handleSignOut}
-              >
-                <View style={styles.signOutContent}>
-                  <View style={styles.signOutIconContainer}>
-                    <ThemedText style={styles.signOutIcon}>🚪</ThemedText>
-                  </View>
-                  <ThemedText style={styles.signOutText}>
-                    {t('auth.signout')}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+            <View style={{ alignItems: 'flex-end', flex: 1 }}>
+              <ThemedText style={[styles.settingValue, { textAlign: 'right', fontSize: 14, lineHeight: 18 }]}>
+                {exchangeRateData?.time_next_update_utc
+                  ? new Date(exchangeRateData.time_next_update_utc).toLocaleString()
+                  : 'Loading...'}
+              </ThemedText>
             </View>
-          )}
+          </View>
+        </View>
 
-          {/* Delete Account Section */}
-          {user && !pendingDeletion && (
-            <View style={[styles.section, styles.dangerSection]}>
-              <View style={styles.dangerHeader}>
-                <ThemedText style={[styles.sectionTitle, styles.dangerTitle]}>
-                  ⚠️ {t('settings.dangerZone')}
-                </ThemedText>
-                <ThemedText style={styles.dangerSubtitle}>
-                  Irreversible actions that affect your account
-                </ThemedText>
-              </View>
-              
-              {showDeletePassword ? (
-                <View style={styles.deleteConfirmContainer}>
-                  <View style={styles.deleteWarningCard}>
-                    <View style={styles.warningIconContainer}>
-                      <ThemedText style={styles.warningIcon}>⚠️</ThemedText>
-                    </View>
-                    <View style={styles.warningContent}>
-                      <ThemedText style={styles.deleteWarningTitle}>
-                        Confirm Account Deletion
-                      </ThemedText>
-                      <ThemedText style={styles.deleteWarningDescription}>
-                        To confirm account deletion, please enter both your email address and password. This action cannot be undone.
-                      </ThemedText>
-                    </View>
-                  </View>
+        {/* Legal Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>{t('settings.aboutSupport')}</ThemedText>
 
-                  <View style={styles.credentialInputsContainer}>
-                    <View style={styles.inputGroup}>
-                      <ThemedText style={styles.inputLabel}>
-                        Email Address *
-                      </ThemedText>
-                      <TextInput
-                        style={styles.credentialInput}
-                        value={confirmEmail}
-                        onChangeText={setConfirmEmail}
-                        placeholder={`Enter ${user?.email}`}
-                        placeholderTextColor="#9CA3AF"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                      />
-                    </View>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowTerms(true)}
+          >
+            <ThemedText style={styles.settingItemText}>📄 {t('settings.termsOfUse')}</ThemedText>
+            <ThemedText style={styles.settingValue}>›</ThemedText>
+          </TouchableOpacity>
+        </View>
 
-                    <View style={styles.inputGroup}>
-                      <ThemedText style={styles.inputLabel}>
-                        Password *
-                      </ThemedText>
-                      <TextInput
-                        style={styles.credentialInput}
-                        value={deletePassword}
-                        onChangeText={setDeletePassword}
-                        placeholder="Enter your password"
-                        placeholderTextColor="#9CA3AF"
-                        secureTextEntry
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                      />
-                    </View>
-                  </View>
+        {/* About Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>{t('settings.about')}</ThemedText>
 
-                  <View style={styles.deleteActionButtons}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.cancelButton]}
-                      onPress={() => {
-                        setShowDeletePassword(false);
-                        setDeletePassword('');
-                        setConfirmEmail('');
-                      }}
-                    >
-                      <ThemedText style={styles.cancelButtonText}>
-                        Cancel
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.deleteButton]}
-                      onPress={verifyPasswordAndDelete}
-                    >
-                      <ThemedText style={styles.deleteButtonText}>
-                        Confirm Deletion
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.deleteAccountButton}
-                  onPress={handleDeleteAccount}
-                >
-                  <View style={styles.deleteButtonContent}>
-                    <View style={styles.deleteIconContainer}>
-                      <ThemedText style={styles.deleteIcon}>🗑️</ThemedText>
-                    </View>
-                    <View style={styles.deleteButtonTextContainer}>
-                      <ThemedText style={styles.deleteButtonTitle}>
-                        Delete Account
-                      </ThemedText>
-                      <ThemedText style={styles.deleteButtonSubtitle}>
-                        Permanently remove your account and all data
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={styles.deleteArrowIcon}>›</ThemedText>
-                  </View>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+          <TouchableOpacity style={styles.settingItem}>
+            <ThemedText style={styles.settingItemText}>ℹ️ {t('settings.about')}</ThemedText>
+            <ThemedText style={styles.settingValue}>1.0.0</ThemedText>
+          </TouchableOpacity>
 
-          {/* Bottom Spacer */}
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-        <Footer />
-      </ThemedView>
+          <TouchableOpacity style={styles.settingItem}>
+            <ThemedText style={styles.settingItemText}>📧 {t('settings.contactSupport')}</ThemedText>
+            <ThemedText style={styles.settingValue}>support@ratesnap.app</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Modals */}
+      {renderThemeSelection()}
+      {renderNotificationSettings()}
+      {renderTerms()}
     </SafeAreaView>
   );
 }

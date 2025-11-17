@@ -68,7 +68,7 @@ export default function HomeScreen() {
   const textColor = useThemeColor({}, 'text');
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
   const borderColor = useThemeColor({}, 'border');
-  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  const shadowColor = '#000000'; // Use black for shadows
 
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"

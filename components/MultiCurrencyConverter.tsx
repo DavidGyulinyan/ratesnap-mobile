@@ -59,7 +59,7 @@ export default function MultiCurrencyConverter({
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
   const borderColor = useThemeColor({}, 'border');
   const errorColor = useThemeColor({}, 'error');
-  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  const shadowColor = '#000000'; // Use black for shadows
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";

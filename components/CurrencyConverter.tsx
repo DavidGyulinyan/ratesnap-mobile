@@ -95,7 +95,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
   const borderColor = useThemeColor({}, 'border');
   const textInverseColor = useThemeColor({}, 'textInverse');
-  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  const shadowColor = '#000000'; // Use black for shadows
 
   // Enhanced Auto-detect user's location and set default currency
   const detectUserLocation = async () => {

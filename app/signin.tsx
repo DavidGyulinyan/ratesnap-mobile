@@ -21,28 +21,36 @@ import AuthButtons from '@/components/AuthButtons';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
-  const [invalidCredentials, setInvalidCredentials] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [passwordVisible, setPasswordVisible] = useState(false);
+   const [loading, setLoading] = useState(false);
+   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+   const [invalidCredentials, setInvalidCredentials] = useState(false);
+   const [resendLoading, setResendLoading] = useState(false);
 
-  const { signIn, resendConfirmationEmail } = useAuth();
-  const { t } = useLanguage();
-  const router = useRouter();
+   const { signIn, resendConfirmationEmail } = useAuth();
+   const { t } = useLanguage();
+   const router = useRouter();
 
-  // Theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-  const primaryColor = useThemeColor({}, 'primary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
-  const errorColor = useThemeColor({}, 'error');
-  const warningColor = useThemeColor({}, 'warning');
+   // Helper function to add opacity to hex colors
+   const addOpacity = (hexColor: string, opacity: number) => {
+     const r = parseInt(hexColor.slice(1, 3), 16);
+     const g = parseInt(hexColor.slice(3, 5), 16);
+     const b = parseInt(hexColor.slice(5, 7), 16);
+     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+   };
+
+   // Theme colors
+   const backgroundColor = useThemeColor({}, 'background');
+   const surfaceColor = useThemeColor({}, 'surface');
+   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+   const primaryColor = useThemeColor({}, 'primary');
+   const textColor = useThemeColor({}, 'text');
+   const textSecondaryColor = useThemeColor({}, 'textSecondary');
+   const borderColor = useThemeColor({}, 'border');
+   const errorColor = useThemeColor({}, 'error');
+   const warningColor = useThemeColor({}, 'warning');
 
   const styles = useMemo(() => StyleSheet.create({
     // Main containers
@@ -211,7 +219,7 @@ export default function SignInScreen() {
 
     // Email Confirmation Error Styles
     confirmationError: {
-      backgroundColor: warningColor + '1a',
+      backgroundColor: addOpacity(warningColor, 0.10),
       borderRadius: 12,
       padding: 16,
       marginBottom: 24,
@@ -243,7 +251,7 @@ export default function SignInScreen() {
 
     // Invalid Credentials Error Styles
     credentialsError: {
-      backgroundColor: errorColor + '1a',
+      backgroundColor: addOpacity(errorColor, 0.10),
       borderRadius: 12,
       padding: 16,
       marginBottom: 24,

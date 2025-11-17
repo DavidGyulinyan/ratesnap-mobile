@@ -25,28 +25,36 @@ import { Ionicons } from '@expo/vector-icons';
 WebBrowser.maybeCompleteAuthSession();
 
 function SignUpScreen() {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
-  
-  const { signUp } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
-  const router = useRouter();
+   const [email, setEmail] = useState('');
+   const [username, setUsername] = useState('');
+   const [password, setPassword] = useState('');
+   const [confirmPassword, setConfirmPassword] = useState('');
+   const [passwordVisible, setPasswordVisible] = useState(false);
+   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+   const [selectedLanguage, setSelectedLanguage] = useState('en');
+   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+   const [loading, setLoading] = useState(false);
 
-  // Theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-  const primaryColor = useThemeColor({}, 'primary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
+   const { signUp } = useAuth();
+   const { t, language, setLanguage } = useLanguage();
+   const router = useRouter();
+
+   // Helper function to add opacity to hex colors
+   const addOpacity = (hexColor: string, opacity: number) => {
+     const r = parseInt(hexColor.slice(1, 3), 16);
+     const g = parseInt(hexColor.slice(3, 5), 16);
+     const b = parseInt(hexColor.slice(5, 7), 16);
+     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+   };
+
+   // Theme colors
+   const backgroundColor = useThemeColor({}, 'background');
+   const surfaceColor = useThemeColor({}, 'surface');
+   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+   const primaryColor = useThemeColor({}, 'primary');
+   const textColor = useThemeColor({}, 'text');
+   const textSecondaryColor = useThemeColor({}, 'textSecondary');
+   const borderColor = useThemeColor({}, 'border');
 
   const styles = useMemo(() => StyleSheet.create({
     safeArea: {
@@ -230,7 +238,7 @@ function SignUpScreen() {
       borderBottomColor: borderColor,
     },
     languageOptionSelected: {
-      backgroundColor: primaryColor + '1a',
+      backgroundColor: addOpacity(primaryColor, 0.10),
     },
     languageOptionText: {
       fontSize: 16,
@@ -447,8 +455,8 @@ function SignUpScreen() {
                     styles.languageOption,
                     selectedLanguage === lang.code && styles.languageOptionSelected
                   ]}
-                  onPress={() => {
-                    setLanguage(lang.code as Language);
+                  onPress={async () => {
+                    await setLanguage(lang.code as Language);
                     setSelectedLanguage(lang.code);
                     setShowLanguagePicker(false);
                   }}

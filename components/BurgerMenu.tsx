@@ -20,20 +20,28 @@ interface BurgerMenuProps {
 }
 
 export default function BurgerMenu({ style }: BurgerMenuProps) {
-  const { t } = useLanguage();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-  const [isVisible, setIsVisible] = useState(false);
+   const { t } = useLanguage();
+   const router = useRouter();
+   const { user, signOut } = useAuth();
+   const [isVisible, setIsVisible] = useState(false);
 
-  // Theme colors
-  const primaryColor = useThemeColor({}, 'primary');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
-  const modalBackgroundColor = useThemeColor({}, 'modalBackground');
-  const errorColor = useThemeColor({}, 'error');
+   // Helper function to add opacity to hex colors
+   const addOpacity = (hexColor: string, opacity: number) => {
+     const r = parseInt(hexColor.slice(1, 3), 16);
+     const g = parseInt(hexColor.slice(3, 5), 16);
+     const b = parseInt(hexColor.slice(5, 7), 16);
+     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+   };
+
+   // Theme colors
+   const primaryColor = useThemeColor({}, 'primary');
+   const surfaceColor = useThemeColor({}, 'surface');
+   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+   const textColor = useThemeColor({}, 'text');
+   const textSecondaryColor = useThemeColor({}, 'textSecondary');
+   const borderColor = useThemeColor({}, 'border');
+   const modalBackgroundColor = addOpacity(useThemeColor({}, 'background'), 0.8);
+   const errorColor = useThemeColor({}, 'error');
 
   const handleSignOut = async () => {
     try {
@@ -188,7 +196,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
                     paddingVertical: 16,
                     paddingHorizontal: 20,
                     marginBottom: 8,
-                    backgroundColor: item.danger ? errorColor + '20' : surfaceSecondaryColor,
+                    backgroundColor: item.danger ? addOpacity(errorColor, 0.20) : surfaceSecondaryColor,
                     borderRadius: 12,
                     borderWidth: 1,
                     borderColor: borderColor,

@@ -56,7 +56,7 @@ export default function SavedRates({
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
   const errorColor = useThemeColor({}, 'error');
   const textInverseColor = useThemeColor({}, 'textInverse');
-  const shadowColor = useThemeColor({}, 'text'); // Use text color for shadows in dark mode
+  const shadowColor = '#000000'; // Use black for shadows
 
   // Use hook data if no prop provided and user is authenticated
   const savedRates = propSavedRates || (user ? hookSavedRates : []);

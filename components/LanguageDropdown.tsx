@@ -143,8 +143,8 @@ export default function LanguageDropdown({
 
   const currentLanguage = languageData[language];
 
-  const handleLanguageSelect = (selectedLanguage: Language) => {
-    setLanguage(selectedLanguage);
+  const handleLanguageSelect = async (selectedLanguage: Language) => {
+    await setLanguage(selectedLanguage);
     setIsDropdownVisible(false);
   };
 
