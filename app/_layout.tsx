@@ -9,6 +9,7 @@ import 'react-native-url-polyfill/auto';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -17,35 +18,45 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+function AppContent() {
+  const { effectiveTheme } = useTheme();
+
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <View style={{ flex: 1 }}>
+          <Stack screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: 'transparent',
+              paddingTop: 0,
+              paddingBottom: 0,
+              paddingLeft: 0,
+              paddingRight: 0
+            }
+          }}>
+            {/* Always register all screens, navigation control will handle which is shown */}
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
+          </Stack>
+          <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
+        </View>
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { user } = useAuth();
 
   return (
     <LanguageProvider>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <View style={{ flex: 1 }}>
-            <Stack screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: 'transparent',
-                paddingTop: 0,
-                paddingBottom: 0,
-                paddingLeft: 0,
-                paddingRight: 0
-              }
-            }}>
-              {/* Always register all screens, navigation control will handle which is shown */}
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
-            </Stack>
-            <StatusBar style="auto" />
-          </View>
-        </AuthProvider>
-      </SafeAreaProvider>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </LanguageProvider>
   );
 }
