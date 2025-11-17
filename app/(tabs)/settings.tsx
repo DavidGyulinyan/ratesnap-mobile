@@ -646,7 +646,7 @@ RateSnap चुनने के लिए धन्यवाद!`
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 20,
-      paddingRight: 22, // Add more padding to ensure close button stays within bounds
+      paddingRight: 2, // Add more padding to ensure close button stays within bounds
     },
     modalTitle: {
       fontSize: 20,
