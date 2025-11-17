@@ -40,8 +40,6 @@ export interface MathCalculatorHistory {
   user_id: string;
   calculation_expression: string;
   result: number;
-  calculation_type: string;
-  metadata: any;
   created_at: string;
 }
 
@@ -467,14 +465,13 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Insert the new record (using the actual column name 'calculation_expression')
       const { data, error } = await supabase
         .from('math_calculator_history')
         .insert({
           user_id: user.id,
           calculation_expression: expression,
-          result: result,
-          calculation_type: calculationType,
-          metadata: metadata
+          result: result
         })
         .select()
         .single();
@@ -486,6 +483,39 @@ export class UserDataService {
         return null;
       }
 
+      // Check if we need to clean up old records (keep only 15 most recent)
+      const { count, error: countError } = await supabase
+        .from('math_calculator_history')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (!countError && count && count > 15) {
+        // Get the IDs of records to delete (all except the 15 most recent)
+        const { data: recordsToDelete, error: selectError } = await supabase
+          .from('math_calculator_history')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .range(15, count - 1);
+
+        if (!selectError && recordsToDelete && recordsToDelete.length > 0) {
+          const idsToDelete = recordsToDelete.map((record: { id: string }) => record.id);
+
+          const { error: deleteError } = await supabase
+            .from('math_calculator_history')
+            .delete()
+            .eq('user_id', user.id)
+            .in('id', idsToDelete);
+
+          if (deleteError) {
+            console.warn('Error cleaning up old calculator history:', deleteError);
+            // Don't fail the save operation if cleanup fails
+          } else {
+            console.log(`Cleaned up ${idsToDelete.length} old calculator history records`);
+          }
+        }
+      }
+
       return data;
     } catch (error) {
       console.error('Error in saveCalculatorHistory:', error);
@@ -493,7 +523,7 @@ export class UserDataService {
     }
   }
 
-  static async getCalculatorHistory(limit: number = 50): Promise<MathCalculatorHistory[]> {
+  static async getCalculatorHistory(limit: number = 15): Promise<MathCalculatorHistory[]> {
     try {
       const supabase = getSupabaseClient();
       if (!supabase) throw new Error('Supabase client not available');
@@ -501,12 +531,37 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // Try to select with calculation_expression first
+      let { data, error } = await supabase
         .from('math_calculator_history')
-        .select('*')
+        .select('id, user_id, calculation_expression, result, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit);
+
+      // If calculation_expression column doesn't exist, try without it
+      if (error && error.code === '42703') {
+        console.warn('calculation_expression column not found, falling back to basic columns');
+        const fallbackResult = await supabase
+          .from('math_calculator_history')
+          .select('id, user_id, result, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (fallbackResult.error) {
+          if (!handleTableNotFound('math_calculator_history', fallbackResult.error)) {
+            console.error('Error fetching calculator history (fallback):', fallbackResult.error);
+          }
+          return [];
+        }
+
+        // Return data with empty expression for backward compatibility
+        return (fallbackResult.data || []).map((item: any) => ({
+          ...item,
+          calculation_expression: 'N/A' // Fallback value
+        }));
+      }
 
       if (error) {
         if (!handleTableNotFound('math_calculator_history', error)) {

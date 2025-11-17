@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useConverterHistory } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,6 +49,17 @@ export default function MultiCurrencyConverter({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { saveConversion } = useConverterHistory();
+
+  // Theme colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const primaryColor = useThemeColor({}, 'primary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+  const errorColor = useThemeColor({}, 'error');
+  const shadowColor = '#000000'; // Use black for shadows
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";
@@ -456,14 +468,14 @@ export default function MultiCurrencyConverter({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.card}>
+      <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
         <View style={styles.header}>
-          <ThemedText style={styles.title}>🔄 Multi-Currency Converter</ThemedText>
           {onClose && (
             <TouchableOpacity
               style={[
+                { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
                 styles.closeButton,
-                closeButtonPressed && styles.closeButtonActive
+                closeButtonPressed && { backgroundColor: borderColor }
               ]}
               onPressIn={() => setCloseButtonPressed(true)}
               onPressOut={() => setCloseButtonPressed(false)}
@@ -473,8 +485,9 @@ export default function MultiCurrencyConverter({
               }}
             >
               <ThemedText style={[
+                { color: textColor },
                 styles.closeButtonText,
-                closeButtonPressed && styles.closeButtonTextActive
+                closeButtonPressed && { color: textSecondaryColor }
               ]}>×</ThemedText>
             </TouchableOpacity>
           )}
@@ -482,33 +495,33 @@ export default function MultiCurrencyConverter({
 
         {/* Amount Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={styles.label}>Amount</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>Amount</ThemedText>
           <TextInput
-            style={styles.amountInput}
+            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"
             placeholder={t('converter.enterAmount')}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={textSecondaryColor}
           />
         </View>
 
         {/* From Currency Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={styles.label}>From</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>From</ThemedText>
           <TouchableOpacity
-            style={styles.currencyButton}
+            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencyButton]}
             onPress={() => setShowFromCurrencyPicker(true)}
           >
             {fromCurrency ? (
               <>
                 <CurrencyFlag currency={fromCurrency} size={20} />
-                <ThemedText style={styles.currencyButtonText}>
+                <ThemedText style={[{ color: textColor }, styles.currencyButtonText]}>
                   {fromCurrency}
                 </ThemedText>
               </>
             ) : (
-              <ThemedText style={styles.currencyButtonPlaceholder}>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.currencyButtonPlaceholder]}>
                 Select currency
               </ThemedText>
             )}
@@ -518,49 +531,49 @@ export default function MultiCurrencyConverter({
         {/* Target Currencies Section */}
         <View style={styles.targetsSection}>
           <View style={styles.targetsHeader}>
-            <ThemedText style={styles.label}>Convert To</ThemedText>
+            <ThemedText style={[{ color: textColor }, styles.label]}>Convert To</ThemedText>
             <TouchableOpacity
-              style={styles.addButton}
+              style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.addButton]}
               onPress={() => {
                 setEditingTargetId(null);
                 setShowTargetCurrencyPicker(true);
               }}
             >
-              <ThemedText style={styles.addButtonText}>+ Add Currency</ThemedText>
+              <ThemedText style={[{ color: primaryColor }, styles.addButtonText]}>+ Add Currency</ThemedText>
             </TouchableOpacity>
           </View>
 
           {conversionTargets.length === 0 ? (
-            <View style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
+            <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.emptyState]}>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.emptyStateText]}>
                 {t('multi.emptyState')}
               </ThemedText>
             </View>
           ) : (
             <ScrollView style={styles.targetsList} showsVerticalScrollIndicator={false}>
               {conversionTargets.map((target) => (
-                <View key={target.id} style={styles.targetItem}>
+                <View key={target.id} style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetItem]}>
                   <TouchableOpacity
-                    style={styles.targetCurrencyButton}
+                    style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetCurrencyButton]}
                     onPress={() => editTargetCurrency(target.id)}
                   >
                     <CurrencyFlag currency={target.currency} size={18} />
-                    <ThemedText style={styles.targetCurrencyText}>
+                    <ThemedText style={[{ color: textColor }, styles.targetCurrencyText]}>
                       {target.currency}
                     </ThemedText>
                   </TouchableOpacity>
-                  
+
                   <View style={styles.conversionResult}>
-                    <ThemedText style={styles.conversionAmount}>
+                    <ThemedText style={[{ color: primaryColor }, styles.conversionAmount]}>
                       {conversions[target.currency]?.toFixed(4) || "---"}
                     </ThemedText>
                   </View>
 
                   <TouchableOpacity
-                    style={styles.removeButton}
+                    style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.removeButton]}
                     onPress={() => removeTargetCurrency(target.id)}
                   >
-                    <ThemedText style={styles.removeButtonText}>×</ThemedText>
+                    <ThemedText style={[{ color: textColor }, styles.removeButtonText]}>×</ThemedText>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -598,42 +611,35 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   card: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#8b5cf6",
     padding: 20,
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent:'flex-end',
     marginBottom: 20,
   },
   title: {
     flex: 1,
     fontSize: 20,
     fontWeight: "700",
-    color: "#1f2937",
     paddingRight: 16,
   },
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: "#f3f4f6",
     borderRadius: '50%',
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonActive: {
-    backgroundColor: "#e5e7eb",
   },
   closeButtonText: {
     fontSize: 16,
-    color: "#6b7280",
     fontWeight: "500",
   },
   closeButtonTextActive: {
-    color: "#4b5563",
   },
   inputGroup: {
     marginBottom: 16,
@@ -641,37 +647,29 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#374151",
     marginBottom: 8,
   },
   amountInput: {
     borderWidth: 2,
-    borderColor: "#d1d5db",
     borderRadius: 12,
     padding: 16,
     fontSize: 18,
-    backgroundColor: "#ffffff",
     fontWeight: "500",
-    color: "#1f2937",
   },
   currencyButton: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#d1d5db",
     borderRadius: 12,
     padding: 16,
-    backgroundColor: "#ffffff",
   },
   currencyButtonText: {
     marginLeft: 10,
     fontSize: 18,
     fontWeight: "600",
-    color: "#1f2937",
   },
   currencyButtonPlaceholder: {
     fontSize: 16,
-    color: "#9ca3af",
     fontStyle: "italic",
   },
   targetsSection: {
@@ -684,28 +682,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addButton: {
-    backgroundColor: "#e0f2fe",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#0284c7",
   },
   addButtonText: {
-    color: "#0369a1",
     fontSize: 14,
     fontWeight: "600",
   },
   emptyState: {
     padding: 20,
-    backgroundColor: "#f9fafb",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
     alignItems: "center",
   },
   emptyStateText: {
-    color: "#6b7280",
     fontSize: 14,
     textAlign: "center",
     fontStyle: "italic",
@@ -716,28 +708,23 @@ const styles = StyleSheet.create({
   targetItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
   },
   targetCurrencyButton: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
     padding: 8,
-    backgroundColor: "#ffffff",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#d1d5db",
   },
   targetCurrencyText: {
     marginLeft: 8,
     fontSize: 16,
     fontWeight: "600",
-    color: "#1f2937",
   },
   conversionResult: {
     marginHorizontal: 12,
@@ -747,18 +734,15 @@ const styles = StyleSheet.create({
   conversionAmount: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#059669",
   },
   removeButton: {
     width: 24,
     height: 24,
-    backgroundColor: "#fee2e2",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   removeButtonText: {
-    color: "#dc2626",
     fontSize: 16,
     fontWeight: "bold",
   },

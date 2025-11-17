@@ -9,8 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageDropdown from '@/components/LanguageDropdown';
@@ -20,16 +20,34 @@ interface BurgerMenuProps {
 }
 
 export default function BurgerMenu({ style }: BurgerMenuProps) {
-  const { t } = useLanguage();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-  const [isVisible, setIsVisible] = useState(false);
+   const { t } = useLanguage();
+   const router = useRouter();
+   const { user, signOut } = useAuth();
+   const [isVisible, setIsVisible] = useState(false);
+
+   // Helper function to add opacity to hex colors
+   const addOpacity = (hexColor: string, opacity: number) => {
+     const r = parseInt(hexColor.slice(1, 3), 16);
+     const g = parseInt(hexColor.slice(3, 5), 16);
+     const b = parseInt(hexColor.slice(5, 7), 16);
+     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+   };
+
+   // Theme colors
+   const primaryColor = useThemeColor({}, 'primary');
+   const surfaceColor = useThemeColor({}, 'surface');
+   const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+   const textColor = useThemeColor({}, 'text');
+   const textSecondaryColor = useThemeColor({}, 'textSecondary');
+   const borderColor = useThemeColor({}, 'border');
+   const modalBackgroundColor = addOpacity(useThemeColor({}, 'background'), 0.8);
+   const errorColor = useThemeColor({}, 'error');
 
   const handleSignOut = async () => {
     try {
       await signOut();
       setIsVisible(false);
-      Alert.alert('Success', 'You have been signed out successfully.');
+      Alert.alert(t('auth.signoutSuccess'));
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out. Please try again.');
     }
@@ -38,7 +56,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
   const menuItems = [
     {
       id: 'settings',
-      title: '⚙️ Settings',
+      title: '⚙️ ' + t('settings.title'),
       onPress: () => {
         setIsVisible(false);
         router.push('/(tabs)/settings');
@@ -46,11 +64,11 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     },
     {
       id: 'language',
-      title: '🌍 Language',
+      title: '🌍 ' + t('settings.language'),
       component: (
-        <View style={styles.languageContainer}>
-          <LanguageDropdown 
-            compact={false} 
+        <View style={{ marginTop: 12 }}>
+          <LanguageDropdown
+            compact={false}
             style={{}}
           />
         </View>
@@ -59,7 +77,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     ...(user ? [
       {
         id: 'converter',
-        title: '💱 Currency Converter',
+        title: '💱 ' + t('auth.converter'),
         onPress: () => {
           setIsVisible(false);
           router.replace('/');
@@ -67,7 +85,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
       },
       {
         id: 'user-info',
-        title: `👤 ${user.email?.split('@')[0]}`,
+        title: `👤 ${user.user_metadata?.username || user.email?.split('@')[0] || 'User'}`,
         subtitle: user.email,
         onPress: () => {
           setIsVisible(false);
@@ -78,14 +96,14 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     ...(user ? [
       {
         id: 'signout',
-        title: '🚪 Sign Out',
+        title: '🚪 ' + t('auth.signout'),
         onPress: handleSignOut,
         danger: true,
       },
     ] : [
       {
         id: 'signin',
-        title: '🔐 Sign In',
+        title: '🔐 ' + t('auth.signin'),
         onPress: () => {
           setIsVisible(false);
           router.push('/signin');
@@ -93,7 +111,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
       },
       {
         id: 'signup',
-        title: '✨ Sign Up',
+        title: '✨ ' + t('auth.signup'),
         onPress: () => {
           setIsVisible(false);
           router.push('/signup');
@@ -106,12 +124,18 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
     <>
       {/* Burger Menu Button */}
       <TouchableOpacity
-        style={[styles.burgerButton, style]}
+        style={[{
+          flexDirection: 'column',
+          justifyContent: 'space-around',
+          width: 24,
+          height: 24,
+          paddingHorizontal: 2,
+        }, style]}
         onPress={() => setIsVisible(true)}
       >
-        <View style={styles.burgerLine} />
-        <View style={styles.burgerLine} />
-        <View style={styles.burgerLine} />
+        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
+        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
+        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
       </TouchableOpacity>
 
       {/* Menu Modal */}
@@ -121,42 +145,79 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
         animationType="slide"
         onRequestClose={() => setIsVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <ThemedView style={styles.menuContainer}>
+        <View style={{ flex: 1, backgroundColor: modalBackgroundColor, justifyContent: 'flex-end' }}>
+          <View style={{
+            backgroundColor: surfaceColor,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            height: '80%',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 10,
+            elevation: 5,
+          }}>
             {/* Header */}
-            <View style={styles.menuHeader}>
-              <ThemedText style={styles.menuTitle}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: 20,
+              borderBottomColor: borderColor,
+            }}>
+              <ThemedText style={{ fontSize: 20, fontWeight: '700' }}>
                 RateSnap Menu
               </ThemedText>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={{
+                  width: 32,
+                  height: 32,
+                  backgroundColor: surfaceSecondaryColor,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
                 onPress={() => setIsVisible(false)}
               >
-                <ThemedText style={styles.closeButtonText}>×</ThemedText>
+                <ThemedText style={{ fontSize: 16, fontWeight: '500' }}>×</ThemedText>
               </TouchableOpacity>
             </View>
 
             {/* Menu Items */}
-            <ScrollView style={styles.menuItems} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+              showsVerticalScrollIndicator={false}
+            >
               {menuItems.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={[
-                    styles.menuItem,
-                    item.danger && styles.menuItemDanger,
-                  ]}
+                  style={{
+                    paddingVertical: 16,
+                    paddingHorizontal: 20,
+                    marginBottom: 8,
+                    backgroundColor: item.danger ? addOpacity(errorColor, 0.20) : surfaceSecondaryColor,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: borderColor,
+                  }}
                   onPress={item.onPress}
                 >
                   <ThemedText
-                    style={[
-                      styles.menuItemText,
-                      item.danger && styles.menuItemTextDanger,
-                    ]}
+                    style={{
+                      fontSize: 16,
+                      fontWeight: '600',
+                      color: item.danger ? errorColor : textColor,
+                    }}
                   >
                     {item.title}
                   </ThemedText>
                   {item.subtitle && (
-                    <ThemedText style={styles.menuItemSubtitle}>
+                    <ThemedText style={{
+                      fontSize: 14,
+                      color: textSecondaryColor,
+                      marginTop: 4,
+                    }}>
                       {item.subtitle}
                     </ThemedText>
                   )}
@@ -165,125 +226,33 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
               ))}
 
               {/* App Info */}
-              <View style={styles.appInfo}>
-                <ThemedText style={styles.appInfoText}>
+              <View style={{
+                alignItems: 'center',
+                marginTop: 20,
+                paddingTop: 20,
+                borderTopWidth: 1,
+                borderTopColor: borderColor,
+              }}>
+                <ThemedText style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: textSecondaryColor,
+                }}>
                   RateSnap v1.0
                 </ThemedText>
-                <ThemedText style={styles.appInfoSubtext}>
-                  Professional Currency Converter
+                <ThemedText style={{
+                  fontSize: 12,
+                  color: textSecondaryColor,
+                  marginTop: 4,
+                  textAlign: 'center',
+                }}>
+                  {t('app.subtitle')}
                 </ThemedText>
               </View>
             </ScrollView>
-          </ThemedView>
+          </View>
         </View>
       </Modal>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  burgerButton: {
-    flexDirection: 'column',
-    justifyContent: 'space-around',
-    width: 24,
-    height: 24,
-    paddingHorizontal: 2,
-  },
-  burgerLine: {
-    height: 2,
-    backgroundColor: '#6366f1',
-    borderRadius: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  menuContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 232, 240, 0.6)',
-  },
-  menuTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#f3f4f6',
-    borderRadius: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  menuItems: {
-    flex: 1,
-    padding: 20,
-  },
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 8,
-    backgroundColor: 'rgba(248, 250, 252, 0.8)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.6)',
-  },
-  menuItemDanger: {
-    backgroundColor: 'rgba(254, 242, 242, 0.8)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  menuItemTextDanger: {
-    color: '#dc2626',
-  },
-  menuItemSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  languageContainer: {
-    marginTop: 12,
-  },
-  appInfo: {
-    alignItems: 'center',
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(226, 232, 240, 0.4)',
-  },
-  appInfoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  appInfoSubtext: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 4,
-  },
-});

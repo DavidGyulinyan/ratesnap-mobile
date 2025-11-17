@@ -120,7 +120,7 @@ export default function AuthPromptModal({
               disabled={loading}
             >
               <Ionicons name="logo-google" size={20} color="#4285F4" />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t('signin.continueWithGoogle')}</Text>
             </TouchableOpacity>
 
             {Platform.OS === 'ios' && (

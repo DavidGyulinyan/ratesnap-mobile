@@ -16,6 +16,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error?: AuthError }>;
   signInWithApple: () => Promise<{ error?: AuthError }>;
   resetPassword: (email: string) => Promise<{ error?: AuthError }>;
+  resendConfirmationEmail: (email: string) => Promise<{ error?: AuthError }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,13 +113,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       console.log('Starting sign in process for email:', email);
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        // Handle email confirmation error specifically
+        if (error.message.includes('Email not confirmed') ||
+            error.message.includes('email_not_confirmed') ||
+            error.message.includes('not confirmed') ||
+            error.message.includes('Email link is invalid or has expired')) {
+          // Don't log email confirmation errors to console since we handle them gracefully
+          return {
+            error: {
+              message: 'Please check your email and click the confirmation link before signing in. Didn\'t receive the email?',
+              name: 'EmailNotConfirmedError'
+            } as AuthError
+          };
+        }
+
+        // Handle invalid credentials
+        if (error.message.includes('Invalid login credentials') ||
+            error.message.includes('User not found') ||
+            error.message.includes('Invalid email or password')) {
+          // Don't log invalid credentials errors to console since we handle them gracefully
+          return {
+            error: {
+              message: 'Invalid email or password. Please check your credentials and try again.',
+              name: 'InvalidCredentialsError'
+            } as AuthError
+          };
+        }
+
+        // Log other unexpected errors
         console.error('Sign in error:', error);
         return { error };
       }
@@ -249,6 +278,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const resendConfirmationEmail = async (email: string) => {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return { error: { message: 'Authentication service not available' } as AuthError };
+    }
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      return {};
+    } catch (error) {
+      return { error: error as AuthError };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
@@ -259,6 +310,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signInWithGoogle,
     signInWithApple,
     resetPassword,
+    resendConfirmationEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

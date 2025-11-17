@@ -1,19 +1,22 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
+import BurgerMenu from "@/components/BurgerMenu";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
-import LanguageDropdown from "@/components/LanguageDropdown";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
 import MathCalculator from "@/components/MathCalculator";
+import OnboardingGuide from "@/components/OnboardingGuide";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -55,6 +58,18 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { savedRates, deleteRate, deleteAllRates } = useSavedRates();
+
+  // Theme colors - must be called at top level
+  const primaryColor = useThemeColor({}, 'primary');
+  const textInverseColor = useThemeColor({}, 'textInverse');
+  const backgroundColor = useThemeColor({}, 'background');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
+  const textColor = useThemeColor({}, 'text');
+  const textSecondaryColor = useThemeColor({}, 'textSecondary');
+  const borderColor = useThemeColor({}, 'border');
+  const shadowColor = '#000000'; // Use black for shadows
+
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
@@ -63,13 +78,34 @@ export default function HomeScreen() {
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
+  const [savedRatesMaxVisible, setSavedRatesMaxVisible] = useState(4);
 
   useEffect(() => {
     loadExchangeRates();
-  }, []);
+    checkOnboardingStatus();
+  }, [user]);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem('onboardingCompleted');
+
+      // Show onboarding if:
+      // 1. User hasn't completed onboarding, OR
+      // 2. User account was created very recently (within last 24 hours)
+      const shouldShowOnboarding = !onboardingCompleted ||
+        (user && user.created_at && (Date.now() - new Date(user.created_at).getTime()) < 24 * 60 * 60 * 1000);
+
+      if (shouldShowOnboarding && user) {
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Failed to check onboarding status:', error);
+    }
+  };
 
   const loadExchangeRates = async () => {
     try {
@@ -94,14 +130,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      Alert.alert("Success", "You have been signed out successfully.");
-    } catch (error) {
-      Alert.alert("Error", "Failed to sign out. Please try again.");
-    }
-  };
 
   const deleteSavedRate = async (id: string | number) => {
     const success = await deleteRate(id.toString());
@@ -131,15 +159,6 @@ export default function HomeScreen() {
     ]);
   };
 
-  const getAuthText = (key: string) => {
-    // For Russian, use compact versions to prevent header overflow
-    const compactKey = key + ".compact";
-    const compactText = t(compactKey);
-    if (compactText !== compactKey) {
-      return compactText;
-    }
-    return t(key);
-  };
 
   const handleCalculatorResult = (result: number): void => {
     console.log('Calculator result:', result);
@@ -207,82 +226,36 @@ export default function HomeScreen() {
     return (
       <ThemedView style={styles.dashboardContainer}>
         {/* Dashboard Header - Fixed at top */}
-        <View style={styles.dashboardHeader}>
+        <View style={[styles.dashboardHeader, { shadowColor }]}>
           <View style={styles.titleContainer}>
-            <View style={styles.logoIcon}>
-              <ThemedText style={styles.logoEmoji}>💱</ThemedText>
+            <View style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: primaryColor,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 12,
+              shadowColor: primaryColor,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 6,
+              elevation: 4,
+            }}>
+              <ThemedText style={{ fontSize: 18, color: textInverseColor }}>💱</ThemedText>
             </View>
-            <ThemedText type="title" style={styles.dashboardTitle}>
-              {t("app.title")} Dashboard
+            <ThemedText type="title" style={{
+              fontSize: 22,
+              fontWeight: "700",
+              color: primaryColor,
+              textAlign: "right",
+              letterSpacing: 0.5,
+            }}>
+              RateSnap Dashboard
             </ThemedText>
           </View>
-          <View style={styles.headerActions}>
-            {/* Language Switcher - Always visible */}
-            <LanguageDropdown compact={true} style={styles.languageSwitcher} />
-
-            {/* Show sign-in/sign-up for non-authenticated users */}
-            {!user ? (
-              <>
-                <TouchableOpacity
-                  style={styles.authButton}
-                  onPress={() => router.push("/signin")}
-                >
-                  <ThemedText
-                    style={styles.authButtonText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signin")}
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.authButton, styles.authButtonPrimary]}
-                  onPress={() => router.push("/signup")}
-                >
-                  <ThemedText
-                    style={styles.authButtonPrimaryText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signup")}
-                  </ThemedText>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  style={styles.converterButton}
-                  onPress={() => setCurrentView("converter")}
-                >
-                  <ThemedText
-                    style={styles.converterButtonText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("converter.title")}
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.userInfo}
-                  onPress={handleSignOut}
-                >
-                  <ThemedText
-                    style={styles.userInfoText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.welcome")}, {user.email?.split("@")[0]}
-                  </ThemedText>
-                  <ThemedText
-                    style={styles.signOutText}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {getAuthText("auth.signout")}
-                  </ThemedText>
-                </TouchableOpacity>
-              </>
-            )}
+          <View style={styles.headerRight}>
+            <BurgerMenu style={styles.burgerMenu} />
           </View>
         </View>
 
@@ -293,117 +266,131 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={true}
           showsHorizontalScrollIndicator={false}
         >
-          {/* Quick Actions */}
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickActionCard}
-              onPress={() => setCurrentView("converter")}
+          {/* Quick Actions - Redesigned for better UX */}
+          <View style={styles.quickActionsContainer}>
+            <ThemedText style={[{ color: textColor }, styles.quickActionsTitle]}>
+              {t("dashboard.quickActions")}
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsScrollContent}
+              style={styles.quickActionsScrollView}
             >
-              <ThemedText style={styles.quickActionIcon}>💱</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.converter")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {t("quick.action.converter.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor }, styles.quickActionCard]}
+                onPress={() => setCurrentView("converter")}
+              >
+                <View style={[styles.quickActionIconContainer, styles.iconContainerConverter]}>
+                  <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
+                </View>
+                <View style={styles.quickActionContent}>
+                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                    {t("quick.action.converter")}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
+                    {t("quick.action.converter.desc")}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                showCalculator && styles.quickActionCardActive,
-              ]}
-              onPress={() => setShowCalculator(!showCalculator)}
-            >
-              <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.calculator")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {showCalculator
-                  ? t("quick.action.calculator.hide")
-                  : t("quick.action.calculator.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                  styles.quickActionCard,
+                  showCalculator && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowCalculator(!showCalculator)}
+              >
+                <View style={[styles.quickActionIconContainer, styles.iconContainerCalculator]}>
+                  <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
+                </View>
+                <View style={styles.quickActionContent}>
+                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                    {t("quick.action.calculator")}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
+                    {showCalculator
+                      ? t("quick.action.calculator.hide")
+                      : t("quick.action.calculator.desc")}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                showMultiCurrency && styles.quickActionCardActive,
-              ]}
-              onPress={() => setShowMultiCurrency(!showMultiCurrency)}
-            >
-              <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.multiCurrency")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {showMultiCurrency
-                  ? t("quick.action.multiCurrency.hide")
-                  : t("quick.action.multiCurrency.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                  styles.quickActionCard,
+                  showMultiCurrency && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowMultiCurrency(!showMultiCurrency)}
+              >
+                <View style={[styles.quickActionIconContainer, styles.iconContainerMulti]}>
+                  <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
+                </View>
+                <View style={styles.quickActionContent}>
+                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                    {t("quick.action.multiCurrency")}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
+                    {showMultiCurrency
+                      ? t("quick.action.multiCurrency.hide")
+                      : t("quick.action.multiCurrency.desc")}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                showSavedRates && styles.quickActionCardActive,
-              ]}
-              onPress={() => setShowSavedRates(!showSavedRates)}
-            >
-              <ThemedText style={styles.quickActionIcon}>📋</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.savedRates")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {savedRates.length}{" "}
-                {savedRates.length === 1 ? "saved rate" : "saved rates"}{" "}
-                -{" "}
-                {showSavedRates
-                  ? t("quick.action.savedRates.hide")
-                  : t("quick.action.savedRates.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                  styles.quickActionCard,
+                  showSavedRates && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowSavedRates(!showSavedRates)}
+              >
+                <View style={[styles.quickActionIconContainer, styles.iconContainerSaved]}>
+                  <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
+                </View>
+                <View style={styles.quickActionContent}>
+                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                    {t("quick.action.savedRates")}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
+                    {savedRates.length}{" "}
+                    {savedRates.length === 1 ? t("saved.rate") : t("saved.rates")}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                showRateAlerts && styles.quickActionCardActive,
-              ]}
-              onPress={() => setShowRateAlerts(!showRateAlerts)}
-            >
-              <ThemedText style={styles.quickActionIcon}>🔔</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.rateAlerts")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {savedRates.filter(rate => rate.hasAlert).length}{" "}
-                {savedRates.filter(rate => rate.hasAlert).length === 1 ? "active alert" : "active alerts"}{" "}
-                -{" "}
-                {showRateAlerts
-                  ? t("quick.action.rateAlerts.hide")
-                  : t("quick.action.rateAlerts.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                  styles.quickActionCard,
+                  showRateAlerts && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowRateAlerts(!showRateAlerts)}
+              >
+                <View style={[styles.quickActionIconContainer, styles.iconContainerAlerts]}>
+                  <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
+                </View>
+                <View style={styles.quickActionContent}>
+                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                    {t("quick.action.rateAlerts")}
+                  </ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
+                    {savedRates.filter(rate => rate.hasAlert).length}{" "}
+                    {savedRates.filter(rate => rate.hasAlert).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.quickActionCard}
-              onPress={() => router.push("/(tabs)/settings")}
-            >
-              <ThemedText style={styles.quickActionIcon}>⚙️</ThemedText>
-              <ThemedText style={styles.quickActionTitle}>
-                {t("quick.action.settings")}
-              </ThemedText>
-              <ThemedText style={styles.quickActionDescription}>
-                {t("quick.action.settings.desc")}
-              </ThemedText>
-            </TouchableOpacity>
+            </ScrollView>
           </View>
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && (
             <View style={styles.multiCurrencySection}>
-              <View style={styles.multiCurrencyCard}>
+              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.multiCurrencyCard]}>
                 <View style={styles.multiCurrencyHeader}>
                   <ThemedText style={styles.multiCurrencyTitle}>
                     📊 {t("converter.multiCurrency.section")}
@@ -443,7 +430,7 @@ export default function HomeScreen() {
           {/* Inline Calculator Widget */}
           {showCalculator && (
             <View style={styles.calculatorSection}>
-              <View style={styles.calculatorCard}>
+              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.calculatorCard]}>
                 <View style={styles.calculatorHeader}>
                   <ThemedText style={styles.calculatorTitle}>
                     🧮 {t("calculator.title")}
@@ -470,13 +457,16 @@ export default function HomeScreen() {
             <SavedRates
               savedRates={savedRates}
               showSavedRates={showSavedRates}
-              onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
+              onToggleVisibility={() => {
+                setShowSavedRates(!showSavedRates);
+                setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+              }}
               onSelectRate={() => setCurrentView("converter")}
               onDeleteRate={deleteSavedRate}
               onDeleteAll={deleteAllSavedRates}
               showMoreEnabled={true}
-              onShowMore={() => setCurrentView("converter")}
-              maxVisibleItems={4}
+              onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
+              maxVisibleItems={savedRatesMaxVisible}
               title={`📋 ${t("saved.title")}`}
               containerStyle={{ marginBottom: 24 }}
             />
@@ -486,7 +476,7 @@ export default function HomeScreen() {
           {showRateAlerts && (
             <View>
               {/* Test Notification Button */}
-              <View style={styles.testNotificationContainer}>
+              <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor }, styles.testNotificationContainer]}>
                 <TouchableOpacity
                   style={styles.testNotificationButton}
                   onPress={handleTestNotification}
@@ -495,7 +485,7 @@ export default function HomeScreen() {
                     {"🧪 Test USD > 382 AMD Alert"}
                   </ThemedText>
                 </TouchableOpacity>
-                <ThemedText style={styles.testNotificationDescription}>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.testNotificationDescription]}>
                   Click to test notification when 1 USD is more than 382 AMD
                 </ThemedText>
               </View>
@@ -527,18 +517,18 @@ export default function HomeScreen() {
             />
           </View>
           {/* Features Preview */}
-          <View style={styles.featuresSection}>
-            <ThemedText style={styles.sectionTitle}>
+          <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.featuresSection]}>
+            <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
               ✨ {t("dashboard.features")}
             </ThemedText>
             <View style={styles.featuresList}>
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
+                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
                     {t("feature.multiCurrency.title")}
                   </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
                     {t("feature.multiCurrency.desc")}
                   </ThemedText>
                 </View>
@@ -547,10 +537,10 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
+                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
                     {t("feature.calculator.title")}
                   </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
                     {t("feature.calculator.desc")}
                   </ThemedText>
                 </View>
@@ -559,10 +549,10 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
+                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
                     {t("feature.offline.title")}
                   </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
                     {t("feature.offline.desc")}
                   </ThemedText>
                 </View>
@@ -571,10 +561,10 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
+                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
                     {t("feature.location.title")}
                   </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
                     {t("feature.location.desc")}
                   </ThemedText>
                 </View>
@@ -583,10 +573,10 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={styles.featureTitle}>
+                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
                     {t("feature.caching.title")}
                   </ThemedText>
-                  <ThemedText style={styles.featureDescription}>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
                     {t("feature.caching.desc")}
                   </ThemedText>
                 </View>
@@ -609,8 +599,17 @@ export default function HomeScreen() {
     );
   };
 
+  // Show onboarding for new users
+  if (showOnboarding) {
+    return (
+      <OnboardingGuide
+        onComplete={() => setShowOnboarding(false)}
+      />
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f6f7f9" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
       {renderMainContent()}
 
       {/* Auth Prompt Modal */}
@@ -618,7 +617,7 @@ export default function HomeScreen() {
         visible={showAuthPrompt}
         onClose={() => setShowAuthPrompt(false)}
         title="Create account to sync and enable alerts"
-        message="Sign up to save your data and enable premium features"
+        message="Sign up to save your data"
         feature="general"
       />
       <Footer />
@@ -647,7 +646,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -694,94 +693,13 @@ const styles = StyleSheet.create({
     elevation: 1,
     backdropFilter: "blur(8px)",
   },
-  languageSwitcher: {
-    marginRight: 2,
+  headerRight: {
+    position: 'absolute',
+    right: 20,
+    top: 16,
   },
   burgerMenu: {
-    marginLeft: 8,
-  },
-
-  // Action buttons
-  converterButton: {
-    backgroundColor: "#6366f1",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  converterButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 11,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  authButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.8)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    maxWidth: 70,
-  },
-  authButtonText: {
-    color: "#64748b",
-    fontWeight: "600",
-    fontSize: 10,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  authButtonPrimary: {
-    backgroundColor: "#6366f1",
-    borderColor: "#6366f1",
-    shadowColor: "#6366f1",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
-    maxWidth: 75,
-    paddingHorizontal: 10,
-  },
-  authButtonPrimaryText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 10,
-    textAlign: "center",
-    flexWrap: "wrap",
-  },
-  userInfo: {
-    alignItems: "flex-end",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.8)",
-    maxWidth: 85,
-  },
-  userInfoText: {
-    color: "#64748b",
-    fontSize: 9,
-    textAlign: "right",
-    fontWeight: "500",
-    flexWrap: "wrap",
-  },
-  signOutText: {
-    color: "#ef4444",
-    fontSize: 9,
-    fontWeight: "600",
-    textAlign: "right",
-    flexWrap: "wrap",
+    // Burger menu is now positioned absolutely in headerRight
   },
 
   // Scroll content
@@ -793,52 +711,81 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
 
-  // Quick actions grid
-  quickActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  // Quick actions - Redesigned horizontal scroll
+  quickActionsContainer: {
     marginBottom: 32,
-    gap: 8,
+  },
+  quickActionsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
+  quickActionsScrollView: {
+    marginHorizontal: -20,
+  },
+  quickActionsScrollContent: {
+    paddingHorizontal: 20,
+    gap: 16,
   },
   quickActionCard: {
-    width: "48%",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    padding: 20,
+    width: 140,
+    padding: 16,
     borderRadius: 16,
-    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.6)",
     alignItems: "center",
-    justifyContent: "flex-start",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
-    minHeight: 160,
+    minHeight: 120,
+  },
+  quickActionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  iconContainerConverter: {
+    backgroundColor: "rgba(99, 102, 241, 0.1)",
+  },
+  iconContainerCalculator: {
+    backgroundColor: "rgba(34, 197, 94, 0.1)",
+  },
+  iconContainerMulti: {
+    backgroundColor: "rgba(251, 146, 60, 0.1)",
+  },
+  iconContainerSaved: {
+    backgroundColor: "rgba(168, 85, 247, 0.1)",
+  },
+  iconContainerAlerts: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+  },
+  iconContainerSettings: {
+    backgroundColor: "rgba(107, 114, 128, 0.1)",
   },
   quickActionIcon: {
-    fontSize: 36,
-    height: 56,
-    marginBottom: 16,
-    lineHeight: 56,
+    fontSize: 24,
     textAlign: "center",
+  },
+  quickActionContent: {
+    alignItems: "center",
+    flex: 1,
   },
   quickActionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: 8,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  quickActionDescription: {
-    fontSize: 12,
-    color: "#64748b",
+    marginBottom: 4,
     textAlign: "center",
     lineHeight: 18,
-    paddingHorizontal: 4,
+  },
+  quickActionDescription: {
+    fontSize: 11,
+    textAlign: "center",
+    lineHeight: 15,
+    paddingHorizontal: 2,
   },
   quickActionCardActive: {
     borderColor: "#6366f1",
@@ -849,11 +796,9 @@ const styles = StyleSheet.create({
 
   // Features section
   featuresSection: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.6)",
     marginBottom: 32,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -864,7 +809,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#1e293b",
     marginBottom: 20,
     letterSpacing: 0.3,
   },
@@ -887,13 +831,11 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#1e293b",
     marginBottom: 6,
     lineHeight: 20,
   },
   featureDescription: {
     fontSize: 13,
-    color: "#64748b",
     lineHeight: 18,
   },
   bottomSpacer: {
@@ -905,10 +847,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   multiCurrencyCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.6)",
     padding: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -925,7 +865,7 @@ const styles = StyleSheet.create({
   multiCurrencyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1e293b",
+    color: "#ffffff",
   },
   closeButton: {
     backgroundColor: "#f3f4f6",

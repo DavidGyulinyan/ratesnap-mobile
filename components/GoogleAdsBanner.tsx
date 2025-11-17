@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
+import { useThemeColor } from '@/hooks/use-theme-color';
 
 interface GoogleAdsBannerProps {
   type?: 'banner' | 'rectangle' | 'interstitial';
@@ -14,8 +13,10 @@ export default function GoogleAdsBanner({
   size = 'medium',
   style
 }: GoogleAdsBannerProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const backgroundColor = useThemeColor({}, 'background');
+  const borderColor = useThemeColor({}, 'icon');
+  const textColor = useThemeColor({}, 'text');
+  const iconColor = useThemeColor({}, 'icon');
 
   const getAdDimensions = () => {
     switch (type) {
@@ -44,12 +45,12 @@ export default function GoogleAdsBanner({
   const dimensions = getAdDimensions();
 
   return (
-    <View 
+    <View
       style={[
         styles.adContainer,
-        { 
-          backgroundColor: colors.background,
-          borderColor: colors.icon 
+        {
+          backgroundColor: backgroundColor,
+          borderColor: borderColor
         },
         getSizeStyle(),
         style
@@ -57,20 +58,20 @@ export default function GoogleAdsBanner({
     >
       <View style={styles.adContent}>
         <Text style={[
-          styles.adLabel, 
-          { color: colors.text }
+          styles.adLabel,
+          { color: textColor }
         ]}>
           Advertisement
         </Text>
         <Text style={[
           styles.adText,
-          { color: colors.icon }
+          { color: iconColor }
         ]}>
           Google Ads Placeholder
         </Text>
         <Text style={[
           styles.adSize,
-          { color: colors.text }
+          { color: textColor }
         ]}>
           {type.toUpperCase()} ({Math.round(dimensions.width)}x{Math.round(dimensions.height)})
         </Text>

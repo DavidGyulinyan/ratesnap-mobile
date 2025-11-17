@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -31,10 +31,120 @@ export default function LanguageDropdown({
   const colors = Colors[colorScheme ?? 'light'];
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
 
+  const styles = useMemo(() => StyleSheet.create({
+    dropdownButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      alignItems: 'center',
+      flexDirection: 'row',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    dropdownButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    buttonFlag: {
+      fontSize: 14,
+    },
+    buttonText: {
+      fontSize: 12,
+      fontWeight: '600',
+      flexWrap: 'wrap',
+    },
+    compactText: {
+      fontSize: 11,
+      fontWeight: '700',
+      flexWrap: 'wrap',
+    },
+    dropdownArrow: {
+      fontSize: 10,
+      marginLeft: 2,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backdropFilter: 'blur(4px)',
+    },
+    dropdownModal: {
+      width: '90%',
+      maxWidth: 320,
+      borderRadius: 16,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    dropdownHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+    },
+    dropdownTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeButtonText: {
+      fontSize: 16,
+      fontWeight: '500',
+    },
+    languageList: {
+      maxHeight: 400,
+    },
+    dropdownItem: {
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+    },
+    dropdownItemContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    dropdownFlag: {
+      fontSize: 24,
+    },
+    languageInfo: {
+      flex: 1,
+    },
+    languageName: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 2,
+    },
+    languageSubtext: {
+      fontSize: 13,
+      fontWeight: '400',
+    },
+    checkMark: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+  }), []);
+
   const currentLanguage = languageData[language];
 
-  const handleLanguageSelect = (selectedLanguage: Language) => {
-    setLanguage(selectedLanguage);
+  const handleLanguageSelect = async (selectedLanguage: Language) => {
+    await setLanguage(selectedLanguage);
     setIsDropdownVisible(false);
   };
 
@@ -138,8 +248,9 @@ export default function LanguageDropdown({
             </View>
             
             <FlatList
-              data={Object.entries(languageData).map(([key, data]) => ({ 
-                key: key as Language, 
+              data={Object.entries(languageData).map(([
+                key, data]) => ({
+                key: key as Language,
                 data: {
                   name: data.name,
                   fullName: data.fullName,
@@ -149,7 +260,7 @@ export default function LanguageDropdown({
               }))}
               renderItem={renderLanguageItem}
               keyExtractor={(item) => item.key}
-              scrollEnabled={false}
+              scrollEnabled={true}
               style={styles.languageList}
             />
           </View>
@@ -158,128 +269,3 @@ export default function LanguageDropdown({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  dropdownButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dropdownButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  buttonFlag: {
-    fontSize: 14,
-  },
-  buttonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
-    flexWrap: 'wrap',
-  },
-  compactText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6366f1',
-    flexWrap: 'wrap',
-  },
-  dropdownArrow: {
-    fontSize: 10,
-    marginLeft: 2,
-    color: '#64748b',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backdropFilter: 'blur(4px)',
-  },
-  dropdownModal: {
-    width: '90%',
-    maxWidth: 320,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  dropdownHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(226, 232, 240, 0.8)',
-  },
-  dropdownTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
-    letterSpacing: 0.3,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#f3f4f6',
-    borderRadius: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  languageList: {
-    maxHeight: 400,
-    backgroundColor: '#ffffff',
-  },
-  dropdownItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: '#ffffff',
-  },
-  dropdownItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  dropdownFlag: {
-    fontSize: 24,
-  },
-  languageInfo: {
-    flex: 1,
-  },
-  languageName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  languageSubtext: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '400',
-  },
-  checkMark: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6366f1',
-  },
-});
