@@ -69,6 +69,7 @@ export default function HomeScreen() {
   const [currenciesData, setCurrenciesData] = useState<any>(null);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
+  const [savedRatesMaxVisible, setSavedRatesMaxVisible] = useState(4);
 
   useEffect(() => {
     loadExchangeRates();
@@ -414,13 +415,16 @@ export default function HomeScreen() {
             <SavedRates
               savedRates={savedRates}
               showSavedRates={showSavedRates}
-              onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
+              onToggleVisibility={() => {
+                setShowSavedRates(!showSavedRates);
+                setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+              }}
               onSelectRate={() => setCurrentView("converter")}
               onDeleteRate={deleteSavedRate}
               onDeleteAll={deleteAllSavedRates}
               showMoreEnabled={true}
-              onShowMore={() => setCurrentView("converter")}
-              maxVisibleItems={4}
+              onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
+              maxVisibleItems={savedRatesMaxVisible}
               title={`📋 ${t("saved.title")}`}
               containerStyle={{ marginBottom: 24 }}
             />
