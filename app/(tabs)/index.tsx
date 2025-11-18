@@ -484,7 +484,7 @@ export default function HomeScreen() {
           {/* Rate Alerts Section - Using Same Component as Currency Converter */}
           {showRateAlerts && (
             <DashboardModal
-              title={t("alerts.title")}
+              title={t("rateAlerts.title")}
               icon="🚨"
               onClose={() => setShowRateAlerts(false)}
             >
