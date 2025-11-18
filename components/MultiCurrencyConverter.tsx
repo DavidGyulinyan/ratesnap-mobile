@@ -22,6 +22,7 @@ interface MultiCurrencyConverterProps {
   onFromCurrencyChange?: (currency: string) => void;
   onClose?: () => void;
   style?: any;
+  inModal?: boolean; // Hide close button when used inside DashboardModal
 }
 
 interface ConversionTarget {
@@ -35,6 +36,7 @@ export default function MultiCurrencyConverter({
   onFromCurrencyChange,
   onClose,
   style,
+  inModal = false,
 }: MultiCurrencyConverterProps) {
   const [amount, setAmount] = useState<string>("1");
   const [fromCurrency, setFromCurrency] = useState<string>(fromCurrencyProp || "");
@@ -469,29 +471,31 @@ export default function MultiCurrencyConverter({
   return (
     <View style={[styles.container, style]}>
       <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
-        <View style={styles.header}>
-          {onClose && (
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: borderColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                onClose();
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textSecondaryColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          )}
-        </View>
+        {!inModal && (
+          <View style={styles.header}>
+            {onClose && (
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
+                  styles.closeButton,
+                  closeButtonPressed && { backgroundColor: borderColor }
+                ]}
+                onPressIn={() => setCloseButtonPressed(true)}
+                onPressOut={() => setCloseButtonPressed(false)}
+                onPress={() => {
+                  onClose();
+                  setCloseButtonPressed(false);
+                }}
+              >
+                <ThemedText style={[
+                  { color: textColor },
+                  styles.closeButtonText,
+                  closeButtonPressed && { color: textSecondaryColor }
+                ]}>×</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Amount Input */}
         <View style={styles.inputGroup}>

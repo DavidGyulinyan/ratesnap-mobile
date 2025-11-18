@@ -1,6 +1,7 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
 import BurgerMenu from "@/components/BurgerMenu";
 import CurrencyConverter from "@/components/CurrencyConverter";
+import DashboardModal from "@/components/DashboardModal";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
@@ -20,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -83,6 +85,7 @@ export default function HomeScreen() {
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
   const [savedRatesMaxVisible, setSavedRatesMaxVisible] = useState(4);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadExchangeRates();
@@ -128,6 +131,12 @@ export default function HomeScreen() {
     } finally {
       setMultiCurrencyLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadExchangeRates();
+    setRefreshing(false);
   };
 
 
@@ -265,6 +274,9 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContentContainer}
           showsVerticalScrollIndicator={true}
           showsHorizontalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           {/* Quick Actions - Redesigned for better UX */}
           <View style={styles.quickActionsContainer}>
@@ -389,92 +401,93 @@ export default function HomeScreen() {
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && (
-            <View style={styles.multiCurrencySection}>
-              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.multiCurrencyCard]}>
-                <View style={styles.multiCurrencyHeader}>
-                  <ThemedText style={styles.multiCurrencyTitle}>
-                    📊 {t("converter.multiCurrency.section")}
+            <DashboardModal
+              title={t("converter.multiCurrency.section")}
+              icon="📊"
+              onClose={() => setShowMultiCurrency(false)}
+            >
+              {!currenciesData ? (
+                <View style={styles.emptyState}>
+                  <ThemedText style={styles.emptyStateText}>
+                    {t("converter.loadingRates")}
                   </ThemedText>
-                </View>
-
-                {!currenciesData ? (
-                  <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>
-                      {t("converter.loadingRates")}
+                  <TouchableOpacity
+                    style={styles.refreshButton}
+                    onPress={loadExchangeRates}
+                  >
+                    <ThemedText style={styles.refreshButtonText}>
+                      🔄 {t("converter.refreshData")}
                     </ThemedText>
-                    <TouchableOpacity
-                      style={styles.refreshButton}
-                      onPress={loadExchangeRates}
-                    >
-                      <ThemedText style={styles.refreshButtonText}>
-                        🔄 {t("converter.refreshData")}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <MultiCurrencyConverter
-                    key="multiCurrencyConverter-main"
-                    currenciesData={currenciesData}
-                    fromCurrency="USD"
-                    onFromCurrencyChange={(currency) =>
-                      console.log("From currency changed to:", currency)
-                    }
-                    onClose={() => setShowMultiCurrency(false)}
-                    style={{ marginBottom: 24 }}
-                  />
-                )}
-              </View>
-            </View>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <MultiCurrencyConverter
+                  key="multiCurrencyConverter-main"
+                  currenciesData={currenciesData}
+                  fromCurrency="USD"
+                  onFromCurrencyChange={(currency) =>
+                    console.log("From currency changed to:", currency)
+                  }
+                  onClose={() => setShowMultiCurrency(false)}
+                  inModal={true} // Hide MultiCurrencyConverter close button since DashboardModal handles it
+                />
+              )}
+            </DashboardModal>
           )}
 
           {/* Inline Calculator Widget */}
           {showCalculator && (
-            <View style={styles.calculatorSection}>
-              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.calculatorCard]}>
-                <View style={styles.calculatorHeader}>
-                  <ThemedText style={styles.calculatorTitle}>
-                    🧮 {t("calculator.title")}
-                  </ThemedText>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowCalculator(false)}
-                  >
-                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
-                  </TouchableOpacity>
-                </View>
-                
-                <MathCalculator
-                  visible={true}
-                  onClose={() => setShowCalculator(false)}
-                  onResult={handleCalculatorResult}
-                />
-              </View>
-            </View>
+            <DashboardModal
+              title={t("calculator.title")}
+              icon="🧮"
+              onClose={() => setShowCalculator(false)}
+            >
+              <MathCalculator
+                visible={true}
+                onClose={() => setShowCalculator(false)}
+                onResult={handleCalculatorResult}
+                inModal={true} // Hide MathCalculator header since DashboardModal handles it
+              />
+            </DashboardModal>
           )}
 
           {/* Saved Rates Section - Separate Component */}
           {showSavedRates && (
-            <SavedRates
-              savedRates={savedRates}
-              showSavedRates={showSavedRates}
-              onToggleVisibility={() => {
-                setShowSavedRates(!showSavedRates);
-                setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+            <DashboardModal
+              title={t("saved.title")}
+              icon="💾"
+              onClose={() => {
+                setShowSavedRates(false);
+                setSavedRatesMaxVisible(4); // Reset to default when closing
               }}
-              onSelectRate={() => setCurrentView("converter")}
-              onDeleteRate={deleteSavedRate}
-              onDeleteAll={deleteAllSavedRates}
-              showMoreEnabled={true}
-              onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
-              maxVisibleItems={savedRatesMaxVisible}
-              title={`📋 ${t("saved.title")}`}
-              containerStyle={{ marginBottom: 24 }}
-            />
+            >
+              <SavedRates
+                savedRates={savedRates}
+                showSavedRates={true}
+                onToggleVisibility={() => {
+                  setShowSavedRates(!showSavedRates);
+                  setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+                }}
+                onSelectRate={() => setCurrentView("converter")}
+                onDeleteRate={deleteSavedRate}
+                onDeleteAll={deleteAllSavedRates}
+                showMoreEnabled={true}
+                onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
+                maxVisibleItems={savedRatesMaxVisible}
+                title="" // Remove title since DashboardModal handles it
+                containerStyle={{ marginBottom: 0 }} // Remove bottom margin since modal handles it
+                inModal={true} // Hide SavedRates header since DashboardModal handles it
+              />
+            </DashboardModal>
           )}
 
           {/* Rate Alerts Section - Using Same Component as Currency Converter */}
           {showRateAlerts && (
-            <View>
+            <DashboardModal
+              title={t("alerts.title")}
+              icon="🚨"
+              onClose={() => setShowRateAlerts(false)}
+            >
               {/* Test Notification Button */}
               <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor }, styles.testNotificationContainer]}>
                 <TouchableOpacity
@@ -504,8 +517,9 @@ export default function HomeScreen() {
                   // The hook will automatically update when rates change
                 }}
                 currenciesData={currenciesData}
+                inModal={true} // Hide RateAlertManager header since DashboardModal handles it
               />
-            </View>
+            </DashboardModal>
           )}
 
           {/* Google Ads Banner */}
@@ -842,44 +856,6 @@ const styles = StyleSheet.create({
     height: 60,
   },
 
-  // Modern card sections
-  multiCurrencySection: {
-    marginBottom: 24,
-  },
-  multiCurrencyCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  multiCurrencyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  multiCurrencyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  closeButton: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: '50%',
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#6b7280",
-    fontWeight: "bold",
-  },
 
   // State styles
   emptyState: {
@@ -1146,31 +1122,4 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
-  // Calculator widget styles
-  calculatorSection: {
-    marginBottom: 24,
-  },
-  calculatorCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.6)",
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  calculatorHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  calculatorTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1e293b",
-  },
 });

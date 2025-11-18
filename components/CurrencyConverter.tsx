@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
   Platform,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from 'expo-constants';
@@ -81,6 +82,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const { user } = useAuth();
   const { savedRates, saveRate, deleteRate, deleteAllRates } = useSavedRates();
@@ -700,6 +702,66 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   };
 
+  const refreshExchangeRates = async (): Promise<void> => {
+    try {
+      console.log('🔄 Refreshing exchange rates...');
+      const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+      const apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY;
+
+      const response = await fetch(
+        `${apiUrl}?apikey=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiData = await response.json();
+
+      if (!apiData.rates || !apiData.base) {
+        throw new Error("Invalid API response structure");
+      }
+
+      const transformedData: Data = {
+        result: "success",
+        documentation: "https://www.currencyfreaks.com/documentation",
+        terms_of_use: "https://www.currencyfreaks.com/terms",
+        time_last_update_unix: Math.floor(Date.now() / 1000),
+        time_last_update_utc: new Date().toUTCString(),
+        time_next_update_unix: Math.floor(Date.now() / 1000) + 3600,
+        time_next_update_utc: new Date(Date.now() + 3600000).toUTCString(),
+        base_code: apiData.base || "USD",
+        conversion_rates: apiData.rates || { USD: 1 },
+      };
+
+      if (!transformedData.conversion_rates["USD"]) {
+        transformedData.conversion_rates["USD"] = 1;
+      }
+
+      await AsyncStorage.setItem('cachedExchangeRates', JSON.stringify(transformedData));
+      await AsyncStorage.setItem('cachedRatesTimestamp', Date.now().toString());
+
+      setCurrenciesData(transformedData);
+      setCurrencyList(Object.keys(transformedData.conversion_rates));
+      console.log('📡 Exchange rates refreshed successfully');
+    } catch (error) {
+      console.error("Exchange rates refresh error:", error);
+      // Try to use cached data if refresh fails
+      const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
+      if (cachedData) {
+        setCurrenciesData(JSON.parse(cachedData));
+        setCurrencyList(Object.keys(JSON.parse(cachedData).conversion_rates || {}));
+        console.log('📦 Using cached data after refresh error');
+      }
+    }
+  };
+
+  const onRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await refreshExchangeRates();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
     if (fromCurrency && toCurrency) {
       updateHistory(fromCurrency, toCurrency);
@@ -848,7 +910,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   }
 
   return (
-      <ScrollView style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}>
+      <ScrollView
+        style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Navigation Header */}
         {onNavigateToDashboard && (
           <TouchableOpacity style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.navHeader]} onPress={onNavigateToDashboard}>

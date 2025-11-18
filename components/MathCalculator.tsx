@@ -10,6 +10,7 @@ interface MathCalculatorProps {
   onResult?: (result: number) => void;
   onAddToConverter?: (result: number) => void;
   autoCloseAfterCalculation?: boolean;
+  inModal?: boolean; // Hide header when used inside DashboardModal
 }
 
 export default function MathCalculator({
@@ -18,6 +19,7 @@ export default function MathCalculator({
   onResult,
   onAddToConverter,
   autoCloseAfterCalculation = true,
+  inModal = false,
 }: MathCalculatorProps) {
   const { user } = useAuth();
   const { calculatorHistory: supabaseHistory, saveCalculation, loading: historyLoading } = useCalculatorHistory();
@@ -499,24 +501,26 @@ export default function MathCalculator({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <ThemedView style={styles.container}>
-        <View style={[
-          styles.header,
-          {
-            paddingTop: getResponsiveValue(20, 30, 40),
-            marginBottom: getResponsiveValue(16, 24, 32),
-          }
-        ]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>x</Text>
-          </TouchableOpacity>
-          <Text style={[
-            styles.title,
+        {!inModal && (
+          <View style={[
+            styles.header,
             {
-              fontSize: getResponsiveValue(20, 24, 28),
+              paddingTop: getResponsiveValue(20, 30, 40),
+              marginBottom: getResponsiveValue(16, 24, 32),
             }
-          ]}>Calculator</Text>
-          <View style={{ width: 60 }} />
-        </View>
+          ]}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>x</Text>
+            </TouchableOpacity>
+            <Text style={[
+              styles.title,
+              {
+                fontSize: getResponsiveValue(20, 24, 28),
+              }
+            ]}>Calculator</Text>
+            <View style={{ width: 60 }} />
+          </View>
+        )}
 
         <View style={[
           styles.displayContainer,

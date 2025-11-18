@@ -33,6 +33,7 @@ interface RateAlertManagerProps {
   savedRates: any[];
   onRatesUpdate: () => void;
   currenciesData?: any;
+  inModal?: boolean; // Hide header when used inside DashboardModal
 }
 
 interface AlertFormData {
@@ -47,6 +48,7 @@ export default function RateAlertManager({
   savedRates,
   onRatesUpdate,
   currenciesData,
+  inModal = false,
 }: RateAlertManagerProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -240,25 +242,27 @@ export default function RateAlertManager({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Rate Alerts
-        </ThemedText>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-            onPress={handleCreateAlert}
-          >
-            <ThemedText style={[{ color: textColor }, styles.createButtonText]}>+ Create Alert</ThemedText>
-          </TouchableOpacity>
+    <View style={[styles.container, inModal && styles.containerInModal]}>
+      {!inModal && (
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            Rate Alerts
+          </ThemedText>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+              onPress={handleCreateAlert}
+            >
+              <ThemedText style={[{ color: textColor }, styles.createButtonText]}>+ Create Alert</ThemedText>
+            </TouchableOpacity>
+          </View>
+          <ThemedText style={styles.subtitle}>
+            {rateAlerts.filter(alert => alert.is_active).length} active alerts
+          </ThemedText>
         </View>
-        <ThemedText style={styles.subtitle}>
-          {rateAlerts.filter(alert => alert.is_active).length} active alerts
-        </ThemedText>
-      </View>
+      )}
 
-      <ScrollView style={styles.alertsList}>
+      <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
         {rateAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
@@ -270,13 +274,21 @@ export default function RateAlertManager({
             <View key={alert.id} style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.alertCard]}>
               <View style={styles.alertHeader}>
                 <View style={styles.currencyPair}>
-                  <CurrencyFlag currency={alert.from_currency} size={20} />
+                  <View style={styles.currencyItem}>
+                    <CurrencyFlag currency={alert.from_currency} size={20} />
+                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
+                      {alert.from_currency}
+                    </ThemedText>
+                  </View>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
-                  <CurrencyFlag currency={alert.to_currency} size={20} />
-                  <ThemedText style={[{ color: textColor }, styles.currencyText]}>
-                    {alert.from_currency} → {alert.to_currency}
-                  </ThemedText>
+                  <View style={styles.currencyItem}>
+                    <CurrencyFlag currency={alert.to_currency} size={20} />
+                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
+                      {alert.to_currency}
+                    </ThemedText>
+                  </View>
                 </View>
+              </View>
                 <View style={styles.alertControls}>
                   <ThemedText style={[{ color: textColor }, styles.switchLabel]}>Active</ThemedText>
                   <Switch
@@ -286,7 +298,6 @@ export default function RateAlertManager({
                     thumbColor='#ffffff'
                   />
                 </View>
-              </View>
 
               <View style={styles.alertInfo}>
                 <View style={styles.alertRow}>
@@ -472,6 +483,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  containerInModal: {
+    flex: 1,
+    paddingTop: 0,
+  },
   header: {
     padding: 20,
     borderBottomWidth: 1,
@@ -502,6 +517,11 @@ const styles = StyleSheet.create({
   alertsList: {
     flex: 1,
     padding: 16,
+  },
+  alertsListInModal: {
+    flex: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 16,
   },
   emptyState: {
     flex: 1,
@@ -535,6 +555,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 12,
+  },
+  currencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  currencyCode: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 6,
+    minWidth: 35,
   },
   arrow: {
     marginHorizontal: 6,
