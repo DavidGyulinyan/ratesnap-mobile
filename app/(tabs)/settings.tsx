@@ -658,15 +658,15 @@ RateSnap चुनने के लिए धन्यवाद!`
     closeButton: {
       width: 32,
       height: 32,
+      backgroundColor: '#f3f4f6',
       borderRadius: 16,
-      backgroundColor: textSecondaryColor + '20',
       alignItems: 'center',
       justifyContent: 'center',
     },
     closeButtonText: {
       fontSize: 18,
-      color: textSecondaryColor,
-      fontWeight: '600',
+      color: '#6b7280',
+      fontWeight: 'bold',
     },
     form: {
       gap: 16,

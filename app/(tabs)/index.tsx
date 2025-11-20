@@ -462,7 +462,6 @@ export default function HomeScreen() {
               }}
             >
               <SavedRates
-                savedRates={savedRates}
                 showSavedRates={true}
                 onToggleVisibility={() => {
                   setShowSavedRates(!showSavedRates);
@@ -477,6 +476,7 @@ export default function HomeScreen() {
                 title="" // Remove title since DashboardModal handles it
                 containerStyle={{ marginBottom: 0 }} // Remove bottom margin since modal handles it
                 inModal={true} // Hide SavedRates header since DashboardModal handles it
+                forceUseHook={true} // Use hook data directly for real-time synchronization
               />
             </DashboardModal>
           )}
