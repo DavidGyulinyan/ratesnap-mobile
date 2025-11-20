@@ -14,7 +14,7 @@ import { ThemedView } from "@/components/themed-view";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSavedRates } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates, deleteRate, deleteAllRates } = useSavedRates();
+  const { savedRates: { savedRates, deleteRate, deleteAllRates } } = useUserData();
 
   // Theme colors - must be called at top level
   const primaryColor = useThemeColor({}, 'primary');
