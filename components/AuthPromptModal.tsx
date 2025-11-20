@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: '#f3f4f6',
-    borderRadius: '50%',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
@@ -186,9 +186,9 @@ const styles = StyleSheet.create({
     right: 16,
   },
   closeButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#6b7280',
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   iconContainer: {
     marginTop: 20,

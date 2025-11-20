@@ -633,15 +633,17 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: '50%',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonActive: {
   },
   closeButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 18,
+    color: '#6b7280',
+    fontWeight: "bold",
   },
   closeButtonTextActive: {
   },

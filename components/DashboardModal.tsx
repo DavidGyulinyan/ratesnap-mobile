@@ -89,9 +89,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -99,7 +100,8 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 18,
-    fontWeight: "600",
+    color: '#6b7280',
+    fontWeight: "bold",
   },
   modalContent: {
     // Content area - children will be rendered here
