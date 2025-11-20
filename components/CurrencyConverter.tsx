@@ -18,14 +18,13 @@ import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
-import SavedRates from "./SavedRates";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSavedRates, useUserData } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData";
 
 interface AlertSettings {
   targetRate: number;
@@ -75,7 +74,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [toCurrency, setToCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState<boolean>(true);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
-  const [showSavedRates, setShowSavedRates] = useState<boolean>(false);
   const [showFromPicker, setShowFromPicker] = useState<boolean>(false);
   const [showToPicker, setShowToPicker] = useState<boolean>(false);
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
@@ -85,7 +83,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const { user } = useAuth();
-  const { savedRates, saveRate, deleteRate, deleteAllRates } = useSavedRates();
+  const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
   const { pickedRates: { trackRate } } = useUserData();
 
   // Theme colors
@@ -615,18 +613,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   };
 
-  const handleDeleteRate = async (id: string | number): Promise<void> => {
-    const success = await deleteRate(id.toString());
-    if (!success) {
-      Alert.alert('Error', 'Failed to delete rate. Please try again.');
-    }
-  };
 
-  const handleSelectRate = (from: string, to: string): void => {
-    setFromCurrency(from);
-    setToCurrency(to);
-    setShowSavedRates(false);
-  };
 
   const handleCalculatorResult = (result: number): void => {
     setAmount(result.toString());
@@ -1052,22 +1039,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           />
         )}
 
-        {/* Saved Rates Section - Using Shared Component */}
-        <SavedRates
-          savedRates={savedRates}
-          showSavedRates={showSavedRates}
-          onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
-          onSelectRate={handleSelectRate}
-          onDeleteRate={handleDeleteRate}
-          onDeleteAll={async () => {
-            const success = await deleteAllRates();
-            if (!success) {
-              Alert.alert('Error', 'Failed to delete all rates. Please try again.');
-            }
-          }}
-          showMoreEnabled={false}
-          title={`⭐ ${t('saved.title')}`}
-        />
 
         {/* Rate Alert Manager Section */}
         {showRateAlerts && (
