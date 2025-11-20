@@ -12,6 +12,7 @@ import {
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
+import AuthPromptModal from "./AuthPromptModal";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRateAlerts } from "@/hooks/useUserData";
@@ -72,6 +73,7 @@ export default function RateAlertManager({
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
   const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
   const [showToCurrencyPicker, setShowToCurrencyPicker] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [formData, setFormData] = useState<AlertFormData>({
     fromCurrency: 'USD',
     toCurrency: 'AMD',
@@ -80,17 +82,6 @@ export default function RateAlertManager({
     isActive: true,
   });
 
-  const handleCreateAlert = () => {
-    setEditingAlertId(null);
-    setFormData({
-      fromCurrency: 'USD',
-      toCurrency: 'AMD',
-      targetRate: '1.0',
-      direction: 'above',
-      isActive: true,
-    });
-    setShowAlertModal(true);
-  };
 
   const handleEditAlert = (alert: RateAlert) => {
     setEditingAlertId(alert.id);
@@ -105,11 +96,6 @@ export default function RateAlertManager({
   };
 
   const handleSaveAlert = async () => {
-    if (!user) {
-      Alert.alert(t('rateAlerts.signInRequired'), t('rateAlerts.signInMessage'));
-      return;
-    }
-
     const targetRate = parseFloat(formData.targetRate);
     if (isNaN(targetRate) || targetRate <= 0) {
       Alert.alert(t('error.invalidInput'), 'Please enter a valid target rate');
@@ -188,24 +174,23 @@ export default function RateAlertManager({
     return successColor;
   };
 
-  // Show sign-in prompt if user is not authenticated
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <ThemedText type="subtitle" style={styles.title}>
-            Rate Alerts
-          </ThemedText>
-        </View>
+  const handleCreateAlert = () => {
+    if (!user) {
+      // Show auth prompt for non-authenticated users
+      setShowAuthPrompt(true);
+      return;
+    }
 
-        <View style={styles.emptyState}>
-          <ThemedText style={styles.emptyStateText}>
-            {t('rateAlerts.signInPrompt')}
-          </ThemedText>
-        </View>
-      </View>
-    );
-  }
+    setEditingAlertId(null);
+    setFormData({
+      fromCurrency: 'USD',
+      toCurrency: 'AMD',
+      targetRate: '1.0',
+      direction: 'above',
+      isActive: true,
+    });
+    setShowAlertModal(true);
+  };
 
   // Show loading state
   if (loading) {
@@ -256,14 +241,34 @@ export default function RateAlertManager({
               <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
             </TouchableOpacity>
           </View>
-          <ThemedText style={styles.subtitle}>
-            {tWithParams('rateAlerts.activeCount', { count: rateAlerts.filter(alert => alert.is_active).length })}
-          </ThemedText>
+          {user && (
+            <ThemedText style={styles.subtitle}>
+              {tWithParams('rateAlerts.activeCount', { count: rateAlerts.filter(alert => alert.is_active).length })}
+            </ThemedText>
+          )}
+        </View>
+      )}
+
+      {/* Show Create button inside modal content when inModal is true */}
+      {inModal && (
+        <View style={styles.modalCreateButtonContainer}>
+          <TouchableOpacity
+            style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+            onPress={handleCreateAlert}
+          >
+            <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
+          </TouchableOpacity>
         </View>
       )}
 
       <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
-        {rateAlerts.length === 0 ? (
+        {!user ? (
+          <View style={styles.emptyState}>
+            <ThemedText style={styles.emptyStateText}>
+              Sign in to create and manage rate alerts that notify you when currency rates reach your targets.
+            </ThemedText>
+          </View>
+        ) : rateAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
               {t('rateAlerts.emptyState')}
@@ -481,6 +486,15 @@ export default function RateAlertManager({
         }}
         onClose={() => setShowToCurrencyPicker(false)}
       />
+
+      {/* Auth Prompt Modal */}
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        title="Authorize to sync your data"
+        message="Create an account to save and sync your rate alerts across devices"
+        feature="alerts"
+      />
     </View>
   );
 }
@@ -672,6 +686,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  modalCreateButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginTop: 0,
   },
   saveButton: {
     padding: 8,

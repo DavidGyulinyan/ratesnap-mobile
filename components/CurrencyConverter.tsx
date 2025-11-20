@@ -1111,7 +1111,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onClose={() => setShowAuthPrompt(false)}
           title="Create account to sync and enable alerts"
           message="Sign up to save your data and enable premium features"
-          feature="sync"
+          feature="general"
         />
       </ScrollView>
   );
