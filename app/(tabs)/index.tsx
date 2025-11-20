@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates: { savedRates, deleteRate, deleteAllRates } } = useUserData();
+  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates } } = useUserData();
 
   // Theme colors - must be called at top level
   const primaryColor = useThemeColor({}, 'primary');
@@ -91,6 +91,13 @@ export default function HomeScreen() {
     loadExchangeRates();
     checkOnboardingStatus();
   }, [user]);
+
+  // Refresh saved rates when the modal opens
+  useEffect(() => {
+    if (showSavedRates) {
+      refreshRates();
+    }
+  }, [showSavedRates, refreshRates]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -135,7 +142,10 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadExchangeRates();
+    await Promise.all([
+      loadExchangeRates(),
+      refreshRates()
+    ]);
     setRefreshing(false);
   };
 
@@ -462,6 +472,7 @@ export default function HomeScreen() {
               }}
             >
               <SavedRates
+                savedRates={savedRates}
                 showSavedRates={true}
                 onToggleVisibility={() => {
                   setShowSavedRates(!showSavedRates);
@@ -476,7 +487,6 @@ export default function HomeScreen() {
                 title="" // Remove title since DashboardModal handles it
                 containerStyle={{ marginBottom: 0 }} // Remove bottom margin since modal handles it
                 inModal={true} // Hide SavedRates header since DashboardModal handles it
-                forceUseHook={true} // Use hook data directly for real-time synchronization
               />
             </DashboardModal>
           )}

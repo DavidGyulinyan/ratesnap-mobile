@@ -72,7 +72,7 @@ export default function SavedRates({
   const handleDeleteRate = async (id: string) => {
     if (onDeleteRate) {
       onDeleteRate(id);
-    } else if (user) {
+    } else {
       Alert.alert(
         'Delete Rate',
         'Are you sure you want to delete this saved rate?',
@@ -112,7 +112,7 @@ export default function SavedRates({
   const handleDeleteAllRates = async () => {
     if (onDeleteAll) {
       onDeleteAll();
-    } else if (user) {
+    } else {
       Alert.alert(
         'Delete All Rates',
         'Are you sure you want to delete all saved rates? This action cannot be undone.',
