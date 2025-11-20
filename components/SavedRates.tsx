@@ -177,7 +177,7 @@ export default function SavedRates({
       : savedRates;
 
   // Show loading state
-  if (loading && !user) {
+  if (loading) {
     return (
       <View style={[styles.savedRatesSection, containerStyle]}>
         <View style={styles.savedRatesHeader}>

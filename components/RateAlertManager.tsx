@@ -195,15 +195,45 @@ export default function RateAlertManager({
   // Show loading state
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <ThemedText type="subtitle" style={styles.title}>
-            Rate Alerts
-          </ThemedText>
-          <ThemedText style={styles.subtitle}>
-            {t('rateAlerts.loading')}
-          </ThemedText>
-        </View>
+      <View style={[styles.container, inModal && styles.containerInModal]}>
+        {!inModal && (
+          <View style={styles.header}>
+            <ThemedText type="subtitle" style={styles.title}>
+              {t('alerts.title')}
+            </ThemedText>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+                onPress={handleCreateAlert}
+              >
+                <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
+              </TouchableOpacity>
+            </View>
+            <ThemedText style={styles.subtitle}>
+              {t('rateAlerts.loading')}
+            </ThemedText>
+          </View>
+        )}
+
+        {/* Show Create button inside modal content when inModal is true */}
+        {inModal && (
+          <View style={styles.modalCreateButtonContainer}>
+            <TouchableOpacity
+              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+              onPress={handleCreateAlert}
+            >
+              <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
+          <View style={styles.emptyState}>
+            <ThemedText style={styles.emptyStateText}>
+              Loading rate alerts...
+            </ThemedText>
+          </View>
+        </ScrollView>
       </View>
     );
   }

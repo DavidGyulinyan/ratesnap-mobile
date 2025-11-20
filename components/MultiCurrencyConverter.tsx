@@ -47,6 +47,7 @@ export default function MultiCurrencyConverter({
   const [showTargetCurrencyPicker, setShowTargetCurrencyPicker] = useState(false);
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -468,6 +469,59 @@ export default function MultiCurrencyConverter({
     setShowTargetCurrencyPicker(true);
   };
 
+  // Set loading to false when currencies are loaded and initial setup is complete
+  useEffect(() => {
+    if (currencyList.length > 0) {
+      // Add a small delay to ensure all state updates are complete
+      const timeoutId = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currencyList]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={[styles.container, style]}>
+        <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
+          {!inModal && (
+            <View style={styles.header}>
+              {onClose && (
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
+                    styles.closeButton,
+                    closeButtonPressed && { backgroundColor: borderColor }
+                  ]}
+                  onPressIn={() => setCloseButtonPressed(true)}
+                  onPressOut={() => setCloseButtonPressed(false)}
+                  onPress={() => {
+                    onClose();
+                    setCloseButtonPressed(false);
+                  }}
+                >
+                  <ThemedText style={[
+                    { color: textColor },
+                    styles.closeButtonText,
+                    closeButtonPressed && { color: textSecondaryColor }
+                  ]}>×</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          <View style={styles.loadingState}>
+            <ThemedText style={[{ color: textSecondaryColor }, styles.loadingText]}>
+              Loading multi-currency converter...
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, style]}>
       <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
@@ -751,5 +805,15 @@ const styles = StyleSheet.create({
   removeButtonText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  loadingState: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });
