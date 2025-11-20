@@ -499,7 +499,12 @@ export default function MathCalculator({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
       <ThemedView style={styles.container}>
         {!inModal && (
           <View style={[
@@ -785,6 +790,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0a0a0a",
     paddingHorizontal: 24,
+    paddingTop: 20,
   },
   header: {
     flexDirection: "row",
