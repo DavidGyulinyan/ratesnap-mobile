@@ -28,6 +28,7 @@ interface SavedRatesProps {
   maxVisibleItems?: number;
   containerStyle?: any;
   title?: string;
+  inModal?: boolean; // Hide header when used inside DashboardModal
 }
 
 export default function SavedRates({
@@ -42,6 +43,7 @@ export default function SavedRates({
   maxVisibleItems = 10,
   containerStyle,
   title,
+  inModal = false,
 }: SavedRatesProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -194,27 +196,33 @@ export default function SavedRates({
 
   return (
     <View style={[styles.savedRatesSection, containerStyle]}>
-      <View style={styles.savedRatesHeader}>
-        <ThemedText type="subtitle" style={styles.savedRatesTitle}>
-          {displayTitle} ({savedRates.length})
-        </ThemedText>
-        {savedRates.length > 0 && (
-          <TouchableOpacity onPress={onToggleVisibility}>
-          <ThemedText
-            style={[
-              { color: textColor },
-              styles.showHideText,
-              showSavedRates && { color: primaryColor, fontWeight: "600" },
-            ]}
-          >
-            {showSavedRates ? `▼ ${t('common.less')}` : `▶ ${t('common.more')}`}
+      {!inModal && (
+        <View style={styles.savedRatesHeader}>
+          <ThemedText type="subtitle" style={styles.savedRatesTitle}>
+            {displayTitle} ({savedRates.length})
           </ThemedText>
-        </TouchableOpacity>
-        )}
-      </View>
+          {savedRates.length > 0 && (
+            <TouchableOpacity onPress={onToggleVisibility}>
+            <ThemedText
+              style={[
+                { color: textColor },
+                styles.showHideText,
+                showSavedRates && { color: primaryColor, fontWeight: "600" },
+              ]}
+            >
+              {showSavedRates ? "×" : `▶ ${t('common.more')}`}
+            </ThemedText>
+          </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {showSavedRates && (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.savedRatesList, styles.fadeIn]}>
+        <View style={[
+          inModal
+            ? styles.fadeIn
+            : [{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.savedRatesList, styles.fadeIn]
+        ]}>
           {savedRates.length === 0 ? (
             <View style={styles.emptySavedRates}>
               <ThemedText style={[{ color: textSecondaryColor }, styles.emptySavedRatesText]}>

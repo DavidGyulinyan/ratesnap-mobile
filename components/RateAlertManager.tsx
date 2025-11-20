@@ -33,6 +33,7 @@ interface RateAlertManagerProps {
   savedRates: any[];
   onRatesUpdate: () => void;
   currenciesData?: any;
+  inModal?: boolean; // Hide header when used inside DashboardModal
 }
 
 interface AlertFormData {
@@ -47,8 +48,9 @@ export default function RateAlertManager({
   savedRates,
   onRatesUpdate,
   currenciesData,
+  inModal = false,
 }: RateAlertManagerProps) {
-  const { t } = useLanguage();
+  const { t, tWithParams } = useLanguage();
   const { user } = useAuth();
   const { rateAlerts, loading, createAlert, updateAlert, deleteAlert, error } = useRateAlerts();
 
@@ -104,7 +106,7 @@ export default function RateAlertManager({
 
   const handleSaveAlert = async () => {
     if (!user) {
-      Alert.alert('Sign In Required', 'Please sign in to create rate alerts');
+      Alert.alert(t('rateAlerts.signInRequired'), t('rateAlerts.signInMessage'));
       return;
     }
 
@@ -124,14 +126,14 @@ export default function RateAlertManager({
         });
 
         if (!success) {
-          Alert.alert('Error', 'Failed to update rate alert');
+          Alert.alert(t('rateAlerts.error'), t('rateAlerts.updateFailed'));
           return;
         }
       } else {
         // Create new alert with selected currencies
         const success = await createAlert(formData.fromCurrency, formData.toCurrency, targetRate, formData.direction);
         if (!success) {
-          Alert.alert('Error', 'Failed to create rate alert');
+          Alert.alert(t('rateAlerts.error'), t('rateAlerts.createFailed'));
           return;
         }
       }
@@ -140,7 +142,7 @@ export default function RateAlertManager({
       setEditingAlertId(null);
       onRatesUpdate();
       
-      Alert.alert('Success', 'Rate alert has been saved successfully!');
+      Alert.alert(t('rateAlerts.success'), t('rateAlerts.savedSuccessfully'));
     } catch (error) {
       console.error('Error saving alert:', error);
       Alert.alert('Error', 'Failed to save rate alert');
@@ -149,17 +151,17 @@ export default function RateAlertManager({
 
   const handleDeleteAlert = async (alertId: string) => {
     Alert.alert(
-      'Delete Alert',
-      'Are you sure you want to delete this rate alert?',
+      t('rateAlerts.deleteTitle'),
+      t('rateAlerts.deleteMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('rateAlerts.cancelButton'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('rateAlerts.deleteButton'),
           style: 'destructive',
           onPress: async () => {
             const success = await deleteAlert(alertId);
             if (!success) {
-              Alert.alert('Error', 'Failed to delete rate alert');
+              Alert.alert(t('rateAlerts.error'), t('rateAlerts.deleteFailed'));
             }
             onRatesUpdate();
           }
@@ -171,14 +173,14 @@ export default function RateAlertManager({
   const toggleAlertActive = async (alertId: string, isActive: boolean) => {
     const success = await updateAlert(alertId, { is_active: isActive });
     if (!success) {
-      Alert.alert('Error', 'Failed to update alert status');
+      Alert.alert(t('rateAlerts.error'), t('rateAlerts.updateStatusFailed'));
     }
     onRatesUpdate();
   };
 
   const getAlertStatusText = (alert: RateAlert): string => {
-    if (!alert.is_active) return 'Inactive';
-    return 'Active';
+    if (!alert.is_active) return t('rateAlerts.status.inactive');
+    return t('rateAlerts.status.active');
   };
 
   const getAlertStatusColor = (alert: RateAlert): string => {
@@ -198,7 +200,7 @@ export default function RateAlertManager({
 
         <View style={styles.emptyState}>
           <ThemedText style={styles.emptyStateText}>
-            Sign in to create and manage currency rate alerts!
+            {t('rateAlerts.signInPrompt')}
           </ThemedText>
         </View>
       </View>
@@ -214,7 +216,7 @@ export default function RateAlertManager({
             Rate Alerts
           </ThemedText>
           <ThemedText style={styles.subtitle}>
-            Loading...
+            {t('rateAlerts.loading')}
           </ThemedText>
         </View>
       </View>
@@ -232,7 +234,7 @@ export default function RateAlertManager({
         </View>
         <View style={styles.emptyState}>
           <ThemedText style={styles.emptyStateText}>
-            Error: {error}
+            {tWithParams('rateAlerts.errorPrefix', { error })}
           </ThemedText>
         </View>
       </View>
@@ -240,29 +242,31 @@ export default function RateAlertManager({
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="subtitle" style={styles.title}>
-          Rate Alerts
-        </ThemedText>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-            onPress={handleCreateAlert}
-          >
-            <ThemedText style={[{ color: textColor }, styles.createButtonText]}>+ Create Alert</ThemedText>
-          </TouchableOpacity>
+    <View style={[styles.container, inModal && styles.containerInModal]}>
+      {!inModal && (
+        <View style={styles.header}>
+          <ThemedText type="subtitle" style={styles.title}>
+            {t('alerts.title')}
+          </ThemedText>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+              onPress={handleCreateAlert}
+            >
+              <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
+            </TouchableOpacity>
+          </View>
+          <ThemedText style={styles.subtitle}>
+            {tWithParams('rateAlerts.activeCount', { count: rateAlerts.filter(alert => alert.is_active).length })}
+          </ThemedText>
         </View>
-        <ThemedText style={styles.subtitle}>
-          {rateAlerts.filter(alert => alert.is_active).length} active alerts
-        </ThemedText>
-      </View>
+      )}
 
-      <ScrollView style={styles.alertsList}>
+      <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
         {rateAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
-              No rate alerts yet. Create your first alert to get notified when rates reach your target!
+              {t('rateAlerts.emptyState')}
             </ThemedText>
           </View>
         ) : (
@@ -270,15 +274,23 @@ export default function RateAlertManager({
             <View key={alert.id} style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.alertCard]}>
               <View style={styles.alertHeader}>
                 <View style={styles.currencyPair}>
-                  <CurrencyFlag currency={alert.from_currency} size={20} />
+                  <View style={styles.currencyItem}>
+                    <CurrencyFlag currency={alert.from_currency} size={20} />
+                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
+                      {alert.from_currency}
+                    </ThemedText>
+                  </View>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
-                  <CurrencyFlag currency={alert.to_currency} size={20} />
-                  <ThemedText style={[{ color: textColor }, styles.currencyText]}>
-                    {alert.from_currency} → {alert.to_currency}
-                  </ThemedText>
+                  <View style={styles.currencyItem}>
+                    <CurrencyFlag currency={alert.to_currency} size={20} />
+                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
+                      {alert.to_currency}
+                    </ThemedText>
+                  </View>
                 </View>
+              </View>
                 <View style={styles.alertControls}>
-                  <ThemedText style={[{ color: textColor }, styles.switchLabel]}>Active</ThemedText>
+                  <ThemedText style={[{ color: textColor }, styles.switchLabel]}>{t('rateAlerts.active')}</ThemedText>
                   <Switch
                     value={alert.is_active}
                     onValueChange={(value) => toggleAlertActive(alert.id, value)}
@@ -286,23 +298,22 @@ export default function RateAlertManager({
                     thumbColor='#ffffff'
                   />
                 </View>
-              </View>
 
               <View style={styles.alertInfo}>
                 <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>Target:</ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.target')}</ThemedText>
                   <ThemedText style={[{ color: textColor }, styles.alertValue]}>
-                    {alert.condition} {alert.target_rate.toFixed(6)}
+                    {t(`rateAlerts.direction.${alert.condition}`)} {alert.target_rate.toFixed(6)}
                   </ThemedText>
                 </View>
                 <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>Status:</ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.status')}</ThemedText>
                   <ThemedText style={[styles.statusText, { color: getAlertStatusColor(alert) }]}>
                     {getAlertStatusText(alert)}
                   </ThemedText>
                 </View>
                 <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>Created:</ThemedText>
+                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.created')}</ThemedText>
                   <ThemedText style={[{ color: textColor }, styles.alertValue]}>
                     {new Date(alert.created_at).toLocaleDateString()}
                   </ThemedText>
@@ -314,14 +325,14 @@ export default function RateAlertManager({
                   style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.editButton]}
                   onPress={() => handleEditAlert(alert)}
                 >
-                  <ThemedText style={[{ color: textColor }, styles.editButtonText]}>Edit</ThemedText>
+                  <ThemedText style={[{ color: textColor }, styles.editButtonText]}>{t('rateAlerts.edit')}</ThemedText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
                   onPress={() => handleDeleteAlert(alert.id)}
                 >
-                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>Delete</ThemedText>
+                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -333,28 +344,34 @@ export default function RateAlertManager({
       <Modal
         visible={showAlertModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent={false}
         onRequestClose={() => setShowAlertModal(false)}
       >
         <View style={[{ backgroundColor: backgroundColor }, styles.modalContainer]}>
+          <View style={[{ backgroundColor: surfaceColor, borderBottomColor: borderColor }, styles.modalTitleSection]}>
+            <ThemedText type="subtitle" style={[{ color: textColor }, styles.modalTitle]}>
+              {editingAlertId ? t('rateAlerts.editAlert') : t('rateAlerts.createAlert')}
+            </ThemedText>
+          </View>
           <View style={[{ backgroundColor: surfaceColor, borderBottomColor: borderColor }, styles.modalHeader]}>
             <TouchableOpacity
               onPress={() => setShowAlertModal(false)}
               style={[{ backgroundColor: surfaceSecondaryColor }, styles.cancelButton]}
             >
-              <ThemedText style={[{ color: textSecondaryColor }, styles.cancelButtonText]}>Cancel</ThemedText>
+              <ThemedText style={[{ color: textSecondaryColor }, styles.cancelButtonText]}>{t('rateAlerts.cancel')}</ThemedText>
             </TouchableOpacity>
-            <ThemedText type="subtitle" style={[{ color: textColor }, styles.modalTitle]}>
-              {editingAlertId ? 'Edit Alert' : 'Create Alert'}
-            </ThemedText>
             <TouchableOpacity onPress={handleSaveAlert} style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.saveButton]}>
-              <ThemedText style={[{ color: textColor }, styles.saveButtonText]}>Save</ThemedText>
+              <ThemedText style={[{ color: textColor }, styles.saveButtonText]}>{t('rateAlerts.save')}</ThemedText>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
+          <ScrollView
+            style={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.formGroup}>
-              <ThemedText style={[{ color: textColor }, styles.label]}>From Currency</ThemedText>
+              <ThemedText style={[{ color: textColor }, styles.label]}>{t('rateAlerts.fromCurrency')}</ThemedText>
               <TouchableOpacity
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.currencySelector]}
                 onPress={() => setShowFromCurrencyPicker(true)}
@@ -370,7 +387,7 @@ export default function RateAlertManager({
             </View>
 
             <View style={styles.formGroup}>
-              <ThemedText style={[{ color: textColor }, styles.label]}>To Currency</ThemedText>
+              <ThemedText style={[{ color: textColor }, styles.label]}>{t('rateAlerts.toCurrency')}</ThemedText>
               <TouchableOpacity
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.currencySelector]}
                 onPress={() => setShowToCurrencyPicker(true)}
@@ -387,20 +404,20 @@ export default function RateAlertManager({
 
             <View style={styles.formGroup}>
               <ThemedText style={[{ color: textColor }, styles.label]}>
-                Target Rate (1 {formData.fromCurrency} = X {formData.toCurrency})
+                {tWithParams('rateAlerts.targetRate', { fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency })}
               </ThemedText>
               <TextInput
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
                 value={formData.targetRate}
                 onChangeText={(text) => setFormData({ ...formData, targetRate: text })}
                 keyboardType="numeric"
-                placeholder={`Enter rate for ${formData.fromCurrency} → ${formData.toCurrency}`}
+                placeholder={tWithParams('rateAlerts.enterRate', { fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency })}
                 placeholderTextColor={textSecondaryColor}
               />
             </View>
 
             <View style={styles.formGroup}>
-              <ThemedText style={[{ color: textColor }, styles.label]}>Direction</ThemedText>
+              <ThemedText style={[{ color: textColor }, styles.label]}>{t('rateAlerts.direction')}</ThemedText>
               <View style={styles.directionButtons}>
                 {(['above', 'below'] as const).map((direction) => (
                   <TouchableOpacity
@@ -416,10 +433,10 @@ export default function RateAlertManager({
                       style={[
                         { color: textColor },
                         styles.directionButtonText,
-                        formData.direction === direction && { color: textColor },
+                        formData.direction === direction && styles.directionButtonTextActive,
                       ]}
                     >
-                      {direction}
+                      {t(`rateAlerts.direction.${direction}`)}
                     </ThemedText>
                   </TouchableOpacity>
                 ))}
@@ -428,7 +445,7 @@ export default function RateAlertManager({
 
             <View style={styles.formGroup}>
               <View style={styles.switchContainer}>
-                <ThemedText style={[{ color: textColor }, styles.label]}>Activate Alert</ThemedText>
+                <ThemedText style={[{ color: textColor }, styles.label]}>{t('rateAlerts.activateAlert')}</ThemedText>
                 <Switch
                   value={formData.isActive}
                   onValueChange={(value) => setFormData({ ...formData, isActive: value })}
@@ -472,6 +489,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  containerInModal: {
+    flex: 1,
+    paddingTop: 0,
+  },
   header: {
     padding: 20,
     borderBottomWidth: 1,
@@ -502,6 +523,11 @@ const styles = StyleSheet.create({
   alertsList: {
     flex: 1,
     padding: 16,
+  },
+  alertsListInModal: {
+    flex: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 16,
   },
   emptyState: {
     flex: 1,
@@ -535,6 +561,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 12,
+  },
+  currencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  currencyCode: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 6,
+    minWidth: 35,
   },
   arrow: {
     marginHorizontal: 6,
@@ -609,12 +646,22 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
   },
+  modalTitleSection: {
+    padding: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    alignItems: 'center',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    borderBottomWidth: 1,
+    paddingTop: 16,
+  },
+  modalTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   cancelButton: {
     padding: 8,
@@ -653,7 +700,8 @@ const styles = StyleSheet.create({
   },
   directionButtons: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 12,
   },
   directionButton: {
     flex: 1,
