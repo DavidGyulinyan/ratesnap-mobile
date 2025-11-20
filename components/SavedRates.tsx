@@ -29,6 +29,7 @@ interface SavedRatesProps {
   containerStyle?: any;
   title?: string;
   inModal?: boolean; // Hide header when used inside DashboardModal
+  forceUseHook?: boolean; // Force use hook data instead of prop
 }
 
 export default function SavedRates({
@@ -44,6 +45,7 @@ export default function SavedRates({
   containerStyle,
   title,
   inModal = false,
+  forceUseHook = false,
 }: SavedRatesProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -60,8 +62,8 @@ export default function SavedRates({
   const textInverseColor = useThemeColor({}, 'textInverse');
   const shadowColor = '#000000'; // Use black for shadows
 
-  // Use hook data if no prop provided and user is authenticated
-  const savedRates = propSavedRates || (user ? hookSavedRates : []);
+  // Use hook data if forceUseHook is true, otherwise use prop or fallback to hook
+  const savedRates = forceUseHook ? hookSavedRates : (propSavedRates || (user ? hookSavedRates : []));
 
   const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
 
@@ -324,8 +326,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   savedRatesTitle: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   showHideText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    minWidth: 30,
+    textAlign: "center",
   },
   showHideTextActive: {
   },
