@@ -81,6 +81,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState<boolean>(false);
 
   const { user } = useAuth();
   const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
@@ -1035,7 +1036,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             currenciesData={currenciesData}
             fromCurrency={fromCurrency}
             onFromCurrencyChange={setFromCurrency}
-            onClose={() => setShowMultiCurrency(false)}
+            onClose={() => {
+              setShowMultiCurrency(false);
+              setMultiCurrencyShowAllTargets(false); // Reset when closing
+            }}
+            showAllTargets={multiCurrencyShowAllTargets}
+            onShowMore={() => setMultiCurrencyShowAllTargets(true)}
           />
         )}
 

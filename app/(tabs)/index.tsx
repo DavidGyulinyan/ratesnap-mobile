@@ -76,6 +76,7 @@ export default function HomeScreen() {
     "dashboard"
   );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
+  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -414,7 +415,10 @@ export default function HomeScreen() {
             <DashboardModal
               title={t("converter.multiCurrency.section")}
               icon="📊"
-              onClose={() => setShowMultiCurrency(false)}
+              onClose={() => {
+                setShowMultiCurrency(false);
+                setMultiCurrencyShowAllTargets(false); // Reset to default when closing
+              }}
             >
               {!currenciesData ? (
                 <View style={styles.emptyState}>
@@ -440,6 +444,8 @@ export default function HomeScreen() {
                   }
                   onClose={() => setShowMultiCurrency(false)}
                   inModal={true} // Hide MultiCurrencyConverter close button since DashboardModal handles it
+                  showAllTargets={multiCurrencyShowAllTargets}
+                  onShowMore={() => setMultiCurrencyShowAllTargets(true)}
                 />
               )}
             </DashboardModal>
