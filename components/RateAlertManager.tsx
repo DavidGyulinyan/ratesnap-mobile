@@ -494,14 +494,14 @@ export default function RateAlertManager({
                   >
                     <ThemedText style={[{ color: textColor }, styles.resetButtonText]}>{t('rateAlerts.reset')}</ThemedText>
                   </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
-                    onPress={() => handleDeleteAlert(alert.id)}
-                  >
-                    <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
-                  </TouchableOpacity>
-                )}
+                ) : null}
+
+                <TouchableOpacity
+                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
+                  onPress={() => handleDeleteAlert(alert.id)}
+                >
+                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
+                </TouchableOpacity>
               </View>
             </View>
           ))
@@ -810,33 +810,37 @@ const styles = StyleSheet.create({
   alertActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
+    gap: 6,
+    flexWrap: 'wrap',
   },
   editButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 5,
+    minWidth: 50,
   },
   editButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 5,
+    minWidth: 50,
   },
   deleteButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   resetButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 5,
+    minWidth: 50,
   },
   resetButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   modalContainer: {

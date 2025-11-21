@@ -18,7 +18,6 @@ import { useUserData } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import notificationService from "@/lib/notificationService";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -187,45 +186,6 @@ export default function HomeScreen() {
     Alert.alert('Calculation Result', `Result: ${result}`);
   };
 
-  const handleTestNotification = async () => {
-    try {
-      // Create a test alert object
-      const testAlert = {
-        id: 'test-alert-' + Date.now(),
-        fromCurrency: 'USD',
-        toCurrency: 'AMD',
-        targetRate: 382,
-        direction: 'above' as const,
-        isActive: true,
-        lastChecked: Date.now(),
-        triggered: false
-      };
-
-      // Send immediate notification using the real notification service
-      await notificationService.sendImmediateAlert(testAlert);
-
-      // Show confirmation that test was completed
-      setTimeout(() => {
-        Alert.alert(
-          "📱 TEST COMPLETED SUCCESSFULLY!",
-          `✅ The alert notification system is working!\n\n🎯 What just happened:\n• A real push notification was sent to your device\n• This simulates a real rate alert\n• The alert shows USD → AMD above 382\n\n📲 Real Notifications:\n• Push notifications appear on your device\n• Background monitoring works\n• Cross-platform compatibility\n\n🚀 Production Ready:\n• Notifications work on iOS and Android\n• Background rate checking enabled\n• Alerts trigger automatically`,
-          [
-            {
-              text: "Perfect!",
-              style: "default"
-            }
-          ]
-        );
-      }, 1500);
-
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      Alert.alert(
-        "❌ Error",
-        "Failed to send test notification. Check console for details."
-      );
-    }
-  };
 
   const renderMainContent = () => {
     if (currentView === "converter") {
@@ -490,20 +450,6 @@ export default function HomeScreen() {
               icon="🚨"
               onClose={() => setShowRateAlerts(false)}
             >
-              {/* Test Notification Button */}
-              <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor }, styles.testNotificationContainer]}>
-                <TouchableOpacity
-                  style={styles.testNotificationButton}
-                  onPress={handleTestNotification}
-                >
-                  <ThemedText style={styles.testNotificationButtonText}>
-                    {"🧪 Test USD > 382 AMD Alert"}
-                  </ThemedText>
-                </TouchableOpacity>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.testNotificationDescription]}>
-                  Click to test notification when 1 USD is more than 382 AMD
-                </ThemedText>
-              </View>
 
               <RateAlertManager
                 savedRates={savedRates.map(rate => ({
@@ -1090,38 +1036,5 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
 
-  // Test notification styles
-  testNotificationContainer: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#0ea5e9",
-    padding: 20,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  testNotificationButton: {
-    backgroundColor: "#0ea5e9",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    shadowColor: "#0ea5e9",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  testNotificationButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  testNotificationDescription: {
-    fontSize: 14,
-    color: "#0c4a6e",
-    textAlign: "center",
-    fontStyle: "italic",
-  },
 
 });
