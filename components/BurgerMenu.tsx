@@ -80,7 +80,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
         title: '💱 ' + t('auth.converter'),
         onPress: () => {
           setIsVisible(false);
-          router.replace('/');
+          router.push('/guide');
         },
       },
       {

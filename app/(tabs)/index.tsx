@@ -4,6 +4,7 @@ import CurrencyConverter from "@/components/CurrencyConverter";
 import DashboardModal from "@/components/DashboardModal";
 import Footer from "@/components/Footer";
 import GoogleAdsBanner from "@/components/GoogleAdsBanner";
+import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
@@ -187,7 +188,7 @@ export default function HomeScreen() {
   };
 
 
-  const renderMainContent = () => {
+  const renderMainContent = (): React.ReactElement => {
     if (currentView === "converter") {
       return (
         <CurrencyConverter
@@ -202,22 +203,7 @@ export default function HomeScreen() {
         {/* Dashboard Header - Fixed at top */}
         <View style={[styles.dashboardHeader, { shadowColor }]}>
           <View style={styles.titleContainer}>
-            <View style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: primaryColor,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-              shadowColor: primaryColor,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 4,
-            }}>
-              <ThemedText style={{ fontSize: 18, color: textInverseColor }}>💱</ThemedText>
-            </View>
+            <Logo size={36} showText={false} />
             <ThemedText type="title" style={{
               fontSize: 22,
               fontWeight: "700",
@@ -609,6 +595,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
+    gap: 12,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -661,7 +648,9 @@ const styles = StyleSheet.create({
     top: 16,
   },
   burgerMenu: {
-    // Burger menu is now positioned absolutely in headerRight
+    position: 'absolute',
+    right: 1,
+    top: 7,
   },
 
   // Scroll content
