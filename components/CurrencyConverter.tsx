@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
   Platform,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from 'expo-constants';
@@ -17,14 +18,14 @@ import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
-import SavedRates from "./SavedRates";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSavedRates, useUserData } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData";
+import { useLocationCurrency } from "./LocationDetection";
 
 interface AlertSettings {
   targetRate: number;
@@ -74,17 +75,19 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [toCurrency, setToCurrency] = useState<string>("EUR");
   const [loading, setLoading] = useState<boolean>(true);
   const [currencyList, setCurrencyList] = useState<string[]>([]);
-  const [showSavedRates, setShowSavedRates] = useState<boolean>(false);
   const [showFromPicker, setShowFromPicker] = useState<boolean>(false);
   const [showToPicker, setShowToPicker] = useState<boolean>(false);
   const [showCalculator, setShowCalculator] = useState<boolean>(false);
   const [showMultiCurrency, setShowMultiCurrency] = useState<boolean>(false);
   const [showRateAlerts, setShowRateAlerts] = useState<boolean>(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState<boolean>(false);
 
   const { user } = useAuth();
-  const { savedRates, saveRate, deleteRate, deleteAllRates } = useSavedRates();
+  const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
   const { pickedRates: { trackRate } } = useUserData();
+  const { currency: detectedCurrency, loading: locationLoading } = useLocationCurrency();
 
   // Theme colors
   const backgroundColor = useThemeColor({}, 'background');
@@ -607,24 +610,13 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           timestamp: Date.now()
         });
       }
-      Alert.alert('Success', user ? 'Rate saved to your account!' : 'Rate saved locally. Sign in to sync across devices!');
+      Alert.alert(t('converter.saveSuccessTitle'), user ? t('converter.saveSuccessMessage') : t('converter.saveSuccessLocalMessage'));
     } else {
-      Alert.alert('Error', 'Failed to save rate. Please try again.');
+      Alert.alert(t('converter.saveErrorTitle'), t('converter.saveErrorMessage'));
     }
   };
 
-  const handleDeleteRate = async (id: string | number): Promise<void> => {
-    const success = await deleteRate(id.toString());
-    if (!success) {
-      Alert.alert('Error', 'Failed to delete rate. Please try again.');
-    }
-  };
 
-  const handleSelectRate = (from: string, to: string): void => {
-    setFromCurrency(from);
-    setToCurrency(to);
-    setShowSavedRates(false);
-  };
 
   const handleCalculatorResult = (result: number): void => {
     setAmount(result.toString());
@@ -698,6 +690,66 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     } catch (error) {
       console.log('Failed to load last conversion:', error);
     }
+  };
+
+  const refreshExchangeRates = async (): Promise<void> => {
+    try {
+      console.log('🔄 Refreshing exchange rates...');
+      const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+      const apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY;
+
+      const response = await fetch(
+        `${apiUrl}?apikey=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiData = await response.json();
+
+      if (!apiData.rates || !apiData.base) {
+        throw new Error("Invalid API response structure");
+      }
+
+      const transformedData: Data = {
+        result: "success",
+        documentation: "https://www.currencyfreaks.com/documentation",
+        terms_of_use: "https://www.currencyfreaks.com/terms",
+        time_last_update_unix: Math.floor(Date.now() / 1000),
+        time_last_update_utc: new Date().toUTCString(),
+        time_next_update_unix: Math.floor(Date.now() / 1000) + 3600,
+        time_next_update_utc: new Date(Date.now() + 3600000).toUTCString(),
+        base_code: apiData.base || "USD",
+        conversion_rates: apiData.rates || { USD: 1 },
+      };
+
+      if (!transformedData.conversion_rates["USD"]) {
+        transformedData.conversion_rates["USD"] = 1;
+      }
+
+      await AsyncStorage.setItem('cachedExchangeRates', JSON.stringify(transformedData));
+      await AsyncStorage.setItem('cachedRatesTimestamp', Date.now().toString());
+
+      setCurrenciesData(transformedData);
+      setCurrencyList(Object.keys(transformedData.conversion_rates));
+      console.log('📡 Exchange rates refreshed successfully');
+    } catch (error) {
+      console.error("Exchange rates refresh error:", error);
+      // Try to use cached data if refresh fails
+      const cachedData = await AsyncStorage.getItem('cachedExchangeRates');
+      if (cachedData) {
+        setCurrenciesData(JSON.parse(cachedData));
+        setCurrencyList(Object.keys(JSON.parse(cachedData).conversion_rates || {}));
+        console.log('📦 Using cached data after refresh error');
+      }
+    }
+  };
+
+  const onRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await refreshExchangeRates();
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -838,6 +890,19 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
     }
   }, [currencyList]);
 
+  // Set detected currency as default toCurrency if no saved preferences
+  useEffect(() => {
+    if (detectedCurrency && detectedCurrency !== 'USD' && currencyList.includes(detectedCurrency)) {
+      // Only set if no saved preferences exist
+      AsyncStorage.getItem('selectedToCurrency').then(savedTo => {
+        if (!savedTo) {
+          setToCurrency(detectedCurrency);
+          console.log(`🌍 Set detected currency: ${detectedCurrency}`);
+        }
+      });
+    }
+  }, [detectedCurrency, currencyList]);
+
 
   if (loading) {
     return (
@@ -848,7 +913,12 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   }
 
   return (
-      <ScrollView style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}>
+      <ScrollView
+        style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Navigation Header */}
         {onNavigateToDashboard && (
           <TouchableOpacity style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.navHeader]} onPress={onNavigateToDashboard}>
@@ -859,7 +929,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         {/* Modern Currency Converter - Complete Redesign */}
         <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.modernConverterCard]}>
           <View style={styles.converterHeader}>
-            <ThemedText style={styles.converterTitle}>💱 Currency Converter</ThemedText>
+            <ThemedText style={styles.converterTitle}>💱 {t('converter.title')}</ThemedText>
             <TouchableOpacity
               style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.calculatorHeaderButton]}
               onPress={() => setShowCalculator(true)}
@@ -870,11 +940,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
           {/* Amount Input Section */}
           <View style={styles.amountSection}>
-            <ThemedText style={styles.amountLabel}>Amount</ThemedText>
+            <ThemedText style={styles.amountLabel}>{t('converter.amountLabel')}</ThemedText>
             <View style={styles.amountInputWrapper}>
               <TextInput
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
-                placeholder="Enter amount"
+                placeholder={t('converter.enterAmountPlaceholder')}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
@@ -906,7 +976,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
                 <CurrencyFlag currency={fromCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>From</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.fromLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{fromCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
@@ -926,7 +996,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
                 <CurrencyFlag currency={toCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>To</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.toLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{toCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
@@ -957,7 +1027,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               ) : (
                 <View style={styles.placeholderResult}>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.placeholderText]}>
-                    Enter an amount to see conversion
+                    {t('converter.placeholderResult')}
                   </ThemedText>
                 </View>
               )}
@@ -970,7 +1040,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.saveRateButton]}
               onPress={handleSaveRate}
             >
-              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>⭐ Save Rate</ThemedText>
+              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>{t('converter.saveRateButton')}</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
@@ -981,26 +1051,15 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             currenciesData={currenciesData}
             fromCurrency={fromCurrency}
             onFromCurrencyChange={setFromCurrency}
-            onClose={() => setShowMultiCurrency(false)}
+            onClose={() => {
+              setShowMultiCurrency(false);
+              setMultiCurrencyShowAllTargets(false); // Reset when closing
+            }}
+            showAllTargets={multiCurrencyShowAllTargets}
+            onShowMore={() => setMultiCurrencyShowAllTargets(true)}
           />
         )}
 
-        {/* Saved Rates Section - Using Shared Component */}
-        <SavedRates
-          savedRates={savedRates}
-          showSavedRates={showSavedRates}
-          onToggleVisibility={() => setShowSavedRates(!showSavedRates)}
-          onSelectRate={handleSelectRate}
-          onDeleteRate={handleDeleteRate}
-          onDeleteAll={async () => {
-            const success = await deleteAllRates();
-            if (!success) {
-              Alert.alert('Error', 'Failed to delete all rates. Please try again.');
-            }
-          }}
-          showMoreEnabled={false}
-          title={`⭐ ${t('saved.title')}`}
-        />
 
         {/* Rate Alert Manager Section */}
         {showRateAlerts && (
@@ -1063,7 +1122,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           visible={showCalculator}
           onClose={() => setShowCalculator(false)}
           onResult={handleCalculatorResult}
-          onAddToConverter={handleCalculatorResult}
           autoCloseAfterCalculation={false}
         />
 
@@ -1073,7 +1131,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           onClose={() => setShowAuthPrompt(false)}
           title="Create account to sync and enable alerts"
           message="Sign up to save your data and enable premium features"
-          feature="sync"
+          feature="general"
         />
       </ScrollView>
   );
@@ -1384,7 +1442,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   currencyLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "500",
     marginBottom: 4,
   },

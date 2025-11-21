@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
+import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useConverterHistory } from "@/hooks/useUserData";
@@ -22,6 +23,11 @@ interface MultiCurrencyConverterProps {
   onFromCurrencyChange?: (currency: string) => void;
   onClose?: () => void;
   style?: any;
+  inModal?: boolean; // Hide close button when used inside DashboardModal
+  showMoreEnabled?: boolean;
+  onShowMore?: () => void;
+  maxVisibleItems?: number;
+  showAllTargets?: boolean;
 }
 
 interface ConversionTarget {
@@ -35,6 +41,11 @@ export default function MultiCurrencyConverter({
   onFromCurrencyChange,
   onClose,
   style,
+  inModal = false,
+  showMoreEnabled = true,
+  onShowMore,
+  maxVisibleItems = 5,
+  showAllTargets = false,
 }: MultiCurrencyConverterProps) {
   const [amount, setAmount] = useState<string>("1");
   const [fromCurrency, setFromCurrency] = useState<string>(fromCurrencyProp || "");
@@ -64,11 +75,16 @@ export default function MultiCurrencyConverter({
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";
 
+  // Maximum number of visible targets before showing "Show More"
+  // const MAX_VISIBLE_TARGETS = 5; // Now using maxVisibleItems prop
+
   // Debug current state on every render
   console.log("🎬 MultiCurrencyConverter: Component rendering...", {
     amount,
     fromCurrency,
     targetCount: conversionTargets.length,
+    showAllTargets,
+    shouldShowShowMoreButton: showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems,
     targets: conversionTargets.map(t => t.currency),
     hasCurrenciesData: !!currenciesData
   });
@@ -435,6 +451,22 @@ export default function MultiCurrencyConverter({
     setConversionTargets(conversionTargets.filter(target => target.id !== id));
   };
 
+  // Remove all target currencies
+  const removeAllTargetCurrencies = () => {
+    Alert.alert(
+      t('common.delete'),
+      t('saved.deleteAllConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => setConversionTargets([])
+        }
+      ]
+    );
+  };
+
   // Handle "From" currency selection
   const handleFromCurrencySelect = (currency: string) => {
     setFromCurrency(currency);
@@ -469,33 +501,35 @@ export default function MultiCurrencyConverter({
   return (
     <View style={[styles.container, style]}>
       <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
-        <View style={styles.header}>
-          {onClose && (
-            <TouchableOpacity
-              style={[
-                { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
-                styles.closeButton,
-                closeButtonPressed && { backgroundColor: borderColor }
-              ]}
-              onPressIn={() => setCloseButtonPressed(true)}
-              onPressOut={() => setCloseButtonPressed(false)}
-              onPress={() => {
-                onClose();
-                setCloseButtonPressed(false);
-              }}
-            >
-              <ThemedText style={[
-                { color: textColor },
-                styles.closeButtonText,
-                closeButtonPressed && { color: textSecondaryColor }
-              ]}>×</ThemedText>
-            </TouchableOpacity>
-          )}
-        </View>
+        {!inModal && (
+          <View style={styles.header}>
+            {onClose && (
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
+                  styles.closeButton,
+                  closeButtonPressed && { backgroundColor: borderColor }
+                ]}
+                onPressIn={() => setCloseButtonPressed(true)}
+                onPressOut={() => setCloseButtonPressed(false)}
+                onPress={() => {
+                  onClose();
+                  setCloseButtonPressed(false);
+                }}
+              >
+                <ThemedText style={[
+                  { color: textColor },
+                  styles.closeButtonText,
+                  closeButtonPressed && { color: textSecondaryColor }
+                ]}>×</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Amount Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={[{ color: textColor }, styles.label]}>Amount</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.amount')}</ThemedText>
           <TextInput
             style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
             value={amount}
@@ -508,7 +542,7 @@ export default function MultiCurrencyConverter({
 
         {/* From Currency Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={[{ color: textColor }, styles.label]}>From</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.from')}</ThemedText>
           <TouchableOpacity
             style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencyButton]}
             onPress={() => setShowFromCurrencyPicker(true)}
@@ -522,7 +556,7 @@ export default function MultiCurrencyConverter({
               </>
             ) : (
               <ThemedText style={[{ color: textSecondaryColor }, styles.currencyButtonPlaceholder]}>
-                Select currency
+                {t('multi.selectCurrency')}
               </ThemedText>
             )}
           </TouchableOpacity>
@@ -531,7 +565,7 @@ export default function MultiCurrencyConverter({
         {/* Target Currencies Section */}
         <View style={styles.targetsSection}>
           <View style={styles.targetsHeader}>
-            <ThemedText style={[{ color: textColor }, styles.label]}>Convert To</ThemedText>
+            <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.convertTo')}</ThemedText>
             <TouchableOpacity
               style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.addButton]}
               onPress={() => {
@@ -539,7 +573,7 @@ export default function MultiCurrencyConverter({
                 setShowTargetCurrencyPicker(true);
               }}
             >
-              <ThemedText style={[{ color: primaryColor }, styles.addButtonText]}>+ Add Currency</ThemedText>
+              <ThemedText style={[{ color: primaryColor }, styles.addButtonText]}>{t('multi.addCurrency')}</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -550,34 +584,79 @@ export default function MultiCurrencyConverter({
               </ThemedText>
             </View>
           ) : (
-            <ScrollView style={styles.targetsList} showsVerticalScrollIndicator={false}>
-              {conversionTargets.map((target) => (
-                <View key={target.id} style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetItem]}>
-                  <TouchableOpacity
-                    style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetCurrencyButton]}
-                    onPress={() => editTargetCurrency(target.id)}
-                  >
-                    <CurrencyFlag currency={target.currency} size={18} />
-                    <ThemedText style={[{ color: textColor }, styles.targetCurrencyText]}>
-                      {target.currency}
-                    </ThemedText>
-                  </TouchableOpacity>
+            <>
+              <View style={styles.targetsList}>
+                {(() => {
+                  const visibleTargets = showAllTargets ? conversionTargets.slice(0, 20) : conversionTargets.slice(0, maxVisibleItems);
+                  console.log('🎨 Rendering targets:', {
+                    totalTargets: conversionTargets.length,
+                    showAllTargets,
+                    visibleCount: visibleTargets.length,
+                    maxVisible: maxVisibleItems,
+                    maxWhenExpanded: 20,
+                    shouldShowButton: showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems,
+                    targetsList: visibleTargets.map(t => t.currency)
+                  });
+                  
+                  // Force a rerender by adding a key based on showAllTargets
+                  return (
+                    <View key={`targets-${showAllTargets ? 'all' : 'limited'}`}>
+                      {visibleTargets.map((target) => (
+                        <View key={target.id} style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetItem]}>
+                          <TouchableOpacity
+                            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetCurrencyButton]}
+                            onPress={() => editTargetCurrency(target.id)}
+                          >
+                            <CurrencyFlag currency={target.currency} size={18} />
+                            <ThemedText style={[{ color: textColor }, styles.targetCurrencyText]}>
+                              {target.currency}
+                            </ThemedText>
+                          </TouchableOpacity>
 
-                  <View style={styles.conversionResult}>
-                    <ThemedText style={[{ color: primaryColor }, styles.conversionAmount]}>
-                      {conversions[target.currency]?.toFixed(4) || "---"}
-                    </ThemedText>
-                  </View>
+                          <View style={styles.conversionResult}>
+                            <ThemedText style={[{ color: primaryColor }, styles.conversionAmount]}>
+                              {conversions[target.currency]?.toFixed(4) || "---"}
+                            </ThemedText>
+                          </View>
 
+                          <TouchableOpacity
+                            style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.removeButton]}
+                            onPress={() => removeTargetCurrency(target.id)}
+                          >
+                            <ThemedText style={[{ color: textColor }, styles.removeButtonText]}>×</ThemedText>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  );
+                })()}
+              </View>
+
+              {showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems && (
+                <View style={{ marginTop: 12, alignItems: 'center' }}>
                   <TouchableOpacity
-                    style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.removeButton]}
-                    onPress={() => removeTargetCurrency(target.id)}
+                    style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.showMoreButton]}
+                    onPress={() => {
+                      if (onShowMore) {
+                        onShowMore();
+                      }
+                    }}
                   >
-                    <ThemedText style={[{ color: textColor }, styles.removeButtonText]}>×</ThemedText>
+                    <ThemedText style={[{ color: primaryColor }, styles.showMoreText]}>
+                      {t('common.showMore').replace('more', `up to 20 target currencies`) + ' →'}
+                    </ThemedText>
                   </TouchableOpacity>
                 </View>
-              ))}
-            </ScrollView>
+              )}
+
+              {conversionTargets.length > 1 && (
+                <DeleteAllButton
+                  onPress={removeAllTargetCurrencies}
+                  count={conversionTargets.length}
+                  translationKey="multi.deleteAll"
+                />
+              )}
+            </>
           )}
         </View>
       </View>
@@ -629,15 +708,17 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    borderRadius: '50%',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   closeButtonActive: {
   },
   closeButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 18,
+    color: '#6b7280',
+    fontWeight: "bold",
   },
   closeButtonTextActive: {
   },
@@ -703,7 +784,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   targetsList: {
-    maxHeight: 300,
+    // Removed maxHeight for mobile compatibility - shows all items without scrolling
   },
   targetItem: {
     flexDirection: "row",
@@ -745,5 +826,15 @@ const styles = StyleSheet.create({
   removeButtonText: {
     fontSize: 16,
     fontWeight: "bold",
+  },
+  showMoreButton: {
+    padding: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  showMoreText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

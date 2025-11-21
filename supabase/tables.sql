@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS public.rate_alerts (
     target_rate DECIMAL(10, 6) NOT NULL,
     condition VARCHAR(10) CHECK (condition IN ('above', 'below')) NOT NULL,
     is_active BOOLEAN DEFAULT true,
+    notified BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );

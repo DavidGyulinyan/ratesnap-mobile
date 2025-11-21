@@ -1,8 +1,9 @@
 import AuthPromptModal from "@/components/AuthPromptModal";
 import BurgerMenu from "@/components/BurgerMenu";
 import CurrencyConverter from "@/components/CurrencyConverter";
+import DashboardModal from "@/components/DashboardModal";
 import Footer from "@/components/Footer";
-import GoogleAdsBanner from "@/components/GoogleAdsBanner";
+import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
@@ -13,13 +14,14 @@ import { ThemedView } from "@/components/themed-view";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSavedRates } from "@/hooks/useUserData";
+import { useUserData } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -57,7 +59,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates, deleteRate, deleteAllRates } = useSavedRates();
+  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates }, rateAlerts: { rateAlerts, refreshAlerts } } = useUserData();
 
   // Theme colors - must be called at top level
   const primaryColor = useThemeColor({}, 'primary');
@@ -74,6 +76,7 @@ export default function HomeScreen() {
     "dashboard"
   );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
+  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -83,11 +86,47 @@ export default function HomeScreen() {
   const [currencyList, setCurrencyList] = useState<string[]>([]);
   const [multiCurrencyLoading, setMultiCurrencyLoading] = useState(false);
   const [savedRatesMaxVisible, setSavedRatesMaxVisible] = useState(4);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadExchangeRates();
     checkOnboardingStatus();
   }, [user]);
+
+  // Refresh saved rates when the modal opens
+  useEffect(() => {
+    if (showSavedRates) {
+      refreshRates();
+    }
+  }, [showSavedRates, refreshRates]);
+
+  // Refresh rate alerts when the modal opens
+  useEffect(() => {
+    if (showRateAlerts) {
+      refreshAlerts();
+    }
+  }, [showRateAlerts, refreshAlerts]);
+
+  // Refresh data when modals close
+  useEffect(() => {
+    if (!showSavedRates) {
+      refreshRates();
+    }
+  }, [showSavedRates, refreshRates]);
+
+  useEffect(() => {
+    if (!showRateAlerts) {
+      refreshAlerts();
+    }
+  }, [showRateAlerts, refreshAlerts]);
+
+  // Refresh data when switching back to dashboard view
+  useEffect(() => {
+    if (currentView === "dashboard") {
+      refreshRates();
+      refreshAlerts();
+    }
+  }, [currentView, refreshRates, refreshAlerts]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -130,6 +169,15 @@ export default function HomeScreen() {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      loadExchangeRates(),
+      refreshRates()
+    ]);
+    setRefreshing(false);
+  };
+
 
   const deleteSavedRate = async (id: string | number) => {
     const success = await deleteRate(id.toString());
@@ -166,54 +214,8 @@ export default function HomeScreen() {
     Alert.alert('Calculation Result', `Result: ${result}`);
   };
 
-  const handleTestNotification = async () => {
-    try {
-      // Force a test alert to show immediately (bypassing rate check)
-      const testMessage = `🎯 USD → AMD rate alert!\n💰 Current rate: 385.75\n🚀 Alert triggered: USD is above 382 AMD\n\n📱 This is a test notification (Expo Go)`;
-      
-      // Show immediate in-app alert - this is what would happen when a real alert triggers
-      Alert.alert(
-        '🚨 RATE ALERT TRIGGERED!',
-        testMessage,
-        [
-          {
-            text: 'View Details',
-            onPress: () => {
-              Alert.alert(
-                '💰 USD → AMD Alert Details',
-                'Target: USD above 382 AMD\nStatus: ACTIVE ✅\nLast Checked: Just now\nThis is a simulated notification for testing.',
-                [{ text: 'OK' }]
-              );
-            }
-          },
-          { text: 'Dismiss', style: 'cancel' }
-        ]
-      );
 
-      // Show confirmation that test was completed
-      setTimeout(() => {
-        Alert.alert(
-          "📱 TEST COMPLETED SUCCESSFULLY!",
-          `✅ The alert notification system is working!\n\n🎯 What just happened:\n• A rate alert popup appeared\n• This simulates a real notification\n• The alert shows USD → AMD above 382\n\n📲 In Expo Go:\n• In-app alerts are used\n• No push notifications available\n\n🚀 In Production:\n• Real push notifications would appear\n• Background monitoring would work\n• Cross-platform compatibility`,
-          [
-            {
-              text: "Perfect!",
-              style: "default"
-            }
-          ]
-        );
-      }, 1500);
-      
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      Alert.alert(
-        "❌ Error",
-        "Failed to send test notification. Check console for details."
-      );
-    }
-  };
-
-  const renderMainContent = () => {
+  const renderMainContent = (): React.ReactElement => {
     if (currentView === "converter") {
       return (
         <CurrencyConverter
@@ -228,26 +230,11 @@ export default function HomeScreen() {
         {/* Dashboard Header - Fixed at top */}
         <View style={[styles.dashboardHeader, { shadowColor }]}>
           <View style={styles.titleContainer}>
-            <View style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: primaryColor,
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-              shadowColor: primaryColor,
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 4,
-            }}>
-              <ThemedText style={{ fontSize: 18, color: textInverseColor }}>💱</ThemedText>
-            </View>
+            <Logo size={36} showText={false} />
             <ThemedText type="title" style={{
               fontSize: 22,
               fontWeight: "700",
-              color: primaryColor,
+              color: "#1894EE",
               textAlign: "right",
               letterSpacing: 0.5,
             }}>
@@ -265,6 +252,9 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContentContainer}
           showsVerticalScrollIndicator={true}
           showsHorizontalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           {/* Quick Actions - Redesigned for better UX */}
           <View style={styles.quickActionsContainer}>
@@ -378,8 +368,8 @@ export default function HomeScreen() {
                     {t("quick.action.rateAlerts")}
                   </ThemedText>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {savedRates.filter(rate => rate.hasAlert).length}{" "}
-                    {savedRates.filter(rate => rate.hasAlert).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
+                    {rateAlerts.filter(alert => alert.is_active).length}{" "}
+                    {rateAlerts.filter(alert => alert.is_active).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
@@ -389,106 +379,90 @@ export default function HomeScreen() {
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && (
-            <View style={styles.multiCurrencySection}>
-              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.multiCurrencyCard]}>
-                <View style={styles.multiCurrencyHeader}>
-                  <ThemedText style={styles.multiCurrencyTitle}>
-                    📊 {t("converter.multiCurrency.section")}
-                  </ThemedText>
-                </View>
-
-                {!currenciesData ? (
-                  <View style={styles.emptyState}>
-                    <ThemedText style={styles.emptyStateText}>
-                      {t("converter.loadingRates")}
-                    </ThemedText>
-                    <TouchableOpacity
-                      style={styles.refreshButton}
-                      onPress={loadExchangeRates}
-                    >
-                      <ThemedText style={styles.refreshButtonText}>
-                        🔄 {t("converter.refreshData")}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <MultiCurrencyConverter
-                    key="multiCurrencyConverter-main"
-                    currenciesData={currenciesData}
-                    fromCurrency="USD"
-                    onFromCurrencyChange={(currency) =>
-                      console.log("From currency changed to:", currency)
-                    }
-                    onClose={() => setShowMultiCurrency(false)}
-                    style={{ marginBottom: 24 }}
-                  />
-                )}
-              </View>
-            </View>
-          )}
-
-          {/* Inline Calculator Widget */}
-          {showCalculator && (
-            <View style={styles.calculatorSection}>
-              <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.calculatorCard]}>
-                <View style={styles.calculatorHeader}>
-                  <ThemedText style={styles.calculatorTitle}>
-                    🧮 {t("calculator.title")}
+            <DashboardModal
+              title={t("converter.multiCurrency.section")}
+              icon="📊"
+              onClose={() => {
+                setShowMultiCurrency(false);
+                setMultiCurrencyShowAllTargets(false); // Reset to default when closing
+              }}
+            >
+              {!currenciesData ? (
+                <View style={styles.emptyState}>
+                  <ThemedText style={styles.emptyStateText}>
+                    {t("converter.loadingRates")}
                   </ThemedText>
                   <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setShowCalculator(false)}
+                    style={styles.refreshButton}
+                    onPress={loadExchangeRates}
                   >
-                    <ThemedText style={styles.closeButtonText}>×</ThemedText>
+                    <ThemedText style={styles.refreshButtonText}>
+                      🔄 {t("converter.refreshData")}
+                    </ThemedText>
                   </TouchableOpacity>
                 </View>
-                
-                <MathCalculator
-                  visible={true}
-                  onClose={() => setShowCalculator(false)}
-                  onResult={handleCalculatorResult}
+              ) : (
+                <MultiCurrencyConverter
+                  key="multiCurrencyConverter-main"
+                  currenciesData={currenciesData}
+                  fromCurrency="USD"
+                  onFromCurrencyChange={(currency) =>
+                    console.log("From currency changed to:", currency)
+                  }
+                  onClose={() => setShowMultiCurrency(false)}
+                  inModal={true} // Hide MultiCurrencyConverter close button since DashboardModal handles it
+                  showAllTargets={multiCurrencyShowAllTargets}
+                  onShowMore={() => setMultiCurrencyShowAllTargets(true)}
                 />
-              </View>
-            </View>
+              )}
+            </DashboardModal>
           )}
+
+          {/* Calculator Modal */}
+          <MathCalculator
+            visible={showCalculator}
+            onClose={() => setShowCalculator(false)}
+            onResult={handleCalculatorResult}
+            autoCloseAfterCalculation={false}
+          />
 
           {/* Saved Rates Section - Separate Component */}
           {showSavedRates && (
-            <SavedRates
-              savedRates={savedRates}
-              showSavedRates={showSavedRates}
-              onToggleVisibility={() => {
-                setShowSavedRates(!showSavedRates);
-                setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+            <DashboardModal
+              title={t("saved.title")}
+              icon="💾"
+              onClose={() => {
+                setShowSavedRates(false);
+                setSavedRatesMaxVisible(4); // Reset to default when closing
               }}
-              onSelectRate={() => setCurrentView("converter")}
-              onDeleteRate={deleteSavedRate}
-              onDeleteAll={deleteAllSavedRates}
-              showMoreEnabled={true}
-              onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
-              maxVisibleItems={savedRatesMaxVisible}
-              title={`📋 ${t("saved.title")}`}
-              containerStyle={{ marginBottom: 24 }}
-            />
+            >
+              <SavedRates
+                savedRates={savedRates}
+                showSavedRates={true}
+                onToggleVisibility={() => {
+                  setShowSavedRates(!showSavedRates);
+                  setSavedRatesMaxVisible(4); // Reset to default when toggling visibility
+                }}
+                onSelectRate={() => setCurrentView("converter")}
+                onDeleteRate={deleteSavedRate}
+                onDeleteAll={deleteAllSavedRates}
+                showMoreEnabled={true}
+                onShowMore={() => setSavedRatesMaxVisible(savedRates.length)}
+                maxVisibleItems={savedRatesMaxVisible}
+                title="" // Remove title since DashboardModal handles it
+                containerStyle={{ marginBottom: 0 }} // Remove bottom margin since modal handles it
+                inModal={true} // Hide SavedRates header since DashboardModal handles it
+              />
+            </DashboardModal>
           )}
 
           {/* Rate Alerts Section - Using Same Component as Currency Converter */}
           {showRateAlerts && (
-            <View>
-              {/* Test Notification Button */}
-              <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor }, styles.testNotificationContainer]}>
-                <TouchableOpacity
-                  style={styles.testNotificationButton}
-                  onPress={handleTestNotification}
-                >
-                  <ThemedText style={styles.testNotificationButtonText}>
-                    {"🧪 Test USD > 382 AMD Alert"}
-                  </ThemedText>
-                </TouchableOpacity>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.testNotificationDescription]}>
-                  Click to test notification when 1 USD is more than 382 AMD
-                </ThemedText>
-              </View>
+            <DashboardModal
+              title={t("rateAlerts.title")}
+              icon="🚨"
+              onClose={() => setShowRateAlerts(false)}
+            >
 
               <RateAlertManager
                 savedRates={savedRates.map(rate => ({
@@ -501,21 +475,14 @@ export default function HomeScreen() {
                   alertSettings: undefined
                 }))}
                 onRatesUpdate={() => {
-                  // The hook will automatically update when rates change
+                  refreshAlerts();
                 }}
                 currenciesData={currenciesData}
+                inModal={true} // Hide RateAlertManager header since DashboardModal handles it
               />
-            </View>
+            </DashboardModal>
           )}
 
-          {/* Google Ads Banner */}
-          <View style={styles.adsContainer}>
-            <GoogleAdsBanner
-              type="banner"
-              size="medium"
-              style={styles.adsBanner}
-            />
-          </View>
           {/* Features Preview */}
           <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.featuresSection]}>
             <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
@@ -584,14 +551,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Google Ads Banner */}
-          <View style={styles.adsContainer}>
-            <GoogleAdsBanner
-              type="banner"
-              size="medium"
-              style={styles.adsBanner}
-            />
-          </View>
           {/* Additional Content to Enable Scrolling */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -647,6 +606,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
+    gap: 12,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -699,7 +659,9 @@ const styles = StyleSheet.create({
     top: 16,
   },
   burgerMenu: {
-    // Burger menu is now positioned absolutely in headerRight
+    position: 'absolute',
+    right: 1,
+    top: 7,
   },
 
   // Scroll content
@@ -842,44 +804,6 @@ const styles = StyleSheet.create({
     height: 60,
   },
 
-  // Modern card sections
-  multiCurrencySection: {
-    marginBottom: 24,
-  },
-  multiCurrencyCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  multiCurrencyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  multiCurrencyTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-  closeButton: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: '50%',
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#6b7280",
-    fontWeight: "bold",
-  },
 
   // State styles
   emptyState: {
@@ -1102,75 +1026,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  // Ads
-  adsContainer: {
-    marginBottom: 32,
-    alignItems: "center",
-  },
-  adsBanner: {
-    width: "100%",
-    marginBottom: 0,
-  },
 
-  // Test notification styles
-  testNotificationContainer: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#0ea5e9",
-    padding: 20,
-    marginBottom: 20,
-    alignItems: "center",
-  },
-  testNotificationButton: {
-    backgroundColor: "#0ea5e9",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    shadowColor: "#0ea5e9",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  testNotificationButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  testNotificationDescription: {
-    fontSize: 14,
-    color: "#0c4a6e",
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-
-  // Calculator widget styles
-  calculatorSection: {
-    marginBottom: 24,
-  },
-  calculatorCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.6)",
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  calculatorHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  calculatorTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1e293b",
-  },
 });

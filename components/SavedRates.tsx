@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
@@ -28,6 +29,8 @@ interface SavedRatesProps {
   maxVisibleItems?: number;
   containerStyle?: any;
   title?: string;
+  inModal?: boolean; // Hide header when used inside DashboardModal
+  forceUseHook?: boolean; // Force use hook data instead of prop
 }
 
 export default function SavedRates({
@@ -42,6 +45,8 @@ export default function SavedRates({
   maxVisibleItems = 10,
   containerStyle,
   title,
+  inModal = false,
+  forceUseHook = false,
 }: SavedRatesProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -54,12 +59,10 @@ export default function SavedRates({
   const primaryColor = useThemeColor({}, 'primary');
   const textColor = useThemeColor({}, 'text');
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const errorColor = useThemeColor({}, 'error');
-  const textInverseColor = useThemeColor({}, 'textInverse');
   const shadowColor = '#000000'; // Use black for shadows
 
-  // Use hook data if no prop provided and user is authenticated
-  const savedRates = propSavedRates || (user ? hookSavedRates : []);
+  // Use hook data if forceUseHook is true, otherwise use prop or fallback to hook
+  const savedRates = forceUseHook ? hookSavedRates : (propSavedRates || (user ? hookSavedRates : []));
 
   const displayTitle = title || `⭐ ${t('saved.shortTitle')}`;
 
@@ -68,31 +71,31 @@ export default function SavedRates({
   const handleDeleteRate = async (id: string) => {
     if (onDeleteRate) {
       onDeleteRate(id);
-    } else if (user) {
+    } else {
       Alert.alert(
-        'Delete Rate',
-        'Are you sure you want to delete this saved rate?',
+        t('saved.deleteRateTitle'),
+        t('saved.deleteRateMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('saved.deleteRateCancel'), style: 'cancel' },
           {
-            text: 'Delete',
+            text: t('saved.deleteRateConfirm'),
             style: 'destructive',
             onPress: async () => {
               try {
                 setDeletingId(id);
                 const success = await deleteRate(id);
                 if (success) {
-                  Alert.alert('Success', 'Rate deleted successfully');
+                  Alert.alert(t('saved.deleteSuccessTitle'), t('saved.deleteSuccessMessage'));
                 } else {
                   Alert.alert(
-                    'Delete Failed',
-                    'Unable to delete the rate. Please try again or check your internet connection.'
+                    t('saved.deleteFailedTitle'),
+                    t('saved.deleteFailedMessage')
                   );
                 }
               } catch (error) {
                 Alert.alert(
-                  'Error',
-                  'An unexpected error occurred while deleting the rate.'
+                  t('saved.deleteErrorTitle'),
+                  t('saved.deleteErrorMessage')
                 );
                 console.error('Delete rate error:', error);
               } finally {
@@ -108,19 +111,19 @@ export default function SavedRates({
   const handleDeleteAllRates = async () => {
     if (onDeleteAll) {
       onDeleteAll();
-    } else if (user) {
+    } else {
       Alert.alert(
-        'Delete All Rates',
-        'Are you sure you want to delete all saved rates? This action cannot be undone.',
+        t('saved.deleteAllTitle'),
+        t('saved.deleteAllMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('saved.deleteAllCancel'), style: 'cancel' },
           {
-            text: 'Delete All',
+            text: t('saved.deleteAllConfirmButton'),
             style: 'destructive',
             onPress: async () => {
               const success = await deleteAllRates();
               if (!success) {
-                Alert.alert('Error', 'Failed to delete all saved rates');
+                Alert.alert(t('saved.deleteAllErrorTitle'), t('saved.deleteAllErrorMessage'));
               }
             }
           }
@@ -161,7 +164,7 @@ export default function SavedRates({
           styles.deleteButtonText,
           deletingId === rate.id && styles.deleteButtonTextDisabled
         ]}>
-          {deletingId === rate.id ? '⏳' : '🗑️'}
+          {deletingId === rate.id ? t('saved.deletingIcon') : t('saved.deleteIcon')}
         </ThemedText>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -173,7 +176,7 @@ export default function SavedRates({
       : savedRates;
 
   // Show loading state
-  if (loading && !user) {
+  if (loading) {
     return (
       <View style={[styles.savedRatesSection, containerStyle]}>
         <View style={styles.savedRatesHeader}>
@@ -184,7 +187,7 @@ export default function SavedRates({
         <View style={styles.savedRatesList}>
           <View style={styles.emptySavedRates}>
             <ThemedText style={styles.emptySavedRatesText}>
-              Loading saved rates...
+              {t('saved.loadingText')}
             </ThemedText>
           </View>
         </View>
@@ -194,33 +197,39 @@ export default function SavedRates({
 
   return (
     <View style={[styles.savedRatesSection, containerStyle]}>
-      <View style={styles.savedRatesHeader}>
-        <ThemedText type="subtitle" style={styles.savedRatesTitle}>
-          {displayTitle} ({savedRates.length})
-        </ThemedText>
-        {savedRates.length > 0 && (
-          <TouchableOpacity onPress={onToggleVisibility}>
-          <ThemedText
-            style={[
-              { color: textColor },
-              styles.showHideText,
-              showSavedRates && { color: primaryColor, fontWeight: "600" },
-            ]}
-          >
-            {showSavedRates ? `▼ ${t('common.less')}` : `▶ ${t('common.more')}`}
+      {!inModal && (
+        <View style={styles.savedRatesHeader}>
+          <ThemedText type="subtitle" style={styles.savedRatesTitle}>
+            {displayTitle} ({savedRates.length})
           </ThemedText>
-        </TouchableOpacity>
-        )}
-      </View>
+          {savedRates.length > 0 && (
+            <TouchableOpacity onPress={onToggleVisibility}>
+            <ThemedText
+              style={[
+                { color: textColor },
+                styles.showHideText,
+                showSavedRates && { color: primaryColor, fontWeight: "600" },
+              ]}
+            >
+              {showSavedRates ? t('saved.hideIcon') : `▶ ${t('common.more')}`}
+            </ThemedText>
+          </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {showSavedRates && (
-        <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.savedRatesList, styles.fadeIn]}>
+        <View style={[
+          inModal
+            ? styles.fadeIn
+            : [{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.savedRatesList, styles.fadeIn]
+        ]}>
           {savedRates.length === 0 ? (
             <View style={styles.emptySavedRates}>
               <ThemedText style={[{ color: textSecondaryColor }, styles.emptySavedRatesText]}>
                 {!user
-                  ? "Sign in to save and sync your currency rates across devices!"
-                  : "No saved rates yet. Convert currencies and click \"Save This Rate\" to add some!"
+                  ? t('saved.signInPrompt')
+                  : t('saved.emptyState')
                 }
               </ThemedText>
             </View>
@@ -242,14 +251,11 @@ export default function SavedRates({
               )}
 
               {savedRates.length > 1 && (
-                <TouchableOpacity
-                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteAllButton]}
+                <DeleteAllButton
                   onPress={handleDeleteAllRates}
-                >
-                  <ThemedText style={[{ color: textInverseColor }, styles.deleteAllText]}>
-                   {t('saved.deleteAll')} ({savedRates.length})
-                  </ThemedText>
-                </TouchableOpacity>
+                  count={savedRates.length}
+                  translationKey="saved.deleteAll"
+                />
               )}
             </>
           )}
@@ -316,8 +322,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   savedRatesTitle: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   showHideText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    minWidth: 30,
+    textAlign: "center",
   },
   showHideTextActive: {
   },
@@ -350,15 +365,5 @@ const styles = StyleSheet.create({
   showMoreText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  deleteAllButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  deleteAllText: {
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

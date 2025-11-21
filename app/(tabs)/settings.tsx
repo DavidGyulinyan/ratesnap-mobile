@@ -17,12 +17,22 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabaseClient } from '@/lib/supabase-safe';
 import { getAsyncStorage } from '@/lib/storage';
 import expoGoSafeNotificationService from '@/lib/expoGoSafeNotificationService';
+import ContactSupportModal from '@/components/ContactSupportModal';
+import { useUserData } from '@/hooks/useUserData';
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
   const { themePreference, setThemePreference } = useTheme();
+  const {
+    savedRates,
+    rateAlerts,
+    converterHistory,
+    calculatorHistory,
+    pickedRates,
+    clearAllData
+  } = useUserData();
 
   // State for modals and forms
   const [showThemeSelection, setShowThemeSelection] = useState(false);
@@ -30,6 +40,7 @@ export default function SettingsScreen() {
   const [showAccountInfo, setShowAccountInfo] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showContactSupport, setShowContactSupport] = useState(false);
 
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
@@ -171,21 +182,88 @@ export default function SettingsScreen() {
   const handleExportData = async () => {
     try {
       const storage = getAsyncStorage();
+
+      // Collect all user data
       const exportData = {
+        exportVersion: '1.0',
         exportDate: new Date().toISOString(),
-        userInfo: user ? { email: user.email } : null,
-        settings: { themePreference, language, notificationSettings },
-        cachedRates: await storage.getItem('cachedExchangeRates'),
+        appVersion: '1.0.0',
+        userInfo: user ? {
+          email: user.email,
+          username: user.user_metadata?.username,
+          created_at: user.created_at
+        } : null,
+        settings: {
+          themePreference,
+          language,
+          notificationSettings
+        },
+        localData: {
+          savedRates: await storage.getItem('savedRates'),
+          selectedFromCurrency: await storage.getItem('selectedFromCurrency'),
+          selectedToCurrency: await storage.getItem('selectedToCurrency'),
+          currencyHistory: await storage.getItem('currencyHistory'),
+          frequentlyUsedCurrencies: await storage.getItem('frequentlyUsedCurrencies'),
+          lastConversion: await storage.getItem('lastConversion'),
+          cachedExchangeRates: await storage.getItem('cachedExchangeRates'),
+          cachedRatesTimestamp: await storage.getItem('cachedRatesTimestamp'),
+          onboardingCompleted: await storage.getItem('onboardingCompleted'),
+          detectedLocation: await storage.getItem('detectedLocation')
+        },
+        databaseData: user ? {
+          savedRates: savedRates.savedRates,
+          rateAlerts: rateAlerts.rateAlerts,
+          converterHistory: converterHistory.converterHistory,
+          calculatorHistory: calculatorHistory.calculatorHistory,
+          pickedRates: pickedRates.pickedRates
+        } : null
       };
+
+      // Convert to JSON string
+      const jsonString = JSON.stringify(exportData, null, 2);
 
       Alert.alert(
         'Data Export',
-        `Data prepared for export. User: ${user?.email || 'Not logged in'}`,
+        `Export Summary:\n• User: ${user?.email || 'Not logged in'}\n• Settings: ${Object.keys(exportData.settings).length} items\n• Local Data: ${Object.keys(exportData.localData).length} items\n• Database Data: ${user && exportData.databaseData ? Object.keys(exportData.databaseData).length : 0} items\n\nTotal data size: ${jsonString.length} characters\n\nIn a production app, this data would be saved to a file for backup.`,
         [{ text: 'OK' }]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to export data.');
+      console.error('Export error:', error);
+      Alert.alert('Error', 'Failed to export data. Please try again.');
     }
+  };
+
+  // Handle import data
+  const handleImportData = async () => {
+    Alert.alert(
+      'Import Data',
+      'File import functionality requires additional setup. For now, you can manually restore your settings through the app preferences.',
+      [
+        { text: 'OK' },
+        {
+          text: 'Reset Settings',
+          onPress: async () => {
+            // Reset to default settings
+            setThemePreference('system');
+            setLanguage('en');
+            setNotificationSettings({
+              enabled: true,
+              sound: true,
+              vibration: true,
+              showPreview: true,
+            });
+            const storage = getAsyncStorage();
+            await storage.setItem('notificationSettings', JSON.stringify({
+              enabled: true,
+              sound: true,
+              vibration: true,
+              showPreview: true,
+            }));
+            Alert.alert('Settings Reset', 'All settings have been reset to defaults.');
+          }
+        }
+      ]
+    );
   };
 
   // Get terms of use content
@@ -656,15 +734,15 @@ RateSnap चुनने के लिए धन्यवाद!`
     closeButton: {
       width: 32,
       height: 32,
+      backgroundColor: '#f3f4f6',
       borderRadius: 16,
-      backgroundColor: textSecondaryColor + '20',
       alignItems: 'center',
       justifyContent: 'center',
     },
     closeButtonText: {
       fontSize: 18,
-      color: textSecondaryColor,
-      fontWeight: '600',
+      color: '#6b7280',
+      fontWeight: 'bold',
     },
     form: {
       gap: 16,
@@ -900,9 +978,53 @@ RateSnap चुनने के लिए धन्यवाद!`
             onPress={handleExportData}
           >
             <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
-              📊 {t('settings.exportData')}
+              📤 {t('settings.exportData')}
             </ThemedText>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton]}
+            onPress={handleImportData}
+          >
+            <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+              📥 {t('settings.importData')}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {user && (
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#ef4444' }]}
+              onPress={() => {
+                Alert.alert(
+                  'Clear All Data',
+                  'This will permanently delete all your saved rates, alerts, history, and preferences. This action cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete Everything',
+                      style: 'destructive',
+                      onPress: async () => {
+                        try {
+                          const success = await clearAllData();
+                          if (success) {
+                            Alert.alert('Success', 'All data has been cleared.');
+                          } else {
+                            Alert.alert('Error', 'Failed to clear all data.');
+                          }
+                        } catch (error) {
+                          Alert.alert('Error', 'Failed to clear all data.');
+                        }
+                      }
+                    }
+                  ]
+                );
+              }}
+            >
+              <ThemedText style={[styles.buttonText, { color: 'white' }]}>
+                🗑️ {t('settings.clearAllData')}
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Account Section */}
@@ -991,9 +1113,12 @@ RateSnap चुनने के लिए धन्यवाद!`
             <ThemedText style={styles.settingValue}>1.0.0</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowContactSupport(true)}
+          >
             <ThemedText style={styles.settingItemText}>📧 {t('settings.contactSupport')}</ThemedText>
-            <ThemedText style={styles.settingValue}>support@ratesnap.app</ThemedText>
+            <ThemedText style={styles.settingValue}>Send Message</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -1002,6 +1127,10 @@ RateSnap चुनने के लिए धन्यवाद!`
       {renderThemeSelection()}
       {renderNotificationSettings()}
       {renderTerms()}
+      <ContactSupportModal
+        visible={showContactSupport}
+        onClose={() => setShowContactSupport(false)}
+      />
     </SafeAreaView>
   );
 }

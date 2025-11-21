@@ -10,6 +10,7 @@ interface MathCalculatorProps {
   onResult?: (result: number) => void;
   onAddToConverter?: (result: number) => void;
   autoCloseAfterCalculation?: boolean;
+  inModal?: boolean; // Hide header when used inside DashboardModal
 }
 
 export default function MathCalculator({
@@ -18,6 +19,7 @@ export default function MathCalculator({
   onResult,
   onAddToConverter,
   autoCloseAfterCalculation = true,
+  inModal = false,
 }: MathCalculatorProps) {
   const { user } = useAuth();
   const { calculatorHistory: supabaseHistory, saveCalculation, loading: historyLoading } = useCalculatorHistory();
@@ -497,26 +499,33 @@ export default function MathCalculator({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
       <ThemedView style={styles.container}>
-        <View style={[
-          styles.header,
-          {
-            paddingTop: getResponsiveValue(20, 30, 40),
-            marginBottom: getResponsiveValue(16, 24, 32),
-          }
-        ]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>x</Text>
-          </TouchableOpacity>
-          <Text style={[
-            styles.title,
+        {!inModal && (
+          <View style={[
+            styles.header,
             {
-              fontSize: getResponsiveValue(20, 24, 28),
+              paddingTop: getResponsiveValue(20, 30, 40),
+              marginBottom: getResponsiveValue(16, 24, 32),
             }
-          ]}>Calculator</Text>
-          <View style={{ width: 60 }} />
-        </View>
+          ]}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>x</Text>
+            </TouchableOpacity>
+            <Text style={[
+              styles.title,
+              {
+                fontSize: getResponsiveValue(20, 24, 28),
+              }
+            ]}>Calculator</Text>
+            <View style={{ width: 60 }} />
+          </View>
+        )}
 
         <View style={[
           styles.displayContainer,
@@ -781,6 +790,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0a0a0a",
     paddingHorizontal: 24,
+    paddingTop: 20,
   },
   header: {
     flexDirection: "row",
@@ -792,14 +802,14 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: '#f3f4f6',
-    borderRadius: '50%',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#6b7280',
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   title: {
     color: "#ffffff",

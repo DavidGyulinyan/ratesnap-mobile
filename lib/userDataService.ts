@@ -21,6 +21,7 @@ export interface RateAlert {
   target_rate: number;
   condition: 'above' | 'below';
   is_active: boolean;
+  notified: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -272,7 +273,7 @@ export class UserDataService {
 
   static async updateRateAlert(
     id: string,
-    updates: Partial<Pick<RateAlert, 'target_rate' | 'condition' | 'is_active'>>
+    updates: Partial<Pick<RateAlert, 'target_rate' | 'condition' | 'is_active' | 'notified'>>
   ): Promise<boolean> {
     try {
       const supabase = getSupabaseClient();
