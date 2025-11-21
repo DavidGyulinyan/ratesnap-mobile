@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates }, rateAlerts: { rateAlerts } } = useUserData();
+  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates }, rateAlerts: { rateAlerts, refreshAlerts } } = useUserData();
 
   // Theme colors - must be called at top level
   const primaryColor = useThemeColor({}, 'primary');
@@ -99,6 +99,34 @@ export default function HomeScreen() {
       refreshRates();
     }
   }, [showSavedRates, refreshRates]);
+
+  // Refresh rate alerts when the modal opens
+  useEffect(() => {
+    if (showRateAlerts) {
+      refreshAlerts();
+    }
+  }, [showRateAlerts, refreshAlerts]);
+
+  // Refresh data when modals close
+  useEffect(() => {
+    if (!showSavedRates) {
+      refreshRates();
+    }
+  }, [showSavedRates, refreshRates]);
+
+  useEffect(() => {
+    if (!showRateAlerts) {
+      refreshAlerts();
+    }
+  }, [showRateAlerts, refreshAlerts]);
+
+  // Refresh data when switching back to dashboard view
+  useEffect(() => {
+    if (currentView === "dashboard") {
+      refreshRates();
+      refreshAlerts();
+    }
+  }, [currentView, refreshRates, refreshAlerts]);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -447,7 +475,7 @@ export default function HomeScreen() {
                   alertSettings: undefined
                 }))}
                 onRatesUpdate={() => {
-                  // The hook will automatically update when rates change
+                  refreshAlerts();
                 }}
                 currenciesData={currenciesData}
                 inModal={true} // Hide RateAlertManager header since DashboardModal handles it
