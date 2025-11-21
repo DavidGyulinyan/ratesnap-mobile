@@ -207,7 +207,7 @@ export default function HomeScreen() {
             <ThemedText type="title" style={{
               fontSize: 22,
               fontWeight: "700",
-              color: primaryColor,
+              color: "#1894EE",
               textAlign: "right",
               letterSpacing: 0.5,
             }}>

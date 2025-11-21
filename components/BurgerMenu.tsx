@@ -133,9 +133,9 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
         }, style]}
         onPress={() => setIsVisible(true)}
       >
-        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
-        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
-        <View style={{ height: 2, backgroundColor: primaryColor, borderRadius: 1 }} />
+        <View style={{ height: 2, backgroundColor: "#1894EE", borderRadius: 1 }} />
+        <View style={{ height: 2, backgroundColor: "#1894EE", borderRadius: 1 }} />
+        <View style={{ height: 2, backgroundColor: "#1894EE", borderRadius: 1 }} />
       </TouchableOpacity>
 
       {/* Menu Modal */}
@@ -231,7 +231,7 @@ export default function BurgerMenu({ style }: BurgerMenuProps) {
                 marginTop: 20,
                 paddingTop: 20,
                 borderTopWidth: 1,
-                borderTopColor: borderColor,
+                borderTopColor: "#1894EE",
               }}>
                 <ThemedText style={{
                   fontSize: 14,
