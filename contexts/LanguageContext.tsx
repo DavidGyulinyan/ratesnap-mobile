@@ -447,7 +447,7 @@ const translations = {
     'quick.action.calculator.desc': 'Բացել հիմնական մաթեմատիկական հաշվիչ',
     'quick.action.calculator.hide': 'Թաքցնել հաշվիչի վիջեթը',
     
-    'converter.title': 'Արժույթի փոխարկիչ',
+    'converter.title': 'Փոխարկիչ',
     'converter.subtitle': 'Արժույթի փոխարկման ամբողջական հավաքածու բարդ գործառույթներով',
     'converter.standard': 'Ստանդարտ փոխարկում',
     'converter.multiCurrency.section': 'Բազմարժույթ փոխարկիչ',

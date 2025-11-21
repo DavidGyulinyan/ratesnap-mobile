@@ -1442,7 +1442,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   currencyLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "500",
     marginBottom: 4,
   },
