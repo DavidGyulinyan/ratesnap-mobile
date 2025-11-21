@@ -913,6 +913,8 @@ const translations = {
     'alerts.activeAlerts': 'активные уведомления',
     'saved.deleteAll': 'Удалить все',
     'saved.deleteAllConfirm': 'Вы уверены, что хотите удалить все сохраненные курсы?',
+    'converter.fromLabel': 'От',
+    'converter.toLabel': 'К',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Дубликат валюты',
@@ -1225,6 +1227,8 @@ const translations = {
     'alerts.activeAlerts': 'alertas activas',
     'saved.deleteAll': 'Eliminar Todo',
     'saved.deleteAllConfirm': '¿Estás seguro de que quieres eliminar todas las tasas guardadas?',
+    'converter.fromLabel': 'De',
+    'converter.toLabel': 'A',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Moneda Duplicada',
@@ -1536,6 +1540,8 @@ const translations = {
     'alerts.activeAlerts': '活跃提醒',
     'saved.deleteAll': '删除全部',
     'saved.deleteAllConfirm': '您确定要删除所有保存的汇率吗？',
+    'converter.fromLabel': '从',
+    'converter.toLabel': '到',
 
     // Errors & Messages
     'error.duplicateCurrency': '重复货币',
@@ -1848,6 +1854,8 @@ const translations = {
     'alerts.activeAlerts': 'एक्टिव अलर्ट्स',
     'saved.deleteAll': 'सभी हटाएं',
     'saved.deleteAllConfirm': 'आपको यह बताने चाहिए कि आप सभी सेव्ड रेट्स को हटाना चाहते हैं?',
+    'converter.fromLabel': 'से',
+    'converter.toLabel': 'से',
 
     // Errors & Messages
     'error.duplicateCurrency': 'डुप्लिकेट करेंसी',
