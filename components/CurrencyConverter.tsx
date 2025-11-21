@@ -608,9 +608,9 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           timestamp: Date.now()
         });
       }
-      Alert.alert('Success', user ? 'Rate saved to your account!' : 'Rate saved locally. Sign in to sync across devices!');
+      Alert.alert(t('converter.saveSuccessTitle'), user ? t('converter.saveSuccessMessage') : t('converter.saveSuccessLocalMessage'));
     } else {
-      Alert.alert('Error', 'Failed to save rate. Please try again.');
+      Alert.alert(t('converter.saveErrorTitle'), t('converter.saveErrorMessage'));
     }
   };
 
@@ -914,7 +914,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
         {/* Modern Currency Converter - Complete Redesign */}
         <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.modernConverterCard]}>
           <View style={styles.converterHeader}>
-            <ThemedText style={styles.converterTitle}>💱 Currency Converter</ThemedText>
+            <ThemedText style={styles.converterTitle}>💱 {t('converter.title')}</ThemedText>
             <TouchableOpacity
               style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.calculatorHeaderButton]}
               onPress={() => setShowCalculator(true)}
@@ -925,11 +925,11 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
           {/* Amount Input Section */}
           <View style={styles.amountSection}>
-            <ThemedText style={styles.amountLabel}>Amount</ThemedText>
+            <ThemedText style={styles.amountLabel}>{t('converter.amountLabel')}</ThemedText>
             <View style={styles.amountInputWrapper}>
               <TextInput
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
-                placeholder="Enter amount"
+                placeholder={t('converter.enterAmountPlaceholder')}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="numeric"
@@ -961,7 +961,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
                 <CurrencyFlag currency={fromCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>From</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.fromLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{fromCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
@@ -981,7 +981,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
                 <CurrencyFlag currency={toCurrency} size={24} />
               </View>
               <View style={styles.currencyInfo}>
-                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>To</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.toLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{toCurrency}</ThemedText>
               </View>
             </TouchableOpacity>
@@ -1012,7 +1012,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               ) : (
                 <View style={styles.placeholderResult}>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.placeholderText]}>
-                    Enter an amount to see conversion
+                    {t('converter.placeholderResult')}
                   </ThemedText>
                 </View>
               )}
@@ -1025,7 +1025,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.saveRateButton]}
               onPress={handleSaveRate}
             >
-              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>⭐ Save Rate</ThemedText>
+              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>{t('converter.saveRateButton')}</ThemedText>
             </TouchableOpacity>
           </View>
         </View>

@@ -73,29 +73,29 @@ export default function SavedRates({
       onDeleteRate(id);
     } else {
       Alert.alert(
-        'Delete Rate',
-        'Are you sure you want to delete this saved rate?',
+        t('saved.deleteRateTitle'),
+        t('saved.deleteRateMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('saved.deleteRateCancel'), style: 'cancel' },
           {
-            text: 'Delete',
+            text: t('saved.deleteRateConfirm'),
             style: 'destructive',
             onPress: async () => {
               try {
                 setDeletingId(id);
                 const success = await deleteRate(id);
                 if (success) {
-                  Alert.alert('Success', 'Rate deleted successfully');
+                  Alert.alert(t('saved.deleteSuccessTitle'), t('saved.deleteSuccessMessage'));
                 } else {
                   Alert.alert(
-                    'Delete Failed',
-                    'Unable to delete the rate. Please try again or check your internet connection.'
+                    t('saved.deleteFailedTitle'),
+                    t('saved.deleteFailedMessage')
                   );
                 }
               } catch (error) {
                 Alert.alert(
-                  'Error',
-                  'An unexpected error occurred while deleting the rate.'
+                  t('saved.deleteErrorTitle'),
+                  t('saved.deleteErrorMessage')
                 );
                 console.error('Delete rate error:', error);
               } finally {
@@ -113,17 +113,17 @@ export default function SavedRates({
       onDeleteAll();
     } else {
       Alert.alert(
-        'Delete All Rates',
-        'Are you sure you want to delete all saved rates? This action cannot be undone.',
+        t('saved.deleteAllTitle'),
+        t('saved.deleteAllMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('saved.deleteAllCancel'), style: 'cancel' },
           {
-            text: 'Delete All',
+            text: t('saved.deleteAllConfirmButton'),
             style: 'destructive',
             onPress: async () => {
               const success = await deleteAllRates();
               if (!success) {
-                Alert.alert('Error', 'Failed to delete all saved rates');
+                Alert.alert(t('saved.deleteAllErrorTitle'), t('saved.deleteAllErrorMessage'));
               }
             }
           }
@@ -164,7 +164,7 @@ export default function SavedRates({
           styles.deleteButtonText,
           deletingId === rate.id && styles.deleteButtonTextDisabled
         ]}>
-          {deletingId === rate.id ? '⏳' : '🗑️'}
+          {deletingId === rate.id ? t('saved.deletingIcon') : t('saved.deleteIcon')}
         </ThemedText>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -187,7 +187,7 @@ export default function SavedRates({
         <View style={styles.savedRatesList}>
           <View style={styles.emptySavedRates}>
             <ThemedText style={styles.emptySavedRatesText}>
-              Loading saved rates...
+              {t('saved.loadingText')}
             </ThemedText>
           </View>
         </View>
@@ -211,7 +211,7 @@ export default function SavedRates({
                 showSavedRates && { color: primaryColor, fontWeight: "600" },
               ]}
             >
-              {showSavedRates ? "×" : `▶ ${t('common.more')}`}
+              {showSavedRates ? t('saved.hideIcon') : `▶ ${t('common.more')}`}
             </ThemedText>
           </TouchableOpacity>
           )}
@@ -228,8 +228,8 @@ export default function SavedRates({
             <View style={styles.emptySavedRates}>
               <ThemedText style={[{ color: textSecondaryColor }, styles.emptySavedRatesText]}>
                 {!user
-                  ? "Sign in to save and sync your currency rates across devices!"
-                  : "No saved rates yet. Convert currencies and click \"Save This Rate\" to add some!"
+                  ? t('saved.signInPrompt')
+                  : t('saved.emptyState')
                 }
               </ThemedText>
             </View>
