@@ -25,6 +25,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserData } from "@/hooks/useUserData";
+import { useLocationCurrency } from "./LocationDetection";
 
 interface AlertSettings {
   targetRate: number;
@@ -86,6 +87,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const { user } = useAuth();
   const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
   const { pickedRates: { trackRate } } = useUserData();
+  const { currency: detectedCurrency, loading: locationLoading } = useLocationCurrency();
 
   // Theme colors
   const backgroundColor = useThemeColor({}, 'background');
@@ -887,6 +889,19 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
       loadLastConversion();
     }
   }, [currencyList]);
+
+  // Set detected currency as default toCurrency if no saved preferences
+  useEffect(() => {
+    if (detectedCurrency && detectedCurrency !== 'USD' && currencyList.includes(detectedCurrency)) {
+      // Only set if no saved preferences exist
+      AsyncStorage.getItem('selectedToCurrency').then(savedTo => {
+        if (!savedTo) {
+          setToCurrency(detectedCurrency);
+          console.log(`🌍 Set detected currency: ${detectedCurrency}`);
+        }
+      });
+    }
+  }, [detectedCurrency, currencyList]);
 
 
   if (loading) {
