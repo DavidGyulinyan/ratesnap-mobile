@@ -8,6 +8,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ratesnap-mobile",
     "userInterfaceStyle": "automatic",
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.davidgyulinyan.ratesnapmobile",
@@ -16,15 +17,14 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "ratesnap",
-            "CFBundleURLSchemes": [
-              "ratesnap-mobile"
-            ]
+            "CFBundleURLSchemes": ["ratesnap-mobile"]
           }
         ],
         "NSUserNotificationsUsageDescription": "RateSnap needs notification access to send you alerts when your saved exchange rates reach your target values.",
         "UNUserNotificationCenterDelegate": true
       }
     },
+
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -39,10 +39,7 @@
               "scheme": "ratesnap-mobile"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "permissions": [
@@ -52,10 +49,12 @@
       ],
       "package": "com.davidgyulinyan.ratesnapmobile"
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       "expo-router",
       "expo-notifications",
@@ -70,9 +69,11 @@
       ],
       "expo-mail-composer"
     ],
+
     "experiments": {
       "typedRoutes": true
     },
+
     "extra": {
       "supabaseUrl": "https://jprafkemftjqrzsrtuui.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E",
@@ -81,10 +82,19 @@
         "projectId": "0e05b89a-80f4-4868-b91e-3009f1bcf007"
       }
     },
+
     "notifications": {
       "icon": "./assets/images/notification-icon.png",
       "color": "#ffffff",
       "iosDisplayInForeground": true
+    },
+
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+
+    "updates": {
+      "url": "https://u.expo.dev/0e05b89a-80f4-4868-b91e-3009f1bcf007"
     }
   }
 }
