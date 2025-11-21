@@ -1107,7 +1107,6 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           visible={showCalculator}
           onClose={() => setShowCalculator(false)}
           onResult={handleCalculatorResult}
-          onAddToConverter={handleCalculatorResult}
           autoCloseAfterCalculation={false}
         />
 

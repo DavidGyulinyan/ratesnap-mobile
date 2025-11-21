@@ -451,21 +451,13 @@ export default function HomeScreen() {
             </DashboardModal>
           )}
 
-          {/* Inline Calculator Widget */}
-          {showCalculator && (
-            <DashboardModal
-              title={t("calculator.title")}
-              icon="🧮"
-              onClose={() => setShowCalculator(false)}
-            >
-              <MathCalculator
-                visible={true}
-                onClose={() => setShowCalculator(false)}
-                onResult={handleCalculatorResult}
-                inModal={true} // Hide MathCalculator header since DashboardModal handles it
-              />
-            </DashboardModal>
-          )}
+          {/* Calculator Modal */}
+          <MathCalculator
+            visible={showCalculator}
+            onClose={() => setShowCalculator(false)}
+            onResult={handleCalculatorResult}
+            autoCloseAfterCalculation={false}
+          />
 
           {/* Saved Rates Section - Separate Component */}
           {showSavedRates && (
