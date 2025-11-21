@@ -229,6 +229,7 @@ const translations = {
     'multi.selectCurrency': 'Select currency',
     'multi.addCurrency': '+ Add Currency',
     'multi.convertTo': 'Convert To',
+    'multi.deleteAll': 'Delete All',
     'multi.titleComponent': '🔄 Multi-Currency Converter',
 
     // Currency Picker & Dynamic
@@ -514,6 +515,7 @@ const translations = {
     'multi.selectCurrency': 'Ընտրել արժույթ',
     'multi.addCurrency': '+ Ավելացնել',
     'multi.convertTo': 'Փոխարկել',
+    'multi.deleteAll': 'Հեռացնել բոլորը',
     'multi.titleComponent': '🔄 Բազմարժույթ փոխարկիչ',
 
     // Currency Picker & Dynamic
@@ -537,6 +539,7 @@ const translations = {
     'alerts.activeAlert': 'ակտիվ ծանուցում',
     'alerts.activeAlerts': 'ակտիվ ծանուցումներ',
     'saved.deleteAll': 'Հեռացնել բոլորը',
+    "saved.deleteAllConfirm": "Դուք համոզվա՞ծ եք, որ ցանկանում եք հեռացնել բոլոր պահպանված դրույքները",
 
     // Rate Alert Manager
     'rateAlerts.signInRequired': 'Մուտք Դրույթային է',
@@ -799,6 +802,7 @@ const translations = {
     'multi.selectCurrency': 'Выберите валюту',
     'multi.addCurrency': '+ Добавить валюту',
     'multi.convertTo': 'Конвертировать в',
+    'multi.deleteAll': 'Удалить все',
     'multi.titleComponent': '🔄 Мультивалютный конвертер',
 
     // Currency Picker & Dynamic
@@ -822,6 +826,7 @@ const translations = {
     'alerts.activeAlert': 'активное уведомление',
     'alerts.activeAlerts': 'активные уведомления',
     'saved.deleteAll': 'Удалить все',
+    'saved.deleteAllConfirm': 'Вы уверены, что хотите удалить все сохраненные курсы?',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Дубликат валюты',
@@ -1100,6 +1105,7 @@ const translations = {
     'multi.selectCurrency': 'Seleccionar moneda',
     'multi.addCurrency': '+ Agregar Moneda',
     'multi.convertTo': 'Convertir a',
+    'multi.deleteAll': 'Eliminar Todo',
     'multi.titleComponent': '🔄 Convertidor Multi-Moneda',
 
     // Currency Picker & Dynamic
@@ -1123,6 +1129,7 @@ const translations = {
     'alerts.activeAlert': 'alerta activa',
     'alerts.activeAlerts': 'alertas activas',
     'saved.deleteAll': 'Eliminar Todo',
+    'saved.deleteAllConfirm': '¿Estás seguro de que quieres eliminar todas las tasas guardadas?',
 
     // Errors & Messages
     'error.duplicateCurrency': 'Moneda Duplicada',
@@ -1400,6 +1407,7 @@ const translations = {
     'multi.selectCurrency': '选择货币',
     'multi.addCurrency': '+ 添加货币',
     'multi.convertTo': '转换为',
+    'multi.deleteAll': '删除全部',
     'multi.titleComponent': '🔄 多货币转换器',
 
     // Currency Picker & Dynamic
@@ -1423,6 +1431,7 @@ const translations = {
     'alerts.activeAlert': '活跃提醒',
     'alerts.activeAlerts': '活跃提醒',
     'saved.deleteAll': '删除全部',
+    'saved.deleteAllConfirm': '您确定要删除所有保存的汇率吗？',
 
     // Errors & Messages
     'error.duplicateCurrency': '重复货币',
@@ -1701,6 +1710,7 @@ const translations = {
     'multi.selectCurrency': 'मुद्रा चुनें',
     'multi.addCurrency': '+ करेंसी जोड़ें',
     'multi.convertTo': 'में बदलें',
+    'multi.deleteAll': 'सभी हटाएं',
     'multi.titleComponent': '🔄 मल्टी-करेंसी कन्वर्टर',
 
     // Currency Picker & Dynamic
@@ -1724,6 +1734,7 @@ const translations = {
     'alerts.activeAlert': 'एक्टिव अलर्ट',
     'alerts.activeAlerts': 'एक्टिव अलर्ट्स',
     'saved.deleteAll': 'सभी हटाएं',
+    'saved.deleteAllConfirm': 'आपको यह बताने चाहिए कि आप सभी सेव्ड रेट्स को हटाना चाहते हैं?',
 
     // Errors & Messages
     'error.duplicateCurrency': 'डुप्लिकेट करेंसी',

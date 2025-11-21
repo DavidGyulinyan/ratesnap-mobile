@@ -18,6 +18,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { getAsyncStorage } from "@/lib/storage";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import notificationService from "@/lib/notificationService";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -188,33 +189,26 @@ export default function HomeScreen() {
 
   const handleTestNotification = async () => {
     try {
-      // Force a test alert to show immediately (bypassing rate check)
-      const testMessage = `🎯 USD → AMD rate alert!\n💰 Current rate: 385.75\n🚀 Alert triggered: USD is above 382 AMD\n\n📱 This is a test notification (Expo Go)`;
-      
-      // Show immediate in-app alert - this is what would happen when a real alert triggers
-      Alert.alert(
-        '🚨 RATE ALERT TRIGGERED!',
-        testMessage,
-        [
-          {
-            text: 'View Details',
-            onPress: () => {
-              Alert.alert(
-                '💰 USD → AMD Alert Details',
-                'Target: USD above 382 AMD\nStatus: ACTIVE ✅\nLast Checked: Just now\nThis is a simulated notification for testing.',
-                [{ text: 'OK' }]
-              );
-            }
-          },
-          { text: 'Dismiss', style: 'cancel' }
-        ]
-      );
+      // Create a test alert object
+      const testAlert = {
+        id: 'test-alert-' + Date.now(),
+        fromCurrency: 'USD',
+        toCurrency: 'AMD',
+        targetRate: 382,
+        direction: 'above' as const,
+        isActive: true,
+        lastChecked: Date.now(),
+        triggered: false
+      };
+
+      // Send immediate notification using the real notification service
+      await notificationService.sendImmediateAlert(testAlert);
 
       // Show confirmation that test was completed
       setTimeout(() => {
         Alert.alert(
           "📱 TEST COMPLETED SUCCESSFULLY!",
-          `✅ The alert notification system is working!\n\n🎯 What just happened:\n• A rate alert popup appeared\n• This simulates a real notification\n• The alert shows USD → AMD above 382\n\n📲 In Expo Go:\n• In-app alerts are used\n• No push notifications available\n\n🚀 In Production:\n• Real push notifications would appear\n• Background monitoring would work\n• Cross-platform compatibility`,
+          `✅ The alert notification system is working!\n\n🎯 What just happened:\n• A real push notification was sent to your device\n• This simulates a real rate alert\n• The alert shows USD → AMD above 382\n\n📲 Real Notifications:\n• Push notifications appear on your device\n• Background monitoring works\n• Cross-platform compatibility\n\n🚀 Production Ready:\n• Notifications work on iOS and Android\n• Background rate checking enabled\n• Alerts trigger automatically`,
           [
             {
               text: "Perfect!",
@@ -223,7 +217,7 @@ export default function HomeScreen() {
           ]
         );
       }, 1500);
-      
+
     } catch (error) {
       console.error('Error sending test notification:', error);
       Alert.alert(

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
+import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
@@ -58,8 +59,6 @@ export default function SavedRates({
   const primaryColor = useThemeColor({}, 'primary');
   const textColor = useThemeColor({}, 'text');
   const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const errorColor = useThemeColor({}, 'error');
-  const textInverseColor = useThemeColor({}, 'textInverse');
   const shadowColor = '#000000'; // Use black for shadows
 
   // Use hook data if forceUseHook is true, otherwise use prop or fallback to hook
@@ -252,14 +251,11 @@ export default function SavedRates({
               )}
 
               {savedRates.length > 1 && (
-                <TouchableOpacity
-                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteAllButton]}
+                <DeleteAllButton
                   onPress={handleDeleteAllRates}
-                >
-                  <ThemedText style={[{ color: textInverseColor }, styles.deleteAllText]}>
-                   {t('saved.deleteAll')} ({savedRates.length})
-                  </ThemedText>
-                </TouchableOpacity>
+                  count={savedRates.length}
+                  translationKey="saved.deleteAll"
+                />
               )}
             </>
           )}
@@ -369,15 +365,5 @@ const styles = StyleSheet.create({
   showMoreText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  deleteAllButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  deleteAllText: {
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

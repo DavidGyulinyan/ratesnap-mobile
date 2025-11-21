@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
+import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useConverterHistory } from "@/hooks/useUserData";
@@ -450,6 +451,22 @@ export default function MultiCurrencyConverter({
     setConversionTargets(conversionTargets.filter(target => target.id !== id));
   };
 
+  // Remove all target currencies
+  const removeAllTargetCurrencies = () => {
+    Alert.alert(
+      t('common.delete'),
+      t('saved.deleteAllConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => setConversionTargets([])
+        }
+      ]
+    );
+  };
+
   // Handle "From" currency selection
   const handleFromCurrencySelect = (currency: string) => {
     setFromCurrency(currency);
@@ -630,6 +647,14 @@ export default function MultiCurrencyConverter({
                     </ThemedText>
                   </TouchableOpacity>
                 </View>
+              )}
+
+              {conversionTargets.length > 1 && (
+                <DeleteAllButton
+                  onPress={removeAllTargetCurrencies}
+                  count={conversionTargets.length}
+                  translationKey="multi.deleteAll"
+                />
               )}
             </>
           )}
