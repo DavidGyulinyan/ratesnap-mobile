@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/lib/supabase-safe';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import alertCheckerService from '@/lib/alertCheckerService';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -54,11 +55,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
+
         if (session?.user) {
           console.log('User authenticated:', session.user.email);
+          // Start alert checking for authenticated users
+          alertCheckerService.startChecking(60); // Check every 60 minutes
         } else {
           console.log('User signed out');
+          // Stop alert checking when user signs out
+          alertCheckerService.stopChecking();
         }
       });
 

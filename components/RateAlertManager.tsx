@@ -17,6 +17,8 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRateAlerts } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
+import alertCheckerService from "@/lib/alertCheckerService";
+import { getAsyncStorage } from "@/lib/storage";
 
 interface RateAlert {
   id: string;
@@ -26,6 +28,7 @@ interface RateAlert {
   target_rate: number;
   condition: 'above' | 'below';
   is_active: boolean;
+  notified: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -103,6 +106,34 @@ export default function RateAlertManager({
     }
 
     try {
+      // Check if alert condition is already met
+      const currentRate = await getCurrentRateForAlert(formData.fromCurrency, formData.toCurrency);
+      const conditionAlreadyMet = checkIfConditionMet(currentRate, targetRate, formData.direction);
+
+      if (conditionAlreadyMet && !editingAlertId) {
+        // Show warning that condition is already met
+        const shouldContinue = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            t('rateAlerts.conditionAlreadyMetTitle'),
+            tWithParams('rateAlerts.conditionAlreadyMetMessage', {
+              fromCurrency: formData.fromCurrency,
+              toCurrency: formData.toCurrency,
+              currentRate: currentRate.toFixed(4),
+              targetRate: targetRate.toFixed(4),
+              condition: t(`rateAlerts.direction.${formData.direction}`)
+            }),
+            [
+              { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+              { text: t('rateAlerts.createAnyway'), onPress: () => resolve(true) }
+            ]
+          );
+        });
+
+        if (!shouldContinue) {
+          return;
+        }
+      }
+
       if (editingAlertId) {
         // Update existing alert
         const success = await updateAlert(editingAlertId, {
@@ -127,7 +158,7 @@ export default function RateAlertManager({
       setShowAlertModal(false);
       setEditingAlertId(null);
       onRatesUpdate();
-      
+
       Alert.alert(t('rateAlerts.success'), t('rateAlerts.savedSuccessfully'));
     } catch (error) {
       console.error('Error saving alert:', error);
@@ -156,6 +187,27 @@ export default function RateAlertManager({
     );
   };
 
+  const handleResetAlert = async (alertId: string) => {
+    Alert.alert(
+      t('rateAlerts.resetTitle'),
+      t('rateAlerts.resetMessage'),
+      [
+        { text: t('rateAlerts.cancelButton'), style: 'cancel' },
+        {
+          text: t('rateAlerts.resetButton'),
+          style: 'default',
+          onPress: async () => {
+            const success = await updateAlert(alertId, { notified: false, is_active: true });
+            if (!success) {
+              Alert.alert(t('rateAlerts.error'), t('rateAlerts.resetFailed'));
+            }
+            onRatesUpdate();
+          }
+        }
+      ]
+    );
+  };
+
   const toggleAlertActive = async (alertId: string, isActive: boolean) => {
     const success = await updateAlert(alertId, { is_active: isActive });
     if (!success) {
@@ -165,13 +217,48 @@ export default function RateAlertManager({
   };
 
   const getAlertStatusText = (alert: RateAlert): string => {
+    if (alert.notified) return t('rateAlerts.status.notified');
     if (!alert.is_active) return t('rateAlerts.status.inactive');
     return t('rateAlerts.status.active');
   };
 
   const getAlertStatusColor = (alert: RateAlert): string => {
+    if (alert.notified) return primaryColor; // Use primary color for notified alerts
     if (!alert.is_active) return textSecondaryColor;
     return successColor;
+  };
+
+  const getCurrentRateForAlert = async (fromCurrency: string, toCurrency: string): Promise<number> => {
+    try {
+      const storage = getAsyncStorage();
+      const cachedData = await storage.getItem('cachedExchangeRates');
+      if (cachedData) {
+        const data = JSON.parse(cachedData);
+        const fromRate = data.conversion_rates[fromCurrency];
+        const toRate = data.conversion_rates[toCurrency];
+
+        if (fromRate && toRate) {
+          return toRate / fromRate;
+        }
+      }
+      throw new Error('No cached rates available');
+    } catch (error) {
+      console.error('Error getting current rate for alert:', error);
+      throw error;
+    }
+  };
+
+  const checkIfConditionMet = (currentRate: number, targetRate: number, direction: 'above' | 'below'): boolean => {
+    const tolerance = 0.0001; // Small tolerance for floating point comparison
+
+    switch (direction) {
+      case 'above':
+        return currentRate > targetRate + tolerance;
+      case 'below':
+        return currentRate < targetRate - tolerance;
+      default:
+        return false;
+    }
   };
 
   const handleCreateAlert = () => {
@@ -190,6 +277,30 @@ export default function RateAlertManager({
       isActive: true,
     });
     setShowAlertModal(true);
+  };
+
+  const handleDebugAlerts = async () => {
+    try {
+      console.log('🔍 Manual alert check triggered');
+
+      // Get all alerts for debugging
+      const allAlerts = await alertCheckerService.getAllAlertsForDebug();
+      console.log(`📋 Total alerts in database: ${allAlerts.length}`);
+
+      // Check each alert
+      for (const alert of allAlerts) {
+        console.log(`🔍 Checking alert: ${alert.id} (${alert.from_currency}→${alert.to_currency})`);
+        await alertCheckerService.debugAlert(alert.id);
+      }
+
+      // Also trigger a full check
+      await alertCheckerService.checkAlertsNow();
+
+      Alert.alert('Debug Complete', 'Check console logs for alert debugging information');
+    } catch (error) {
+      console.error('❌ Error in debug:', error);
+      Alert.alert('Debug Error', 'Failed to debug alerts. Check console for details.');
+    }
   };
 
   // Show loading state
@@ -265,6 +376,12 @@ export default function RateAlertManager({
           </ThemedText>
           <View style={styles.headerActions}>
             <TouchableOpacity
+              style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.debugButton]}
+              onPress={handleDebugAlerts}
+            >
+              <ThemedText style={[{ color: textColor }, styles.debugButtonText]}>🔍 Debug</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
               onPress={handleCreateAlert}
             >
@@ -282,6 +399,12 @@ export default function RateAlertManager({
       {/* Show Create button inside modal content when inModal is true */}
       {inModal && (
         <View style={styles.modalCreateButtonContainer}>
+          <TouchableOpacity
+            style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.debugButton]}
+            onPress={handleDebugAlerts}
+          >
+            <ThemedText style={[{ color: textColor }, styles.debugButtonText]}>🔍 Debug</ThemedText>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
             onPress={handleCreateAlert}
@@ -329,6 +452,7 @@ export default function RateAlertManager({
                   <Switch
                     value={alert.is_active}
                     onValueChange={(value) => toggleAlertActive(alert.id, value)}
+                    disabled={alert.notified}
                     trackColor={{ false: '#ec1c1cff', true: '#10b981' }}
                     thumbColor='#ffffff'
                   />
@@ -363,12 +487,21 @@ export default function RateAlertManager({
                   <ThemedText style={[{ color: textColor }, styles.editButtonText]}>{t('rateAlerts.edit')}</ThemedText>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
-                  onPress={() => handleDeleteAlert(alert.id)}
-                >
-                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
-                </TouchableOpacity>
+                {alert.notified ? (
+                  <TouchableOpacity
+                    style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.resetButton]}
+                    onPress={() => handleResetAlert(alert.id)}
+                  >
+                    <ThemedText style={[{ color: textColor }, styles.resetButtonText]}>{t('rateAlerts.reset')}</ThemedText>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
+                    onPress={() => handleDeleteAlert(alert.id)}
+                  >
+                    <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ))
@@ -555,6 +688,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  debugButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  debugButtonText: {
+    fontWeight: '600',
+    fontSize: 12,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -684,6 +827,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   deleteButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  resetButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  resetButtonText: {
     fontSize: 12,
     fontWeight: '600',
   },

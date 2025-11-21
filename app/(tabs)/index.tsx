@@ -60,7 +60,7 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates } } = useUserData();
+  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates }, rateAlerts: { rateAlerts } } = useUserData();
 
   // Theme colors - must be called at top level
   const primaryColor = useThemeColor({}, 'primary');
@@ -395,8 +395,8 @@ export default function HomeScreen() {
                     {t("quick.action.rateAlerts")}
                   </ThemedText>
                   <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {savedRates.filter(rate => rate.hasAlert).length}{" "}
-                    {savedRates.filter(rate => rate.hasAlert).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
+                    {rateAlerts.filter(alert => alert.is_active).length}{" "}
+                    {rateAlerts.filter(alert => alert.is_active).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
