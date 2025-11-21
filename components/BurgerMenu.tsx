@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  TextInput,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
