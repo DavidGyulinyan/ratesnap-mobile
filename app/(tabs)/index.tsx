@@ -3,7 +3,6 @@ import BurgerMenu from "@/components/BurgerMenu";
 import CurrencyConverter from "@/components/CurrencyConverter";
 import DashboardModal from "@/components/DashboardModal";
 import Footer from "@/components/Footer";
-import GoogleAdsBanner from "@/components/GoogleAdsBanner";
 import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
@@ -456,14 +455,6 @@ export default function HomeScreen() {
             </DashboardModal>
           )}
 
-          {/* Google Ads Banner */}
-          <View style={styles.adsContainer}>
-            <GoogleAdsBanner
-              type="banner"
-              size="medium"
-              style={styles.adsBanner}
-            />
-          </View>
           {/* Features Preview */}
           <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.featuresSection]}>
             <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
@@ -532,14 +523,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Google Ads Banner */}
-          <View style={styles.adsContainer}>
-            <GoogleAdsBanner
-              type="banner"
-              size="medium"
-              style={styles.adsBanner}
-            />
-          </View>
           {/* Additional Content to Enable Scrolling */}
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -1013,16 +996,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 10,
     textAlign: "center",
-  },
-
-  // Ads
-  adsContainer: {
-    marginBottom: 32,
-    alignItems: "center",
-  },
-  adsBanner: {
-    width: "100%",
-    marginBottom: 0,
   },
 
 
