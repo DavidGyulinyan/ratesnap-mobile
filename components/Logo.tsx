@@ -33,7 +33,7 @@ export default function Logo({ size = 24, showText = true, textSize = 18 }: Logo
           style={[
             styles.logoText,
             {
-              color: '#11181C', // Always use dark color for better visibility
+              color: colors.text, // Use theme-aware text color
               fontSize: textSize,
             },
           ]}
