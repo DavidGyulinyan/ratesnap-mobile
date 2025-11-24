@@ -166,7 +166,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
       <ThemedView style={[styles.container, style]}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>
-            📊 {baseCurrency}/{targetCurrency} Chart
+            {baseCurrency}/{targetCurrency} Chart
           </ThemedText>
         </View>
         <View style={styles.loadingContainer}>
@@ -181,7 +181,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
       <ThemedView style={[styles.container, style]}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>
-            📊 {baseCurrency}/{targetCurrency} Chart
+            {baseCurrency}/{targetCurrency} Chart
           </ThemedText>
         </View>
         <View style={styles.errorContainer}>
@@ -204,7 +204,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
     <ThemedView style={[styles.container, style]}>
       <View style={styles.header}>
         <ThemedText style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}>
-          📊 {baseCurrency}/{targetCurrency} Chart
+          {baseCurrency}/{targetCurrency} Chart
         </ThemedText>
         {onClose && (
           <TouchableOpacity
@@ -246,7 +246,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
       </View>
 
       {/* Time Period Selector */}
-      <View style={[styles.periodSelector, { flexDirection: screenWidth < 400 ? 'column' : 'row' }]}>
+      <View style={[styles.periodSelector, { flexDirection: 'row' }]}>
         {timePeriods.map((period) => (
           <TouchableOpacity
             key={period.key}
@@ -255,10 +255,10 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
               {
                 backgroundColor: selectedPeriod === period.key ? primaryColor : surfaceColor,
                 borderColor: borderColor,
-                flex: screenWidth < 400 ? 0 : 1,
-                minWidth: screenWidth < 400 ? '100%' : 50,
-                marginVertical: screenWidth < 400 ? 2 : 0,
-                marginHorizontal: screenWidth < 400 ? 0 : 1,
+                flex: 1,
+                minWidth: 50,
+                marginVertical: 0,
+                marginHorizontal: 1,
               }
             ]}
             onPress={() => setSelectedPeriod(period.key)}
@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     margin: 6,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

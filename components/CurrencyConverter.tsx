@@ -13,7 +13,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from 'expo-constants';
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
-import Logo from "./Logo";
 import CurrencyPicker from "./CurrencyPicker";
 import MathCalculator from "./MathCalculator";
 import CurrencyFlag from "./CurrencyFlag";
@@ -87,7 +86,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showChart, setShowChart] = useState<boolean>(false);
 
   const { user } = useAuth();
-  const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
+  const { savedRates: { savedRates, saveRate} } = useUserData();
   const { pickedRates: { trackRate } } = useUserData();
   const { currency: detectedCurrency, loading: locationLoading } = useLocationCurrency();
 
