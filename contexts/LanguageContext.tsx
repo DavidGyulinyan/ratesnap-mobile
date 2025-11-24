@@ -70,7 +70,8 @@ const translations = {
     'converter.fromLabel': 'From',
     'converter.toLabel': 'To',
     'converter.placeholderResult': 'Enter an amount to see conversion',
-    'converter.saveRateButton': '⭐ Save Rate',
+    'converter.saveRateButton': 'Save',
+    'converter.chartButton': 'Chart',
     'converter.saveSuccessTitle': 'Success',
     'converter.saveSuccessMessage': 'Rate saved to your account!',
     'converter.saveSuccessLocalMessage': 'Rate saved locally. Sign in to sync across devices!',
@@ -419,6 +420,21 @@ const translations = {
     'common.sponsored': 'Sponsored',
     'common.learnMore': 'Learn More',
     'common.adSupport': 'Support us with ads',
+
+    // Chart
+    'chart.title': 'Exchange Rate Chart',
+    'chart.showingDataFor': 'Showing data for',
+    'chart.noData': 'No chart data available',
+    'chart.loading': 'Loading chart data...',
+    'chart.error': 'Failed to load chart data',
+    'chart.retry': 'Retry',
+    'chart.currentRate': 'Current rate',
+    'chart.rateChange': 'Change',
+    'chart.dataPoints': 'data points',
+    'chart.timePeriods.7D': '7 Days',
+    'chart.timePeriods.30D': '30 Days',
+    'chart.timePeriods.90D': '90 Days',
+    'chart.timePeriods.1Y': '1 Year',
   },
   hy: {
     // Armenian
@@ -593,7 +609,8 @@ const translations = {
     'converter.fromLabel': 'Որտեղից',
     'converter.toLabel': 'Ուր',
     'converter.placeholderResult': 'Մուտքագրեք գումարը՝ փոխարկումը տեսնելու համար',
-    'converter.saveRateButton': '⭐ Պահպանել դրույքը',
+    'converter.saveRateButton': 'Պահպանել',
+    'converter.chartButton': 'Գրաֆիկ',
     'converter.saveSuccessTitle': 'Հաջողություն',
     'converter.saveSuccessMessage': 'Դրույքը պահպանվեց ձեր հաշվում:',
     'converter.saveSuccessLocalMessage': 'Դրույքը պահպանվեց տեղայնորեն: Մուտք գործեք՝ սարքերի միջև համաժամանակեցնելու համար:',
@@ -726,6 +743,21 @@ const translations = {
     'error.loading': 'Չհաջողվեց բեռնել տվյալները: Խնդրում ենք կրկին փորձել:',
     'success.rateSaved': 'Դրույքը հաջողությամբ պահպանվեց:',
 
+    // Chart
+    'chart.title': 'Փոխարժեքի գրաֆիկ',
+    'chart.showingDataFor': 'Ցուցադրվում է տվյալներ',
+    'chart.noData': 'Գրաֆիկի տվյալներ չկան',
+    'chart.loading': 'Բեռնվում են գրաֆիկի տվյալները...',
+    'chart.error': 'Չհաջողվեց բեռնել գրաֆիկի տվյալները',
+    'chart.retry': 'Կրկին փորձել',
+    'chart.currentRate': 'Ընթացիկ դրույք',
+    'chart.rateChange': 'Փոխվածք',
+    'chart.dataPoints': 'տվյալների կետեր',
+    'chart.timePeriods.7D': '7 օր',
+    'chart.timePeriods.30D': '30 օր',
+    'chart.timePeriods.90D': '90 օր',
+    'chart.timePeriods.1Y': '1 տարի',
+
     // Sign In Page
     'signin.welcomeBack': 'Բարի վերադարձ',
     'signin.subtitle': 'Մուտք գործեք՝ ձեր տվյալները համաժամանակեցնելու համար',
@@ -825,7 +857,9 @@ const translations = {
     'converter.conversionResult': '{amount} {fromCurrency} = {convertedAmount} {toCurrency}',
     'converter.exchangeRateResult': '{rateLabel}: 1 {fromCurrency} = {rate} {toCurrency}',
     'converter.backToDashboard': '← Назад к панели',
-    
+    'converter.saveRateButton': 'Сохранить',
+    "converter.chartButton": 'Диаграмма',
+
     // Settings & Common
     'settings.title': 'Настройки',
     'settings.subtitle': 'Управляйте своей учетной записью и настройками приложения',
@@ -1141,7 +1175,10 @@ const translations = {
     'converter.conversionResult': '{amount} {fromCurrency} = {convertedAmount} {toCurrency}',
     'converter.exchangeRateResult': '{rateLabel}: 1 {fromCurrency} = {rate} {toCurrency}',
     'converter.backToDashboard': '← Volver al Panel',
+    'converter.saveRateButton': 'Guardar',
+    'converter.chartButton': "Cuadro",
     
+
     // Settings & Common
     'settings.title': 'Configuración',
     'settings.subtitle': 'Administra tu cuenta y preferencias de la aplicación',
@@ -1457,7 +1494,9 @@ const translations = {
     'converter.conversionResult': '{amount} {fromCurrency} = {convertedAmount} {toCurrency}',
     'converter.exchangeRateResult': '{rateLabel}: 1 {fromCurrency} = {rate} {toCurrency}',
     'converter.backToDashboard': '← 返回仪表板',
-    
+    'converter.saveRateButton': '保存',
+    'converter.chartButton': '图表',
+
     // Settings & Common
     'settings.title': '设置',
     'settings.subtitle': '管理您的账户和应用偏好',
@@ -1772,7 +1811,9 @@ const translations = {
     'converter.conversionResult': '{amount} {fromCurrency} = {convertedAmount} {toCurrency}',
     'converter.exchangeRateResult': '{rateLabel}: 1 {fromCurrency} = {rate} {toCurrency}',
     'converter.backToDashboard': '← डैशबोर्ड पर वापस जाएं',
-    
+    'converter.saveRateButton': 'सेव करें',
+    'converter.chartButton': 'चार्ट',
+
     // Settings & Common
     'settings.title': 'सेटिंग्स',
     'settings.subtitle': 'अपने खाते और ऐप प्राथमिकताओं का प्रबंधन करें',

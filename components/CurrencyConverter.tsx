@@ -20,6 +20,7 @@ import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
+import RateChart from "./RateChart";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -67,7 +68,7 @@ interface Data {
 }
 
 export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyConverterProps) {
-  const { t, tWithParams } = useLanguage();
+  const { t, tWithParams, language } = useLanguage();
   const [amount, setAmount] = useState<string>("1");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
@@ -83,6 +84,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
   const [showAuthPrompt, setShowAuthPrompt] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState<boolean>(false);
+  const [showChart, setShowChart] = useState<boolean>(false);
 
   const { user } = useAuth();
   const { savedRates: { savedRates, saveRate, deleteRate, deleteAllRates } } = useUserData();
@@ -112,7 +114,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
       if (savedFromCurrency && savedToCurrency && currencyList.includes(savedFromCurrency) && currencyList.includes(savedToCurrency)) {
         setFromCurrency(savedFromCurrency);
         setToCurrency(savedToCurrency);
-        console.log(`💾 Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
+        console.log(`Using saved preferences: ${savedFromCurrency} → ${savedToCurrency}`);
         return; // Exit early - we have saved data!
       }
       
@@ -1036,12 +1038,20 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.saveRateButton]}
-              onPress={handleSaveRate}
-            >
-              <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>{t('converter.saveRateButton')}</ThemedText>
-            </TouchableOpacity>
+            <View style={styles.actionButtonsRow}>
+              <TouchableOpacity
+                style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.saveRateButton]}
+                onPress={handleSaveRate}
+              >
+                <ThemedText style={[{ color: textInverseColor }, styles.saveRateText]}>{t('converter.saveRateButton')}</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.chartButton]}
+                onPress={() => setShowChart(true)}
+              >
+                <ThemedText style={[{ color: primaryColor }, styles.chartButtonText, language === 'hy' && { fontSize: 13 }]}>{t('converter.chartButton')}</ThemedText>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -1133,9 +1143,18 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
           message="Sign up to save your data and enable premium features"
           feature="general"
         />
+
+        {/* Rate Chart */}
+        {showChart && (
+          <RateChart
+            baseCurrency={fromCurrency}
+            targetCurrency={toCurrency}
+            onClose={() => setShowChart(false)}
+          />
+        )}
       </ScrollView>
-  );
-}
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {
@@ -1524,7 +1543,13 @@ const styles = StyleSheet.create({
   actionButtons: {
     alignItems: "center",
   },
+  actionButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   saveRateButton: {
+    flex: 1,
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 24,
@@ -1535,7 +1560,23 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveRateText: {
-    fontSize: 16,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  chartButton: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  chartButtonText: {
+    fontSize: 13,
     fontWeight: "600",
   },
 });

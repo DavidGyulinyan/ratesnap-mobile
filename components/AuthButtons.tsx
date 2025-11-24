@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
+import { ThemedText } from './themed-text';
 
 interface AuthButtonsProps {
   onSuccess?: () => void;
@@ -44,7 +45,7 @@ export default function AuthButtons({ onSuccess }: AuthButtonsProps) {
     <>
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
+        <ThemedText style={styles.dividerText}>{t('auth.orContinueWith')}</ThemedText>
         <View style={styles.dividerLine} />
       </View>
 
@@ -54,7 +55,7 @@ export default function AuthButtons({ onSuccess }: AuthButtonsProps) {
           onPress={handleGoogleSignIn}
         >
           <Ionicons name="logo-google" size={20} color="#4285F4" />
-          <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</Text>
+          <ThemedText style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -62,7 +63,7 @@ export default function AuthButtons({ onSuccess }: AuthButtonsProps) {
           onPress={handleAppleSignIn}
         >
           <Ionicons name="logo-apple" size={20} color="#000" />
-          <Text style={styles.appleButtonText}>{t('auth.continueWithApple')}</Text>
+          <ThemedText style={styles.appleButtonText}>{t('auth.continueWithApple')}</ThemedText>
         </TouchableOpacity>
       </View>
     </>

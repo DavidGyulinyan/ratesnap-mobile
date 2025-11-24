@@ -257,6 +257,7 @@ export default function LocationDetection({ onCurrencyDetected, visible = true }
       const { latitude, longitude } = location.coords;
 
       // Reverse geocode to get country code
+      // Note: reverseGeocodeAsync is deprecated in SDK 49+, consider using Google Places API for production
       const address = await Location.reverseGeocodeAsync({ latitude, longitude });
       if (address.length > 0) {
         const countryCode = address[0].isoCountryCode;
@@ -321,6 +322,7 @@ export const useLocationCurrency = () => {
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
+      // Note: reverseGeocodeAsync is deprecated in SDK 49+, consider using Google Places API for production
       const address = await Location.reverseGeocodeAsync({ latitude, longitude });
       if (address.length > 0) {
         const countryCode = address[0].isoCountryCode;

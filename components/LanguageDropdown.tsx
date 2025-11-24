@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { useLanguage, type Language } from '@/contexts/LanguageContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { ThemedText } from './themed-text';
 
 interface LanguageDropdownProps {
   showFlag?: boolean;
@@ -159,29 +160,29 @@ export default function LanguageDropdown({
       onPress={() => handleLanguageSelect(item.key)}
     >
       <View style={styles.dropdownItemContent}>
-        {showFlag && <Text style={styles.dropdownFlag}>{item.data.flag}</Text>}
+        {showFlag && <ThemedText style={styles.dropdownFlag}>{item.data.flag}</ThemedText>}
         <View style={styles.languageInfo}>
-          <Text
+          <ThemedText
             style={[
               styles.languageName,
               { color: colors.text }
             ]}
           >
             {item.data.name}
-          </Text>
+          </ThemedText>
           {!compact && (
-            <Text
+            <ThemedText
               style={[
                 styles.languageSubtext,
                 { color: colors.icon }
               ]}
             >
               {item.data.fullName}
-            </Text>
+            </ThemedText>
           )}
         </View>
         {language === item.key && (
-          <Text style={[styles.checkMark, { color: colors.tint }]}>✓</Text>
+          <ThemedText style={[styles.checkMark, { color: colors.tint }]}>✓</ThemedText>
         )}
       </View>
     </TouchableOpacity>
@@ -201,8 +202,8 @@ export default function LanguageDropdown({
         onPress={() => setIsDropdownVisible(true)}
       >
         <View style={styles.dropdownButtonContent}>
-          {showFlag && <Text style={styles.buttonFlag}>{currentLanguage.flag}</Text>}
-          <Text
+          {showFlag && <ThemedText style={styles.buttonFlag}>{currentLanguage.flag}</ThemedText>}
+          <ThemedText
             style={[
               compact ? styles.compactText : styles.buttonText,
               { color: colors.text },
@@ -210,10 +211,10 @@ export default function LanguageDropdown({
             ]}
           >
             {compact ? currentLanguage.code : currentLanguage.name}
-          </Text>
-          <Text style={[styles.dropdownArrow, { color: colors.icon }]}>
+          </ThemedText>
+          <ThemedText style={[styles.dropdownArrow, { color: colors.icon }]}>
             ▼
-          </Text>
+          </ThemedText>
         </View>
       </TouchableOpacity>
 
@@ -238,14 +239,14 @@ export default function LanguageDropdown({
             ]}
           >
             <View style={styles.dropdownHeader}>
-              <Text style={[styles.dropdownTitle, { color: colors.text }]}>
+              <ThemedText style={[styles.dropdownTitle, { color: colors.text }]}>
                 {t('settings.language')}
-              </Text>
+              </ThemedText>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setIsDropdownVisible(false)}
               >
-                <Text style={styles.closeButtonText}>×</Text>
+                <ThemedText style={styles.closeButtonText}>×</ThemedText>
               </TouchableOpacity>
             </View>
             

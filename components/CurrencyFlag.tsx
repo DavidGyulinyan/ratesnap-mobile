@@ -93,6 +93,7 @@ const currencyFlags: { [key: string]: string } = {
   KHR: "🇰🇭",
   KID: "🇰🇮",
   KMF: "🇰🇲",
+  KWD: "🇰🇼",
   KYD: "🇰🇾",
   KZT: "🇰🇿",
   LAK: "🇱🇦",

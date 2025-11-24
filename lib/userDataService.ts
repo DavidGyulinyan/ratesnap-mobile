@@ -540,8 +540,8 @@ export class UserDataService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      // If calculation_expression column doesn't exist, try without it
-      if (error && error.code === '42703') {
+      // If calculation_expression column doesn't exist or other error, try without it
+      if (error && (error.code === '42703' || error.code === '400')) {
         console.warn('calculation_expression column not found, falling back to basic columns');
         const fallbackResult = await supabase
           .from('math_calculator_history')
