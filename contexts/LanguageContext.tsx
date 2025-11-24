@@ -14,10 +14,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const translations = {
   en: {
-    // App & Navigation
-    'app.subtitle': 'Professional Currency Converter Suite',
-    
-    // Dashboard
+    // App & Navigation    // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.quickActions': 'Quick Actions',
     'dashboard.converter': 'Converter',
@@ -49,9 +46,7 @@ const translations = {
     'converter.title': 'Currency Converter',
     'converter.subtitle': 'Complete currency conversion suite with advanced features',
     'converter.standard': 'Standard Conversion',
-    'converter.multiCurrency.section': 'Multi-Currency',
-    'converter.calculator': 'Calculator',
-    'converter.saveRate': 'Save This Rate',
+    'converter.multiCurrency.section': 'Multi-Currency',    'converter.saveRate': 'Save This Rate',
     'converter.disclaimer': 'Professional currency converter with real-time rates and advanced features',
     'converter.loadingRates': 'Loading exchange rates...',
     'converter.refreshData': 'Refresh Data',
@@ -80,18 +75,7 @@ const translations = {
     
     // Rate Alerts
     'alerts.title': 'Rate Alerts',
-    'alerts.active': 'Your Active Alerts:',
-    'alerts.none': 'No rate alerts set yet',
-    'alerts.createFirst': 'Create your first alert below',
-    'alerts.createNew': 'Create New Alert:',
-    'alerts.condition.below': 'Below',
-    'alerts.condition.above': 'Above',
-    'alerts.create': 'Create Alert',
-    'alerts.deleteAll': 'Delete All',
-    'alerts.viewMore': 'View more alerts →',
-    'alerts.targetRate': 'Target rate',
-
-    // Rate Alert Manager
+    'alerts.active': 'Your Active Alerts:',    // Rate Alert Manager
     'rateAlerts.signInRequired': 'Sign In Required',
     'rateAlerts.signInMessage': 'Please sign in to create rate alerts',
     'rateAlerts.error': 'Error',
@@ -146,11 +130,7 @@ const translations = {
     'saved.title': 'Saved Rates',
     'saved.titles': 'Saved Rates', // Alias for compatibility
     'saved.shortTitle': 'Saved', // Short version for constrained layouts
-    'saved.clear': 'Clear All',
-    'saved.yourRates': 'Your Saved Rates:',
-    'saved.none': 'No saved rates yet',
-    'saved.addFirst': 'Add your first rate using the converter above',
-    'saved.deleteConfirm': 'Are you sure you want to delete this saved rate?',
+    'saved.clear': 'Clear All',    'saved.deleteConfirm': 'Are you sure you want to delete this saved rate?',
     'saved.deleteAllConfirm': 'Are you sure you want to delete all saved rates? This action cannot be undone.',
     'saved.delete': 'Delete',
     'saved.cancel': 'Cancel',
@@ -187,10 +167,7 @@ const translations = {
     'saved.loadingText': 'Loading saved rates...',
     'saved.deletingIcon': '⏳',
     'saved.deleteIcon': '🗑️',
-    'saved.hideIcon': '×',
-    'saved.showIcon': '▶',
-    
-    // Settings & Common
+    'saved.hideIcon': '×',    // Settings & Common
     'settings.title': 'Settings',
     'settings.subtitle': 'Manage your account and app preferences',
     'settings.accountInfo': 'Account Information',
@@ -234,9 +211,7 @@ const translations = {
     'settings.sound': 'Sound',
     'settings.vibration': 'Vibration',
     'settings.showPreview': 'Show Preview',
-    'common.enabled': 'Enabled',
-    'common.disabled': 'Disabled',
-    'common.settings': 'Settings',
+    'common.enabled': 'Enabled',    'common.settings': 'Settings',
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.retry': 'Retry',
@@ -244,25 +219,8 @@ const translations = {
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
-    'common.edit': 'Edit',
-    'common.change': 'Change',
-    'common.update': 'Update',
-    'common.back': 'Back',
-    'common.next': 'Next',
-    'common.previous': 'Previous',
-    'common.refresh': 'Refresh',
-    'common.search': 'Search',
-    'common.filter': 'Filter',
-    'common.sort': 'Sort',
-    'common.more': 'More',
-    'common.less': 'Less',
-    'common.showMore': 'Show More',
-    'common.showLess': 'Show Less',
-    'common.select': 'Select',
-    'common.selected': 'Selected',
-    'common.noneSelected': 'None Selected',
-    
-    // Multi-Currency
+    'common.edit': 'Edit',    'common.update': 'Update',    'common.more': 'More',    'common.showMore': 'Show More',
+    'common.showLess': 'Show Less',    'common.selected': 'Selected',    // Multi-Currency
     'multi.title': 'Multi-Currency Converter',
     'multi.subtitle': 'Convert to multiple currencies instantly with live rates',
     'multi.from': 'From',
@@ -417,12 +375,7 @@ const translations = {
     'error.selectCurrency': 'Please select currencies to convert',
     'error.ratesUnavailable': 'Exchange rates are currently unavailable',
     'error.duplicateCurrency': 'Duplicate Currency',
-    'common.ok': 'OK',
-    'common.sponsored': 'Sponsored',
-    'common.learnMore': 'Learn More',
-    'common.adSupport': 'Support us with ads',
-
-    // Chart
+    'common.ok': 'OK',    // Chart
     'chart.title': 'Exchange Rate Chart',
     'chart.showingDataFor': 'Showing data for',
     'chart.noData': 'No chart data available',
@@ -438,10 +391,7 @@ const translations = {
     'chart.timePeriods.1Y': '1 Year',
   },
   hy: {
-    // Armenian
-    'app.subtitle': 'Պորֆեսիոնալ արժույթի փոխարկիչ',
-    
-    'dashboard.title': 'Վահանակ',
+    // Armenian    'dashboard.title': 'Վահանակ',
     'dashboard.quickActions': 'Արագ գործողություններ',
     'dashboard.converter': 'Փոխարկիչ',
     'dashboard.multiCurrency': 'Բազմարժույթ',
@@ -470,9 +420,7 @@ const translations = {
     'converter.title': 'Փոխարկիչ',
     'converter.subtitle': 'Պրոֆեսիոնալ փոխարկիչ՝ լիարժեք գործառույթներով',
     'converter.standard': 'Ստանդարտ',
-    'converter.multiCurrency.section': 'Բազմարժույթ',
-    'converter.calculator': 'Հաշվիչ',
-    'converter.saveRate': 'Պահպանել այս դրույքը',
+    'converter.multiCurrency.section': 'Բազմարժույթ',    'converter.saveRate': 'Պահպանել այս դրույքը',
     'converter.disclaimer': 'Արժույթի փոխանակման պրոֆեսիոնալ լուծում՝ բարդ գործառույթներով',
     'converter.loadingRates': 'Արտարժույթի դրույքները բեռնվում են...',
     'converter.refreshData': 'Թարմացնել տվյալները',
@@ -524,9 +472,7 @@ const translations = {
     'settings.sound': 'Ձայն',
     'settings.vibration': 'Վիբրացիա',
     'settings.showPreview': 'Ցուցադրել նախադիտում',
-    'common.enabled': 'Միացված է',
-    'common.disabled': 'Անջատված է',
-    'common.settings': 'Կարգավորումներ',
+    'common.enabled': 'Միացված է',    'common.settings': 'Կարգավորումներ',
     'common.loading': 'Բեռնում...',
     'common.error': 'Սխալ',
     'common.retry': 'Կրկին փորձել',
@@ -534,12 +480,8 @@ const translations = {
     'common.save': 'Պահպանել',
     'common.cancel': 'Չեղարկել',
     'common.delete': 'Հեռացնել',
-    'common.edit': 'Խմբագրել',
-    'common.change': 'Փոխել',
-    'common.update': 'Թարմացնել',
-    'common.more': 'Ավելի',
-    'common.less': 'Ավելի քիչ',
-    'common.showMore': 'Ցուցադրել ավելին',
+    'common.edit': 'Խմբագրել',    'common.update': 'Թարմացնել',
+    'common.more': 'Ավելի',    'common.showMore': 'Ցուցադրել ավելին',
     'common.showLess': 'Ցուցադրել քիչ',
     'common.ok': 'Լավ',
     
@@ -638,10 +580,7 @@ const translations = {
     'saved.loadingText': 'Բեռնվում են պահպանված դրույքները...',
     'saved.deletingIcon': '⏳',
     'saved.deleteIcon': '🗑️',
-    'saved.hideIcon': '×',
-    'saved.showIcon': '▶',
-
-    // Rate Alert Manager
+    'saved.hideIcon': '×',    // Rate Alert Manager
     'rateAlerts.signInRequired': 'Մուտք գործեք շարունակելու համար',
     'rateAlerts.signInMessage': 'Խնդրում ենք մուտք գործել՝ արժույթի դրույքի ծանուցումներ ստեղծելու համար',
     'rateAlerts.error': 'Սխալ',
@@ -804,10 +743,7 @@ const translations = {
     'signup.selectLanguage': 'Ընտրել լեզու',
   },
   ru: {
-    // Russian
-    'app.subtitle': 'Профессиональный набор конвертеров валют',
-    
-    'dashboard.title': 'Панель',
+    // Russian    'dashboard.title': 'Панель',
     'dashboard.quickActions': 'Быстрые действия',
     'dashboard.converter': 'Конвертер',
     'dashboard.multiCurrency': 'Мультивалютный',
@@ -816,14 +752,7 @@ const translations = {
     'dashboard.features': 'Возможности панели',
     'dashboard.features.description': 'Полный набор конвертации валют с расширенными функциями',
     
-    // Compact versions for header buttons
-    'auth.signin.compact': 'Вход',
-    'auth.signup.compact': 'Регистрация',
-    'auth.signout.compact': 'Выход',
-    'auth.welcome.compact': 'Привет',
-    'converter.title.compact': 'Конв',
-    
-    'quick.action.converter': 'Конвертер валют',
+    // Compact versions for header buttons    'quick.action.converter': 'Конвертер валют',
     'quick.action.converter.desc': 'Профессиональный конвертер со всеми функциями',
     'quick.action.multiCurrency': 'Мультивалютный',
     'quick.action.multiCurrency.desc': 'Быстрая конвертация в 20 валют',
@@ -843,9 +772,7 @@ const translations = {
     'converter.title': 'Конвертер валют',
     'converter.subtitle': 'Полный набор конвертации валют с расширенными функциями',
     'converter.standard': 'Стандартная конвертация',
-    'converter.multiCurrency.section': 'Мультивалютный конвертер',
-    'converter.calculator': 'Калькулятор',
-    'converter.saveRate': 'Сохранить этот курс',
+    'converter.multiCurrency.section': 'Мультивалютный конвертер',    'converter.saveRate': 'Сохранить этот курс',
     'converter.disclaimer': 'Профессиональный конвертер валют с курсами в реальном времени и расширенными функциями',
     'converter.loadingRates': 'Загрузка курсов валют...',
     'converter.refreshData': 'Обновить данные',
@@ -899,9 +826,7 @@ const translations = {
     'settings.sound': 'Звук',
     'settings.vibration': 'Вибрация',
     'settings.showPreview': 'Показать превью',
-    'common.enabled': 'Включено',
-    'common.disabled': 'Отключено',
-    'common.settings': 'Настройки',
+    'common.enabled': 'Включено',    'common.settings': 'Настройки',
     'common.loading': 'Загрузка...',
     'common.error': 'Ошибка',
     'common.retry': 'Повторить',
@@ -909,12 +834,8 @@ const translations = {
     'common.save': 'Сохранить',
     'common.cancel': 'Отмена',
     'common.delete': 'Удалить',
-    'common.edit': 'Редактировать',
-    'common.change': 'Изменить',
-    'common.update': 'Обновить',
-    'common.more': 'Больше',
-    'common.less': 'Меньше',
-    'common.showMore': 'Показать больше',
+    'common.edit': 'Редактировать',    'common.update': 'Обновить',
+    'common.more': 'Больше',    'common.showMore': 'Показать больше',
     'common.showLess': 'Показать меньше',
     'common.ok': 'OK',
 
@@ -1130,10 +1051,7 @@ const translations = {
     'rateAlerts.reset': 'Сбросить',
   },
   es: {
-    // Spanish
-    'app.subtitle': 'Suite Profesional de Conversores de Moneda',
-    
-    'dashboard.title': 'Panel',
+    // Spanish    'dashboard.title': 'Panel',
     'dashboard.quickActions': 'Acciones Rápidas',
     'dashboard.converter': 'Convertidor',
     'dashboard.multiCurrency': 'Multi Moneda',
@@ -1162,9 +1080,7 @@ const translations = {
     'converter.title': 'Convertidor de Moneda',
     'converter.subtitle': 'Suite completa de conversión de moneda con funciones avanzadas',
     'converter.standard': 'Conversión Estándar',
-    'converter.multiCurrency.section': 'Convertidor Multi-Moneda',
-    'converter.calculator': 'Calculadora',
-    'converter.saveRate': 'Guardar Esta Tasa',
+    'converter.multiCurrency.section': 'Convertidor Multi-Moneda',    'converter.saveRate': 'Guardar Esta Tasa',
     'converter.disclaimer': 'Convertidor de moneda profesional con tasas en tiempo real y funciones avanzadas',
     'converter.loadingRates': 'Cargando tipos de cambio...',
     'converter.refreshData': 'Actualizar Datos',
@@ -1219,9 +1135,7 @@ const translations = {
     'settings.sound': 'Sonido',
     'settings.vibration': 'Vibración',
     'settings.showPreview': 'Mostrar Vista Previa',
-    'common.enabled': 'Habilitado',
-    'common.disabled': 'Deshabilitado',
-    'common.settings': 'Configuración',
+    'common.enabled': 'Habilitado',    'common.settings': 'Configuración',
     'common.loading': 'Cargando...',
     'common.error': 'Error',
     'common.retry': 'Reintentar',
@@ -1229,12 +1143,8 @@ const translations = {
     'common.save': 'Guardar',
     'common.cancel': 'Cancelar',
     'common.delete': 'Eliminar',
-    'common.edit': 'Editar',
-    'common.change': 'Cambiar',
-    'common.update': 'Actualizar',
-    'common.more': 'Más',
-    'common.less': 'Menos',
-    'common.showMore': 'Mostrar Más',
+    'common.edit': 'Editar',    'common.update': 'Actualizar',
+    'common.more': 'Más',    'common.showMore': 'Mostrar Más',
     'common.showLess': 'Mostrar Menos',
     'common.ok': 'OK',
 
@@ -1450,10 +1360,7 @@ const translations = {
     'rateAlerts.reset': 'Restablecer',
   },
   zh: {
-    // Chinese (Simplified)
-    'app.subtitle': '专业货币转换器套件',
-    
-    'dashboard.title': '仪表板',
+    // Chinese (Simplified)    'dashboard.title': '仪表板',
     'dashboard.quickActions': '快速操作',
     'dashboard.converter': '转换器',
     'dashboard.multiCurrency': '多货币',
@@ -1482,9 +1389,7 @@ const translations = {
     'converter.title': '货币转换器',
     'converter.subtitle': '带高级功能的完整货币转换套件',
     'converter.standard': '标准转换',
-    'converter.multiCurrency.section': '多货币转换器',
-    'converter.calculator': '计算器',
-    'converter.saveRate': '保存此汇率',
+    'converter.multiCurrency.section': '多货币转换器',    'converter.saveRate': '保存此汇率',
     'converter.disclaimer': '带实时汇率和高级功能的专业货币转换器',
     'converter.loadingRates': '正在加载汇率...',
     'converter.refreshData': '刷新数据',
@@ -1537,9 +1442,7 @@ const translations = {
     'settings.sound': '声音',
     'settings.vibration': '振动',
     'settings.showPreview': '显示预览',
-    'common.enabled': '已启用',
-    'common.disabled': '已禁用',
-    'common.settings': '设置',
+    'common.enabled': '已启用',    'common.settings': '设置',
     'common.loading': '加载中...',
     'common.error': '错误',
     'common.retry': '重试',
@@ -1547,12 +1450,8 @@ const translations = {
     'common.save': '保存',
     'common.cancel': '取消',
     'common.delete': '删除',
-    'common.edit': '编辑',
-    'common.change': '更改',
-    'common.update': '更新',
-    'common.more': '更多',
-    'common.less': '更少',
-    'common.showMore': '显示更多',
+    'common.edit': '编辑',    'common.update': '更新',
+    'common.more': '更多',    'common.showMore': '显示更多',
     'common.showLess': '显示更少',
     'common.ok': 'OK',
 
@@ -1768,10 +1667,7 @@ const translations = {
     'rateAlerts.reset': '重置',
   },
   hi: {
-    // Hindi
-    'app.subtitle': 'पेशेवर मुद्रा कन्वर्टर सूट',
-    
-    'dashboard.title': 'डैशबोर्ड',
+    // Hindi    'dashboard.title': 'डैशबोर्ड',
     'dashboard.quickActions': 'त्वरित कार्य',
     'dashboard.converter': 'कन्वर्टर',
     'dashboard.multiCurrency': 'मल्टी करेंसी',
@@ -1800,9 +1696,7 @@ const translations = {
     'converter.title': 'मुद्रा कन्वर्टर',
     'converter.subtitle': 'उन्नत सुविधाओं के साथ पूर्ण मुद्रा रूपांतरण सूट',
     'converter.standard': 'मानक रूपांतरण',
-    'converter.multiCurrency.section': 'मल्टी-करेंसी कन्वर्टर',
-    'converter.calculator': 'कैलकुलेटर',
-    'converter.saveRate': 'इस दर को सेव करें',
+    'converter.multiCurrency.section': 'मल्टी-करेंसी कन्वर्टर',    'converter.saveRate': 'इस दर को सेव करें',
     'converter.disclaimer': 'रियल-टाइम दरों और उन्नत सुविधाओं के साथ पेशेवर मुद्रा कन्वर्टर',
     'converter.loadingRates': 'एक्सचेंज रेट लोड हो रहे हैं...',
     'converter.refreshData': 'डेटा रिफ्रेश करें',
@@ -1856,9 +1750,7 @@ const translations = {
     'settings.sound': 'ध्वनि',
     'settings.vibration': 'कंपन',
     'settings.showPreview': 'पूर्वावलोकन दिखाएं',
-    'common.enabled': 'सक्षम',
-    'common.disabled': 'अक्षम',
-    'common.settings': 'सेटिंग्स',
+    'common.enabled': 'सक्षम',    'common.settings': 'सेटिंग्स',
     'common.loading': 'लोड हो रहा है...',
     'common.error': 'एरर',
     'common.retry': 'पुनः प्रयास करें',
@@ -1866,12 +1758,8 @@ const translations = {
     'common.save': 'सेव करें',
     'common.cancel': 'रद्द करें',
     'common.delete': 'डिलीट करें',
-    'common.edit': 'एडिट करें',
-    'common.change': 'बदलें',
-    'common.update': 'अपडेट करें',
-    'common.more': 'और',
-    'common.less': 'कम',
-    'common.showMore': 'और दिखाएं',
+    'common.edit': 'एडिट करें',    'common.update': 'अपडेट करें',
+    'common.more': 'और',    'common.showMore': 'और दिखाएं',
     'common.showLess': 'कम दिखाएं',
     'common.ok': 'OK',
 
