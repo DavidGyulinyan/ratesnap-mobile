@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/lib/supabase-safe';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import alertCheckerService from '@/lib/alertCheckerService';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -158,6 +159,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       console.log('Sign in successful');
+      // Mark that user has signed in before for future sign-in screens
+      AsyncStorage.setItem('hasSignedInBefore', 'true').catch(error => {
+        console.warn('Failed to set hasSignedInBefore flag:', error);
+      });
       return {};
     } catch (error) {
       console.error('Sign in catch error:', error);

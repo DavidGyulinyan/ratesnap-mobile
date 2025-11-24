@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -21,17 +22,42 @@ import AuthButtons from '@/components/AuthButtons';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignInScreen() {
-   const [email, setEmail] = useState('');
-   const [password, setPassword] = useState('');
-   const [passwordVisible, setPasswordVisible] = useState(false);
-   const [loading, setLoading] = useState(false);
-   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
-   const [invalidCredentials, setInvalidCredentials] = useState(false);
-   const [resendLoading, setResendLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
+    const [invalidCredentials, setInvalidCredentials] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [welcomeTitle, setWelcomeTitle] = useState('auth.welcome'); // Default to "Welcome"
+    const [rememberMe, setRememberMe] = useState(false);
 
-   const { signIn, resendConfirmationEmail } = useAuth();
-   const { t } = useLanguage();
-   const router = useRouter();
+    const { signIn, resendConfirmationEmail } = useAuth();
+    const { t } = useLanguage();
+    const router = useRouter();
+
+    useEffect(() => {
+      const loadPreferences = async () => {
+        try {
+          const hasSignedInBefore = await AsyncStorage.getItem('hasSignedInBefore');
+          if (hasSignedInBefore === 'true') {
+            setWelcomeTitle('signin.welcomeBack');
+          } else {
+            setWelcomeTitle('auth.welcome');
+          }
+
+          const rememberMePref = await AsyncStorage.getItem('rememberMe');
+          if (rememberMePref === 'true') {
+            setRememberMe(true);
+          }
+        } catch (error) {
+          console.warn('Failed to load preferences:', error);
+          setWelcomeTitle('auth.welcome');
+        }
+      };
+
+      loadPreferences();
+    }, []);
 
    // Helper function to add opacity to hex colors
    const addOpacity = (hexColor: string, opacity: number) => {
@@ -292,6 +318,34 @@ export default function SignInScreen() {
       fontSize: 14,
       fontWeight: '600',
     },
+
+    // Remember Me Checkbox
+    rememberMeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 24,
+      marginBottom: 20,
+      alignSelf: 'flex-start',
+    },
+    checkbox: {
+      width: 20,
+      height: 20,
+      borderWidth: 2,
+      borderColor: borderColor,
+      borderRadius: 4,
+      backgroundColor: surfaceSecondaryColor,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8,
+    },
+    checkboxChecked: {
+      backgroundColor: primaryColor,
+      borderColor: primaryColor,
+    },
+    rememberMeText: {
+      fontSize: 14,
+      color: textColor,
+    },
   }), [backgroundColor, surfaceColor, surfaceSecondaryColor, primaryColor, textColor, textSecondaryColor, borderColor, errorColor, warningColor]);
 
   const handleSignIn = async () => {
@@ -315,6 +369,10 @@ export default function SignInScreen() {
           Alert.alert(t('auth.signin'), error.message);
         }
       } else {
+        // Store remember me preference
+        AsyncStorage.setItem('rememberMe', rememberMe.toString()).catch(error => {
+          console.warn('Failed to store remember me preference:', error);
+        });
         // Navigation will be handled by the auth state change
         router.back();
       }
@@ -357,8 +415,8 @@ export default function SignInScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
           <Logo size={48} showText={true} textSize={24} />
-          <Text style={styles.title}>{t('signin.welcomeBack')}</Text>
-          <Text style={styles.subtitle}>{t('signin.subtitle')}</Text>
+           <Text style={styles.title}>{t(welcomeTitle)}</Text>
+           <Text style={styles.subtitle}>{t('signin.subtitle')}</Text>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
@@ -398,6 +456,19 @@ export default function SignInScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            {/* Remember Me Checkbox */}
+            <TouchableOpacity
+              style={styles.rememberMeContainer}
+              onPress={() => setRememberMe(!rememberMe)}
+            >
+              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                {rememberMe && (
+                  <Ionicons name="checkmark" size={14} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.rememberMeText}>{t('signin.rememberMe')}</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, styles.primaryButton, loading && styles.buttonDisabled]}
