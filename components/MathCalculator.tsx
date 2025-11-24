@@ -88,7 +88,13 @@ export default function MathCalculator({
       setWaitingForOperand(false);
     } else if (waitingForOperand) {
       setDisplay(num);
-      setEquation(prev => prev + num);
+      setEquation(prev => {
+        // Add space if the last character is an operator
+        const operators = ['+', '-', '×', '÷'];
+        const lastChar = prev.slice(-1);
+        const needsSpace = operators.includes(lastChar);
+        return prev + (needsSpace ? ' ' : '') + num;
+      });
       setWaitingForOperand(false);
     } else {
       setDisplay(display === "0" ? num : display + num);
@@ -691,7 +697,7 @@ export default function MathCalculator({
               ]}>
                 {renderButton("0", () => inputNumber("0"), "default", 2)}
                 {renderButton(".", inputDecimal)}
-                {renderButton("=", performCalculation, "equals")}
+                {renderButton("add", performCalculation, "equals")}
               </View>
             </>
           ) : (
@@ -798,7 +804,7 @@ export default function MathCalculator({
               ]}>
                 {renderButton("0", () => inputNumber("0"), "default", 2)}
                 {renderButton(".", inputDecimal)}
-                {renderButton("=", performCalculation, "equals")}
+                {renderButton("add", performCalculation, "equals")}
               </View>
             </>
           )}
