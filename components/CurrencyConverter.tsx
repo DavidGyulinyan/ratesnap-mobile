@@ -967,7 +967,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
             </View>
           </View>
 
-          {/* Currency Selection - Horizontal Layout */}
+          {/* Currency Selection - Column Layout */}
           <View style={styles.currencySelection}>
             <TouchableOpacity
               style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencySelector]}
@@ -979,6 +979,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyInfo}>
                 <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.fromLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{fromCurrency}</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.dropdownArrow]}>▼</ThemedText>
               </View>
             </TouchableOpacity>
 
@@ -999,6 +1000,7 @@ export default function CurrencyConverter({ onNavigateToDashboard }: CurrencyCon
               <View style={styles.currencyInfo}>
                 <ThemedText style={[{ color: textSecondaryColor }, styles.currencyLabel]}>{t('converter.toLabel')}</ThemedText>
                 <ThemedText style={[{ color: textColor }, styles.currencyCode]}>{toCurrency}</ThemedText>
+                <ThemedText style={[{ color: textSecondaryColor }, styles.dropdownArrow]}>▼</ThemedText>
               </View>
             </TouchableOpacity>
           </View>
@@ -1440,33 +1442,43 @@ const styles = StyleSheet.create({
 
   // Currency Selection
   currencySelection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    alignItems: "stretch",
     marginBottom: 24,
     paddingHorizontal: 8,
+    position: "relative",
   },
   currencySelector: {
-    flex: 1,
+    width: '100%',
     borderRadius: 16,
     padding: 16,
+    flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
+    marginBottom: 4,
   },
   currencyFlagContainer: {
-    marginBottom: 8,
+    marginRight: 12,
   },
   currencyInfo: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent:"space-between"
   },
   currencyLabel: {
     fontSize: 10,
     fontWeight: "500",
-    marginBottom: 4,
+    marginRight: 8,
   },
   currencyCode: {
     fontSize: 16,
     fontWeight: "700",
+    marginRight: 8,
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    fontWeight: "bold",
   },
   swapButtonModern: {
     width: 48,
@@ -1474,11 +1486,16 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 12,
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    marginLeft: -24, // Half of width to center horizontally
+    marginTop: -24, // Half of height to center vertically
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    zIndex: 10,
   },
   swapIcon: {
     fontSize: 18,

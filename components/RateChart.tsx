@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 32,
-    minHeight: 120,
+    height: 360, // Fixed height to match loaded chart + other content (240px chart + 120px for rate display, period selector, etc.)
   },
   errorContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 32,
-    minHeight: 120,
+    height: 360, // Same height as loading container for consistency
   },
   errorText: {
     fontSize: 14,
