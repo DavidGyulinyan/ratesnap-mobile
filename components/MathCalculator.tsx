@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, Dimensions, useWindowD
 import { ThemedView } from "./themed-view";
 import { useCalculatorHistory } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MathCalculatorProps {
   visible: boolean;
@@ -23,6 +24,7 @@ export default function MathCalculator({
 }: MathCalculatorProps) {
   const { user } = useAuth();
   const { calculatorHistory: supabaseHistory, saveCalculation, clearAllCalculations, loading: historyLoading } = useCalculatorHistory();
+  const { t, tWithParams } = useLanguage();
   
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
@@ -448,7 +450,7 @@ export default function MathCalculator({
 
   const RoundingOptions = () => (
     <View style={styles.optionsContainer}>
-      <Text style={styles.optionsTitle}>Rounding Options</Text>
+      <Text style={styles.optionsTitle}>{t('calculator.roundingOptions')}</Text>
       <View style={styles.optionsRow}>
         {[0, 1, 2, 3, 4].map(decimals => (
           <TouchableOpacity
@@ -501,20 +503,20 @@ export default function MathCalculator({
     return (
       <View style={styles.historyContainer}>
         <View style={styles.historyHeader}>
-          <Text style={styles.historyTitle}>Calculation History</Text>
+          <Text style={styles.historyTitle}>{t('calculator.calculationHistory')}</Text>
           {displayHistory.length > 0 && (
             <TouchableOpacity
               style={styles.clearHistoryButton}
               onPress={clearHistory}
               activeOpacity={0.8}
             >
-              <Text style={styles.clearHistoryButtonText}>Clear</Text>
+              <Text style={styles.clearHistoryButtonText}>{t('calculator.clear')}</Text>
             </TouchableOpacity>
           )}
         </View>
         <ScrollView style={styles.historyList}>
           {displayHistory.length === 0 ? (
-            <Text style={styles.historyEmpty}>No calculations yet</Text>
+            <Text style={styles.historyEmpty}>{t('calculator.noCalculations')}</Text>
           ) : (
             displayHistory.map((calc, index) => (
               <View key={index}>
@@ -551,7 +553,7 @@ export default function MathCalculator({
               {
                 fontSize: getResponsiveValue(20, 24, 28),
               }
-            ]}>Calculator</Text>
+            ]}>{t('calculator.title')}</Text>
             <View style={{ width: 60 }} />
           </View>
         )}
@@ -582,39 +584,43 @@ export default function MathCalculator({
 
         {/* Quick access toolbar */}
         <View style={styles.toolbar}>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => setShowAdvanced(!showAdvanced)}
-          >
-            <Text style={styles.toolbarButtonText}>{showAdvanced ? "Basic" : "Advanced"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => setShowHistory(!showHistory)}
-          >
-            <Text style={styles.toolbarButtonText}>History</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => setShowRoundingOptions(!showRoundingOptions)}
-          >
-            <Text style={styles.toolbarButtonText}>Rounding: {roundingDecimalPlaces}</Text>
-          </TouchableOpacity>
-          {onAddToConverter && (
+          <View style={styles.toolbarRow}>
             <TouchableOpacity
-              style={[styles.toolbarButton, styles.addToConverterButton]}
-              onPress={() => {
-                const result = parseFloat(display);
-                if (!isNaN(result) && result !== 0) {
-                  onAddToConverter(result);
-                  onClose();
-                  clear();
-                }
-              }}
+              style={styles.toolbarButton}
+              onPress={() => setShowAdvanced(!showAdvanced)}
             >
-              <Text style={styles.addToConverterButtonText}>Add to Converter</Text>
+              <Text style={styles.toolbarButtonText}>{showAdvanced ? t('calculator.basic') : t('calculator.advanced')}</Text>
             </TouchableOpacity>
-          )}
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={() => setShowHistory(!showHistory)}
+            >
+              <Text style={styles.toolbarButtonText}>{t('calculator.history')}</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.toolbarRow}>
+            <TouchableOpacity
+              style={[styles.toolbarButton, styles.roundingButton]}
+              onPress={() => setShowRoundingOptions(!showRoundingOptions)}
+            >
+              <Text style={[styles.toolbarButtonText, styles.roundingButtonText]}>{tWithParams('calculator.rounding', { decimals: roundingDecimalPlaces })}</Text>
+            </TouchableOpacity>
+            {onAddToConverter && (
+              <TouchableOpacity
+                style={[styles.toolbarButton, styles.addToConverterButton]}
+                onPress={() => {
+                  const result = parseFloat(display);
+                  if (!isNaN(result) && result !== 0) {
+                    onAddToConverter(result);
+                    onClose();
+                    clear();
+                  }
+                }}
+              >
+                <Text style={styles.addToConverterButtonText}>{t('calculator.addToConverter')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Conditional views */}
@@ -643,10 +649,10 @@ export default function MathCalculator({
                   gap: getResponsiveValue(6, 8, 12),
                 }
               ]}>
-                {renderButton("C", clear, "clear")}
-                {renderButton("⌫", deleteLastDigit, "delete")}
-                {renderButton("%", inputPercentage)}
-                {renderButton("÷", () => inputOperation("/"), "operation")}
+                {renderButton(t('calculator.buttonC'), clear, "clear")}
+                {renderButton(t('calculator.buttonBackspace'), deleteLastDigit, "delete")}
+                {renderButton(t('calculator.buttonPercent'), inputPercentage)}
+                {renderButton(t('calculator.buttonDivide'), () => inputOperation("/"), "operation")}
               </View>
 
               <View style={[
@@ -659,7 +665,7 @@ export default function MathCalculator({
                 {renderButton("7", () => inputNumber("7"))}
                 {renderButton("8", () => inputNumber("8"))}
                 {renderButton("9", () => inputNumber("9"))}
-                {renderButton("×", () => inputOperation("*"), "operation")}
+                {renderButton(t('calculator.buttonMultiply'), () => inputOperation("*"), "operation")}
               </View>
 
               <View style={[
@@ -672,7 +678,7 @@ export default function MathCalculator({
                 {renderButton("4", () => inputNumber("4"))}
                 {renderButton("5", () => inputNumber("5"))}
                 {renderButton("6", () => inputNumber("6"))}
-                {renderButton("-", () => inputOperation("-"), "operation")}
+                {renderButton(t('calculator.buttonSubtract'), () => inputOperation("-"), "operation")}
               </View>
 
               <View style={[
@@ -685,7 +691,7 @@ export default function MathCalculator({
                 {renderButton("1", () => inputNumber("1"))}
                 {renderButton("2", () => inputNumber("2"))}
                 {renderButton("3", () => inputNumber("3"))}
-                {renderButton("+", () => inputOperation("+"), "operation")}
+                {renderButton(t('calculator.buttonAdd'), () => inputOperation("+"), "operation")}
               </View>
 
               <View style={[
@@ -696,8 +702,8 @@ export default function MathCalculator({
                 }
               ]}>
                 {renderButton("0", () => inputNumber("0"), "default", 2)}
-                {renderButton(".", inputDecimal)}
-                {renderButton("add", performCalculation, "equals")}
+                {renderButton(t('calculator.buttonDecimal'), inputDecimal)}
+                {renderButton(t('calculator.buttonEquals'), performCalculation, "equals")}
               </View>
             </>
           ) : (
@@ -711,10 +717,10 @@ export default function MathCalculator({
                   gap: getResponsiveValue(6, 8, 12),
                 }
               ]}>
-                {renderButton("MC", memoryClear, "memory")}
-                {renderButton("MR", memoryRecall, "memory")}
-                {renderButton("M+", memoryAdd, "memory")}
-                {renderButton("M-", memorySubtract, "memory")}
+                {renderButton(t('calculator.buttonMC'), memoryClear, "memory")}
+                {renderButton(t('calculator.buttonMR'), memoryRecall, "memory")}
+                {renderButton(t('calculator.buttonMPlus'), memoryAdd, "memory")}
+                {renderButton(t('calculator.buttonMMinus'), memorySubtract, "memory")}
               </View>
 
               {/* Financial Tools Row */}
@@ -865,11 +871,14 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   toolbar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
     paddingHorizontal: 20,
     paddingVertical: 10,
     marginBottom: 16,
+  },
+  toolbarRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 8,
   },
   toolbarButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -878,6 +887,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  roundingButton: {
+    flex: 1,
+    marginHorizontal: 20,
+  },
+  roundingButtonText: {
+    textAlign: 'center',
   },
   toolbarButtonText: {
     color: "#ffffff",

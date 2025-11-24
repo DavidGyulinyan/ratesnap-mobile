@@ -7,6 +7,7 @@ import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
+import RateChart from "@/components/RateChart";
 import MathCalculator from "@/components/MathCalculator";
 import OnboardingGuide from "@/components/OnboardingGuide";
 import { ThemedText } from "@/components/themed-text";
@@ -79,6 +80,7 @@ export default function HomeScreen() {
   const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -256,126 +258,123 @@ export default function HomeScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {/* Quick Actions - Redesigned for better UX */}
-          <View style={styles.quickActionsContainer}>
-            <ThemedText style={[{ color: textColor }, styles.quickActionsTitle]}>
-              {t("dashboard.quickActions")}
-            </ThemedText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsScrollContent}
-              style={styles.quickActionsScrollView}
-            >
-              <TouchableOpacity
-                style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor }, styles.quickActionCard]}
-                onPress={() => setCurrentView("converter")}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerConverter]}>
-                  <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                    {t("quick.action.converter")}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {t("quick.action.converter.desc")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+           {/* Quick Actions - Redesigned for better UX */}
+           <View style={styles.quickActionsContainer}>
+             <ThemedText style={[{ color: textColor }, styles.quickActionsTitle]}>
+               {t("dashboard.quickActions")}
+             </ThemedText>
+             <ScrollView
+               horizontal
+               showsHorizontalScrollIndicator={false}
+               contentContainerStyle={styles.quickActionsScrollContent}
+               style={styles.quickActionsScrollView}
+             >
+               <TouchableOpacity
+                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor }, styles.quickActionCard]}
+                 onPress={() => setCurrentView("converter")}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerConverter]}>
+                   <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.converter")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
-                  styles.quickActionCard,
-                  showCalculator && styles.quickActionCardActive,
-                ]}
-                onPress={() => setShowCalculator(!showCalculator)}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerCalculator]}>
-                  <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                    {t("quick.action.calculator")}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {showCalculator
-                      ? t("quick.action.calculator.hide")
-                      : t("quick.action.calculator.desc")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+               <TouchableOpacity
+                 style={[
+                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   styles.quickActionCard,
+                   showCalculator && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowCalculator(!showCalculator)}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerCalculator]}>
+                   <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.calculator")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
-                  styles.quickActionCard,
-                  showMultiCurrency && styles.quickActionCardActive,
-                ]}
-                onPress={() => setShowMultiCurrency(!showMultiCurrency)}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerMulti]}>
-                  <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                    {t("quick.action.multiCurrency")}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {showMultiCurrency
-                      ? t("quick.action.multiCurrency.hide")
-                      : t("quick.action.multiCurrency.desc")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+               <TouchableOpacity
+                 style={[
+                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   styles.quickActionCard,
+                   showMultiCurrency && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowMultiCurrency(!showMultiCurrency)}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerMulti]}>
+                   <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.multiCurrency")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
-                  styles.quickActionCard,
-                  showSavedRates && styles.quickActionCardActive,
-                ]}
-                onPress={() => setShowSavedRates(!showSavedRates)}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerSaved]}>
-                  <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                    {t("quick.action.savedRates")}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {savedRates.length}{" "}
-                    {savedRates.length === 1 ? t("saved.rate") : t("saved.rates")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+               <TouchableOpacity
+                 style={[
+                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   styles.quickActionCard,
+                   showSavedRates && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowSavedRates(!showSavedRates)}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerSaved]}>
+                   <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.savedRates")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
-                  styles.quickActionCard,
-                  showRateAlerts && styles.quickActionCardActive,
-                ]}
-                onPress={() => setShowRateAlerts(!showRateAlerts)}
-              >
-                <View style={[styles.quickActionIconContainer, styles.iconContainerAlerts]}>
-                  <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
-                </View>
-                <View style={styles.quickActionContent}>
-                  <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                    {t("quick.action.rateAlerts")}
-                  </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.quickActionDescription]}>
-                    {rateAlerts.filter(alert => alert.is_active).length}{" "}
-                    {rateAlerts.filter(alert => alert.is_active).length === 1 ? t("alerts.activeAlert") : t("alerts.activeAlerts")}
-                  </ThemedText>
-                </View>
-              </TouchableOpacity>
+               <TouchableOpacity
+                 style={[
+                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   styles.quickActionCard,
+                   showRateAlerts && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowRateAlerts(!showRateAlerts)}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerAlerts]}>
+                   <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.rateAlerts")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
 
-            </ScrollView>
-          </View>
+               <TouchableOpacity
+                 style={[
+                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   styles.quickActionCard,
+                   showCharts && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowCharts(!showCharts)}
+               >
+                 <View style={[styles.quickActionIconContainer, styles.iconContainerCharts]}>
+                   <ThemedText style={styles.quickActionIcon}>📈</ThemedText>
+                 </View>
+                 <View style={styles.quickActionContent}>
+                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
+                     {t("quick.action.charts")}
+                   </ThemedText>
+                 </View>
+               </TouchableOpacity>
+
+             </ScrollView>
+           </View>
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && (
@@ -479,6 +478,21 @@ export default function HomeScreen() {
                 }}
                 currenciesData={currenciesData}
                 inModal={true} // Hide RateAlertManager header since DashboardModal handles it
+              />
+            </DashboardModal>
+          )}
+
+          {/* Charts Section */}
+          {showCharts && (
+            <DashboardModal
+              title={t("charts.title")}
+              icon="📈"
+              onClose={() => setShowCharts(false)}
+            >
+              <RateChart
+                baseCurrency="USD"
+                targetCurrency="AMD"
+                onClose={() => setShowCharts(false)}
               />
             </DashboardModal>
           )}
@@ -673,87 +687,90 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
 
-  // Quick actions - Redesigned horizontal scroll
+  // Quick actions - Completely new modern design
   quickActionsContainer: {
-    marginBottom: 32,
+    marginBottom: 40,
+    paddingHorizontal: 10,
   },
   quickActionsTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 16,
-    letterSpacing: 0.3,
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 20,
+    letterSpacing: 0.5,
+    textAlign: "center",
   },
   quickActionsScrollView: {
-    marginHorizontal: -20,
+    marginHorizontal: -10,
   },
   quickActionsScrollContent: {
-    paddingHorizontal: 20,
-    gap: 16,
+    paddingHorizontal: 10,
+    gap: 20,
   },
   quickActionCard: {
-    width: 140,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    width: 200,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: 2,
+    flexDirection: "row",
     alignItems: "center",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    minHeight: 120,
+    paddingHorizontal: 16,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+    transform: [{ scale: 1 }],
   },
   quickActionIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginRight: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   iconContainerConverter: {
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    backgroundColor: "#667eea",
   },
   iconContainerCalculator: {
-    backgroundColor: "rgba(34, 197, 94, 0.1)",
+    backgroundColor: "#f5576c",
   },
   iconContainerMulti: {
-    backgroundColor: "rgba(251, 146, 60, 0.1)",
+    backgroundColor: "#4facfe",
   },
   iconContainerSaved: {
-    backgroundColor: "rgba(168, 85, 247, 0.1)",
+    backgroundColor: "#43e97b",
   },
   iconContainerAlerts: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: "#fa709a",
   },
-  iconContainerSettings: {
-    backgroundColor: "rgba(107, 114, 128, 0.1)",
+  iconContainerCharts: {
+    backgroundColor: "#6366f1",
   },
   quickActionIcon: {
-    fontSize: 24,
+    fontSize: 16,
     textAlign: "center",
   },
   quickActionContent: {
-    alignItems: "center",
     flex: 1,
+    alignItems: "flex-start",
   },
   quickActionTitle: {
     fontSize: 14,
     fontWeight: "700",
-    marginBottom: 4,
-    textAlign: "center",
+    textAlign: "left",
     lineHeight: 18,
-  },
-  quickActionDescription: {
-    fontSize: 11,
-    textAlign: "center",
-    lineHeight: 15,
-    paddingHorizontal: 2,
   },
   quickActionCardActive: {
     borderColor: "#6366f1",
-    borderWidth: 2,
-    backgroundColor: "rgba(99, 102, 241, 0.05)",
-    shadowOpacity: 0.12,
+    borderWidth: 3,
+    transform: [{ scale: 1.05 }],
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 8,
   },
 
   // Features section
