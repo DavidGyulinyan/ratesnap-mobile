@@ -152,7 +152,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS public.math_calculator_history (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    calculation_expression TEXT NOT NULL,
+    expression TEXT NOT NULL,
     result DECIMAL(15, 6) NOT NULL,
     calculation_type VARCHAR(50) DEFAULT 'basic',
     metadata JSONB,

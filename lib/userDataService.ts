@@ -39,7 +39,7 @@ export interface MultiCurrencyConverterHistory {
 export interface MathCalculatorHistory {
   id: string;
   user_id: string;
-  calculation_expression: string;
+  expression: string;
   result: number;
   created_at: string;
 }
@@ -466,12 +466,18 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Insert the new record (using the actual column name 'calculation_expression')
+      // Ensure expression is not null or empty
+      if (!expression || expression.trim() === '') {
+        console.warn('Cannot save calculator history: expression is null or empty');
+        return null;
+      }
+
+      // Insert the new record (using the actual column name 'expression')
       const { data, error } = await supabase
         .from('math_calculator_history')
         .insert({
           user_id: user.id,
-          calculation_expression: expression,
+          expression: expression.trim(),
           result: result
         })
         .select()
@@ -532,37 +538,13 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Try to select with calculation_expression first
-      let { data, error } = await supabase
+      // Select with expression column
+      const { data, error } = await supabase
         .from('math_calculator_history')
-        .select('id, user_id, calculation_expression, result, created_at')
+        .select('id, user_id, expression, result, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit);
-
-      // If calculation_expression column doesn't exist or other error, try without it
-      if (error && (error.code === '42703' || error.code === '400')) {
-        console.warn('calculation_expression column not found, falling back to basic columns');
-        const fallbackResult = await supabase
-          .from('math_calculator_history')
-          .select('id, user_id, result, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(limit);
-
-        if (fallbackResult.error) {
-          if (!handleTableNotFound('math_calculator_history', fallbackResult.error)) {
-            console.error('Error fetching calculator history (fallback):', fallbackResult.error);
-          }
-          return [];
-        }
-
-        // Return data with empty expression for backward compatibility
-        return (fallbackResult.data || []).map((item: any) => ({
-          ...item,
-          calculation_expression: 'N/A' // Fallback value
-        }));
-      }
 
       if (error) {
         if (!handleTableNotFound('math_calculator_history', error)) {

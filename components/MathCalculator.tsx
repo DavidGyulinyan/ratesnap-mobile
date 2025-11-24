@@ -22,7 +22,7 @@ export default function MathCalculator({
   inModal = false,
 }: MathCalculatorProps) {
   const { user } = useAuth();
-  const { calculatorHistory: supabaseHistory, saveCalculation, loading: historyLoading } = useCalculatorHistory();
+  const { calculatorHistory: supabaseHistory, saveCalculation, clearAllCalculations, loading: historyLoading } = useCalculatorHistory();
   
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState<number | null>(null);
@@ -47,8 +47,8 @@ export default function MathCalculator({
   useEffect(() => {
     if (visible && user && supabaseHistory.length > 0) {
       const formattedHistory = supabaseHistory.map(record => {
-        // Handle both old 'expression' field and new 'calculation_expression' field
-        const expression = record.calculation_expression || record.expression || 'Unknown calculation';
+        // Use the expression field
+        const expression = record.expression || 'Unknown calculation';
         // If expression already contains "= result", use it as-is, otherwise add result
         if (expression.includes('=')) {
           return expression;
@@ -167,11 +167,11 @@ export default function MathCalculator({
       addToHistory(fullEquation);
 
       // Save to user history if authenticated
-      if (user) {
+      if (user && fullEquation && fullEquation.trim() !== '') {
         try {
           const calculationType = operation === '%' ? 'percentage' :
-                                 ['+', '-', '*', '/'].includes(operation) ? 'basic' : 'advanced';
-          
+                                ['+', '-', '*', '/'].includes(operation) ? 'basic' : 'advanced';
+
           await saveCalculation(fullEquation, result, calculationType, {
             memory,
             roundingDecimalPlaces,
@@ -465,12 +465,24 @@ export default function MathCalculator({
     </View>
   );
 
+  const clearHistory = async () => {
+    try {
+      const success = await clearAllCalculations();
+      if (success) {
+        // Clear local history as well
+        setCalculationHistory([]);
+      }
+    } catch (error) {
+      console.error('Error clearing calculator history:', error);
+    }
+  };
+
   const HistoryView = () => {
     // Combine Supabase history with local history for display
     const displayHistory = user && supabaseHistory.length > 0
       ? supabaseHistory.map(record => {
-          // Handle both old 'expression' field and new 'calculation_expression' field
-          const expression = record.calculation_expression || record.expression || 'Unknown calculation';
+          // Use the expression field
+          const expression = record.expression || 'Unknown calculation';
           // If expression already contains "= result", use it as-is, otherwise add result
           if (expression.includes('=')) {
             return expression;
@@ -482,7 +494,18 @@ export default function MathCalculator({
 
     return (
       <View style={styles.historyContainer}>
-        <Text style={styles.historyTitle}>Calculation History</Text>
+        <View style={styles.historyHeader}>
+          <Text style={styles.historyTitle}>Calculation History</Text>
+          {displayHistory.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearHistoryButton}
+              onPress={clearHistory}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.clearHistoryButtonText}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <ScrollView style={styles.historyList}>
           {displayHistory.length === 0 ? (
             <Text style={styles.historyEmpty}>No calculations yet</Text>
@@ -906,12 +929,29 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.1)",
     maxHeight: 200,
   },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   historyTitle: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
-    textAlign: "center",
+  },
+  clearHistoryButton: {
+    backgroundColor: "rgba(255, 69, 58, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 69, 58, 0.6)",
+  },
+  clearHistoryButtonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "500",
   },
   historyList: {
     maxHeight: 120,
