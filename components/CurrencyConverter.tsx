@@ -19,7 +19,6 @@ import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
-import RateChart from "./RateChart";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -88,7 +87,6 @@ export default function CurrencyConverter({
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] =
     useState<boolean>(false);
-  const [showChart, setShowChart] = useState<boolean>(false);
 
   const { user } = useAuth();
   const {
@@ -1102,31 +1100,18 @@ export default function CurrencyConverter({
 
   return (
     <ScrollView
-      style={[{ flex: 1, padding: inModal ? 0 : 20 }]}
+      style={[{ flex: 1, padding: inModal ? 0 : 20, backgroundColor }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* Navigation Header - Only show when not in modal */}
-      {onNavigateToDashboard && !inModal && (
-        <TouchableOpacity
-          style={[
-            {
-              backgroundColor: surfaceSecondaryColor,
-              borderColor: borderColor,
-            },
-            styles.navHeader,
-          ]}
-          onPress={onNavigateToDashboard}
-        >
-          <ThemedText style={[{ color: primaryColor }, styles.navHeaderText]}>
-            {t("converter.backToDashboard")}
-          </ThemedText>
-        </TouchableOpacity>
-      )}
-
       {/* Modern Currency Converter - Complete Redesign */}
-      <View>
+      <View
+        style={[
+          { backgroundColor: surfaceColor, borderColor: borderColor }
+        ]}
+      >
+
         {/* Amount Input Section */}
         <View style={styles.amountSection}>
           <ThemedText style={styles.amountLabel}>
@@ -1327,27 +1312,6 @@ export default function CurrencyConverter({
                 {t("converter.saveRateButton")}
               </ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                {
-                  backgroundColor: surfaceSecondaryColor,
-                  borderColor: borderColor,
-                  shadowColor: shadowColor,
-                },
-                styles.chartButton,
-              ]}
-              onPress={() => setShowChart(true)}
-            >
-              <ThemedText
-                style={[
-                  { color: primaryColor },
-                  styles.chartButtonText,
-                  language === "hy" && { fontSize: 13 },
-                ]}
-              >
-                {t("converter.chartButton")}
-              </ThemedText>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -1444,14 +1408,6 @@ export default function CurrencyConverter({
         feature="general"
       />
 
-      {/* Rate Chart */}
-      {showChart && (
-        <RateChart
-          baseCurrency={fromCurrency}
-          targetCurrency={toCurrency}
-          onClose={() => setShowChart(false)}
-        />
-      )}
     </ScrollView>
   );
 }
@@ -1822,7 +1778,7 @@ const styles = StyleSheet.create({
   },
   actionButtonsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: 12,
   },
   saveRateButton: {
@@ -1837,21 +1793,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveRateText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  chartButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  chartButtonText: {
     fontSize: 13,
     fontWeight: "600",
   },
