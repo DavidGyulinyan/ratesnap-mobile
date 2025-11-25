@@ -269,7 +269,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
         {chartData.labels.length > 0 ? (
           <LineChart
             data={chartData}
-            width={screenWidth - 60}
+            width={screenWidth - 100}
             height={Math.min(screenHeight * 0.25, 240)}
             chartConfig={chartConfig}
             bezier
@@ -412,6 +412,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     alignSelf: 'center',
+    overflow: 'hidden',
   },
   chart: {
     borderRadius: 12,

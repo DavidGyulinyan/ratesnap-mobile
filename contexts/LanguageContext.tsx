@@ -712,8 +712,8 @@ const translations = {
     'footer.terms': 'Օգտագործման պայմաններ և գաղտնիություն',
     
     // Date/Time
-    'time.lastUpdate': 'Վերջին թարմացում',
-    'time.nextUpdate': 'Հաջորդ թարմացում',
+    'time.lastUpdate': 'Վերջին',
+    'time.nextUpdate': 'Հաջորդ',
 
     // Onboarding Guide
     'onboarding.welcome': 'Բարի գալուստ RateSnap! 🎉',
@@ -991,8 +991,8 @@ const translations = {
     'footer.terms': 'Условия использования и конфиденциальность',
     
     // Date/Time
-    'time.lastUpdate': 'Последнее обновление',
-    'time.nextUpdate': 'Следующее обновление',
+    'time.lastUpdate': 'Последнее',
+    'time.nextUpdate': 'Следующее',
 
     // Onboarding Guide
     'onboarding.welcome': 'Добро пожаловать в RateSnap! 🎉',
@@ -1345,8 +1345,8 @@ const translations = {
     'footer.terms': 'Términos de Uso y Privacidad',
     
     // Date/Time
-    'time.lastUpdate': 'Última Actualización',
-    'time.nextUpdate': 'Próxima Actualización',
+    'time.lastUpdate': 'Última',
+    'time.nextUpdate': 'Próxima',
 
     // Onboarding Guide
     'onboarding.welcome': '¡Bienvenido a RateSnap! 🎉',
