@@ -82,6 +82,7 @@ export default function HomeScreen() {
   const [showRateAlerts, setShowRateAlerts] = useState(false);
   const [showCharts, setShowCharts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showConverter, setShowConverter] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [currenciesData, setCurrenciesData] = useState<any>(null);
@@ -270,22 +271,21 @@ export default function HomeScreen() {
                style={styles.quickActionsScrollView}
              >
                <TouchableOpacity
-                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor }, styles.quickActionCard]}
-                 onPress={() => setCurrentView("converter")}
+                 style={[
+                   { backgroundColor: surfaceColor },
+                   styles.quickActionCard,
+                   showConverter && styles.quickActionCardActive,
+                 ]}
+                 onPress={() => setShowConverter(!showConverter)}
                >
                  <View style={[styles.quickActionIconContainer, styles.iconContainerConverter]}>
                    <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
-                 </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.converter")}
-                   </ThemedText>
                  </View>
                </TouchableOpacity>
 
                <TouchableOpacity
                  style={[
-                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   { backgroundColor: surfaceColor },
                    styles.quickActionCard,
                    showCalculator && styles.quickActionCardActive,
                  ]}
@@ -294,16 +294,11 @@ export default function HomeScreen() {
                  <View style={[styles.quickActionIconContainer, styles.iconContainerCalculator]}>
                    <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
                  </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.calculator")}
-                   </ThemedText>
-                 </View>
                </TouchableOpacity>
 
                <TouchableOpacity
                  style={[
-                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   { backgroundColor: surfaceColor },
                    styles.quickActionCard,
                    showMultiCurrency && styles.quickActionCardActive,
                  ]}
@@ -312,16 +307,11 @@ export default function HomeScreen() {
                  <View style={[styles.quickActionIconContainer, styles.iconContainerMulti]}>
                    <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
                  </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.multiCurrency")}
-                   </ThemedText>
-                 </View>
                </TouchableOpacity>
 
                <TouchableOpacity
                  style={[
-                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   { backgroundColor: surfaceColor },
                    styles.quickActionCard,
                    showSavedRates && styles.quickActionCardActive,
                  ]}
@@ -330,16 +320,11 @@ export default function HomeScreen() {
                  <View style={[styles.quickActionIconContainer, styles.iconContainerSaved]}>
                    <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
                  </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.savedRates")}
-                   </ThemedText>
-                 </View>
                </TouchableOpacity>
 
                <TouchableOpacity
                  style={[
-                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   { backgroundColor: surfaceColor },
                    styles.quickActionCard,
                    showRateAlerts && styles.quickActionCardActive,
                  ]}
@@ -348,16 +333,11 @@ export default function HomeScreen() {
                  <View style={[styles.quickActionIconContainer, styles.iconContainerAlerts]}>
                    <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
                  </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.rateAlerts")}
-                   </ThemedText>
-                 </View>
                </TouchableOpacity>
 
                <TouchableOpacity
                  style={[
-                   { backgroundColor: surfaceColor, borderColor: borderColor, shadowColor },
+                   { backgroundColor: surfaceColor },
                    styles.quickActionCard,
                    showCharts && styles.quickActionCardActive,
                  ]}
@@ -365,11 +345,6 @@ export default function HomeScreen() {
                >
                  <View style={[styles.quickActionIconContainer, styles.iconContainerCharts]}>
                    <ThemedText style={styles.quickActionIcon}>📈</ThemedText>
-                 </View>
-                 <View style={styles.quickActionContent}>
-                   <ThemedText style={[{ color: textColor }, styles.quickActionTitle]}>
-                     {t("quick.action.charts")}
-                   </ThemedText>
                  </View>
                </TouchableOpacity>
 
@@ -414,6 +389,20 @@ export default function HomeScreen() {
                   onShowMore={() => setMultiCurrencyShowAllTargets(true)}
                 />
               )}
+            </DashboardModal>
+          )}
+
+          {/* Currency Converter Modal */}
+          {showConverter && (
+            <DashboardModal
+              title={t("converter.title")}
+              icon="🔄"
+              onClose={() => setShowConverter(false)}
+            >
+              <CurrencyConverter
+                onNavigateToDashboard={() => setShowConverter(false)}
+                inModal={true}
+              />
             </DashboardModal>
           )}
 
@@ -704,29 +693,22 @@ const styles = StyleSheet.create({
   },
   quickActionsScrollContent: {
     paddingHorizontal: 10,
-    gap: 20,
+    gap: 5,
   },
   quickActionCard: {
-    width: 200,
+    width: 80,
     height: 80,
-    borderRadius: 24,
-    borderWidth: 2,
-    flexDirection: "row",
+    borderRadius: 14,
     alignItems: "center",
-    paddingHorizontal: 16,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 6,
+    justifyContent: "center",
     transform: [{ scale: 1 }],
   },
   quickActionIconContainer: {
-    width: 32,
-    height: 32,
+    width: 42,
+    height: 42,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -754,23 +736,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
-  quickActionContent: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  quickActionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "left",
-    lineHeight: 18,
-  },
   quickActionCardActive: {
-    borderColor: "#6366f1",
-    borderWidth: 3,
     transform: [{ scale: 1.05 }],
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 8,
   },
 
   // Features section

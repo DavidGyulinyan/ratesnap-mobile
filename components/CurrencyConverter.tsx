@@ -50,6 +50,7 @@ interface SavedRate {
 
 interface CurrencyConverterProps {
   onNavigateToDashboard?: () => void;
+  inModal?: boolean;
 }
 
 interface Data {
@@ -68,6 +69,7 @@ interface Data {
 
 export default function CurrencyConverter({
   onNavigateToDashboard,
+  inModal = false,
 }: CurrencyConverterProps) {
   const { t, tWithParams, language } = useLanguage();
   const [amount, setAmount] = useState<string>("1");
@@ -1100,13 +1102,13 @@ export default function CurrencyConverter({
 
   return (
     <ScrollView
-      style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}
+      style={[{ flex: 1, padding: inModal ? 0 : 20 }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* Navigation Header */}
-      {onNavigateToDashboard && (
+      {/* Navigation Header - Only show when not in modal */}
+      {onNavigateToDashboard && !inModal && (
         <TouchableOpacity
           style={[
             {
@@ -1124,30 +1126,7 @@ export default function CurrencyConverter({
       )}
 
       {/* Modern Currency Converter - Complete Redesign */}
-      <View
-        style={[
-          { backgroundColor: surfaceColor, borderColor: borderColor },
-          styles.modernConverterCard,
-        ]}
-      >
-        <View style={styles.converterHeader}>
-          <ThemedText style={styles.converterTitle}>
-            💱 {t("converter.title")}
-          </ThemedText>
-          <TouchableOpacity
-            style={[
-              {
-                backgroundColor: surfaceSecondaryColor,
-                shadowColor: shadowColor,
-              },
-              styles.calculatorHeaderButton,
-            ]}
-            onPress={() => setShowCalculator(true)}
-          >
-            <ThemedText style={styles.calculatorHeaderText}>🧮</ThemedText>
-          </TouchableOpacity>
-        </View>
-
+      <View>
         {/* Amount Input Section */}
         <View style={styles.amountSection}>
           <ThemedText style={styles.amountLabel}>
@@ -1478,10 +1457,6 @@ export default function CurrencyConverter({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -1686,40 +1661,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontStyle: "italic",
   },
-
-  // Modern Currency Converter Styles
-  modernConverterCard: {
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  converterHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  converterTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  calculatorHeaderButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calculatorHeaderText: {
-    fontSize: 20,
-  },
-
   // Amount Section
   amountSection: {
     marginBottom: 24,
@@ -1909,7 +1850,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 4,
   },
   chartButtonText: {
     fontSize: 13,
