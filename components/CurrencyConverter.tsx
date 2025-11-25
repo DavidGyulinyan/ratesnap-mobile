@@ -19,7 +19,6 @@ import CurrencyFlag from "./CurrencyFlag";
 import MultiCurrencyConverter from "./MultiCurrencyConverter";
 import AuthPromptModal from "./AuthPromptModal";
 import RateAlertManager from "./RateAlertManager";
-import RateChart from "./RateChart";
 import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -50,6 +49,7 @@ interface SavedRate {
 
 interface CurrencyConverterProps {
   onNavigateToDashboard?: () => void;
+  inModal?: boolean;
 }
 
 interface Data {
@@ -68,6 +68,7 @@ interface Data {
 
 export default function CurrencyConverter({
   onNavigateToDashboard,
+  inModal = false,
 }: CurrencyConverterProps) {
   const { t, tWithParams, language } = useLanguage();
   const [amount, setAmount] = useState<string>("1");
@@ -86,7 +87,6 @@ export default function CurrencyConverter({
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] =
     useState<boolean>(false);
-  const [showChart, setShowChart] = useState<boolean>(false);
 
   const { user } = useAuth();
   const {
@@ -1100,53 +1100,17 @@ export default function CurrencyConverter({
 
   return (
     <ScrollView
-      style={[{ flex: 1, padding: 20, backgroundColor }, styles.container]}
+      style={[{ flex: 1, padding: inModal ? 0 : 20, backgroundColor }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {/* Navigation Header */}
-      {onNavigateToDashboard && (
-        <TouchableOpacity
-          style={[
-            {
-              backgroundColor: surfaceSecondaryColor,
-              borderColor: borderColor,
-            },
-            styles.navHeader,
-          ]}
-          onPress={onNavigateToDashboard}
-        >
-          <ThemedText style={[{ color: primaryColor }, styles.navHeaderText]}>
-            {t("converter.backToDashboard")}
-          </ThemedText>
-        </TouchableOpacity>
-      )}
-
       {/* Modern Currency Converter - Complete Redesign */}
       <View
         style={[
-          { backgroundColor: surfaceColor, borderColor: borderColor },
-          styles.modernConverterCard,
+          { backgroundColor: surfaceColor, borderColor: borderColor }
         ]}
       >
-        <View style={styles.converterHeader}>
-          <ThemedText style={styles.converterTitle}>
-            💱 {t("converter.title")}
-          </ThemedText>
-          <TouchableOpacity
-            style={[
-              {
-                backgroundColor: surfaceSecondaryColor,
-                shadowColor: shadowColor,
-              },
-              styles.calculatorHeaderButton,
-            ]}
-            onPress={() => setShowCalculator(true)}
-          >
-            <ThemedText style={styles.calculatorHeaderText}>🧮</ThemedText>
-          </TouchableOpacity>
-        </View>
 
         {/* Amount Input Section */}
         <View style={styles.amountSection}>
@@ -1348,27 +1312,6 @@ export default function CurrencyConverter({
                 {t("converter.saveRateButton")}
               </ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                {
-                  backgroundColor: surfaceSecondaryColor,
-                  borderColor: borderColor,
-                  shadowColor: shadowColor,
-                },
-                styles.chartButton,
-              ]}
-              onPress={() => setShowChart(true)}
-            >
-              <ThemedText
-                style={[
-                  { color: primaryColor },
-                  styles.chartButtonText,
-                  language === "hy" && { fontSize: 13 },
-                ]}
-              >
-                {t("converter.chartButton")}
-              </ThemedText>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -1465,23 +1408,11 @@ export default function CurrencyConverter({
         feature="general"
       />
 
-      {/* Rate Chart */}
-      {showChart && (
-        <RateChart
-          baseCurrency={fromCurrency}
-          targetCurrency={toCurrency}
-          onClose={() => setShowChart(false)}
-        />
-      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -1686,40 +1617,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontStyle: "italic",
   },
-
-  // Modern Currency Converter Styles
-  modernConverterCard: {
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  converterHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  converterTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  calculatorHeaderButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  calculatorHeaderText: {
-    fontSize: 20,
-  },
-
   // Amount Section
   amountSection: {
     marginBottom: 24,
@@ -1881,7 +1778,7 @@ const styles = StyleSheet.create({
   },
   actionButtonsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: 12,
   },
   saveRateButton: {
@@ -1896,22 +1793,6 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveRateText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  chartButton: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  chartButtonText: {
     fontSize: 13,
     fontWeight: "600",
   },

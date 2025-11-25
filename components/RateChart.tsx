@@ -206,18 +206,6 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
         <ThemedText style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}>
           {baseCurrency}/{targetCurrency} Chart
         </ThemedText>
-        {onClose && (
-          <TouchableOpacity
-            style={[styles.closeButton, {
-              width: screenWidth < 400 ? 24 : 28,
-              height: screenWidth < 400 ? 24 : 28,
-              borderRadius: screenWidth < 400 ? 12 : 14,
-            }]}
-            onPress={onClose}
-          >
-            <ThemedText style={[styles.closeButtonText, { fontSize: screenWidth < 400 ? 16 : 18 }]}>×</ThemedText>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Current Rate Display */}
