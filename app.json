@@ -1,26 +1,26 @@
 {
   "expo": {
-    "name": "ratesnap-mobile",
-    "slug": "ratesnap-mobile",
+    "name": "exratio-mobile",
+    "slug": "exratio-mobile",
     "owner": "davidgyulinyan",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ratesnap-mobile",
+    "scheme": "exratio-mobile",
     "userInterfaceStyle": "automatic",
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.davidgyulinyan.ratesnapmobile",
+      "bundleIdentifier": "com.davidgyulinyan.exratiomobile",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "ratesnap",
-            "CFBundleURLSchemes": ["ratesnap-mobile"]
+            "CFBundleURLName": "exratio",
+            "CFBundleURLSchemes": ["exratio-mobile"]
           }
         ],
-        "NSUserNotificationsUsageDescription": "RateSnap needs notification access to send you alerts when your saved exchange rates reach your target values.",
+        "NSUserNotificationsUsageDescription": "ExRatio needs notification access to send you alerts when your saved exchange rates reach your target values.",
         "UNUserNotificationCenterDelegate": true
       }
     },
@@ -36,7 +36,7 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "ratesnap-mobile"
+              "scheme": "exratio-mobile"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
@@ -47,7 +47,7 @@
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
-      "package": "com.davidgyulinyan.ratesnapmobile"
+      "package": "com.davidgyulinyan.exratiomobile"
     },
 
     "web": {

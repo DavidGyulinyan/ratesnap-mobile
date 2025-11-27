@@ -17,7 +17,7 @@ export default function Footer({ style }: FooterProps) {
     <View style={[{ backgroundColor, borderTopWidth: 1, borderTopColor: borderColor, padding: 20, paddingBottom: 40, alignItems: "center" }, style]}>
       <ThemedText style={{ fontSize: 12, textAlign: "center" }}>
         {tWithParams('footer.copyright', {
-          appTitle: "RateSnap",
+          appTitle: "ExRatio",
           suiteName: t('footer.suiteName')
         })}
       </ThemedText>

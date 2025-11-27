@@ -305,7 +305,7 @@ const translations = {
     'time.nextUpdate': 'Next update',
 
     // Onboarding Guide
-    'onboarding.welcome': 'Welcome to RateSnap! 🎉',
+    'onboarding.welcome': 'Welcome to ExRatio! 🎉',
     'onboarding.welcomeDesc': 'Your professional currency converter with real-time rates and advanced features.',
     'onboarding.convert': 'Convert Currencies Instantly',
     'onboarding.convertDesc': 'Use the main converter to quickly convert between any currencies with live exchange rates.',
@@ -378,7 +378,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'Create Account',
-    'signup.subtitle': 'Join RateSnap to sync your data',
+    'signup.subtitle': 'Join ExRatio to sync your data',
     'signup.usernameOptional': 'Username (Optional)',
     'signup.chooseUsername': 'Choose a username',
     'signup.preferredLanguage': 'Preferred Language',
@@ -716,7 +716,7 @@ const translations = {
     'time.nextUpdate': 'Հաջորդ',
 
     // Onboarding Guide
-    'onboarding.welcome': 'Բարի գալուստ RateSnap! 🎉',
+    'onboarding.welcome': 'Բարի գալուստ ExRatio! 🎉',
     'onboarding.welcomeDesc': 'Թարմ ու ճշգրիտ փոխարժեքներ՝ լիարժեք գործիքներով և առաջադեմ հնարավորություններով։',
     'onboarding.convert': 'Արժույթները փոխանակեք անմիջապես',
     'onboarding.convertDesc': 'Հիմնական փոխանակումը թույլ է տալիս ակնթարթորեն իմանալ ներկայիս փոխարժեքներն ու կատարել արժույթների փոխարկում։',
@@ -784,7 +784,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'Ստեղծել հաշիվ',
-    'signup.subtitle': 'Միացեք RateSnap-ին՝ ձեր տվյալները համաժամանակեցնելու համար',
+    'signup.subtitle': 'Միացեք ExRatio-ին՝ ձեր տվյալները համաժամանակեցնելու համար',
     'signup.usernameOptional': 'Օգտանուն (ըստ ցանկության)',
     'signup.chooseUsername': 'Ընտրեք օգտանուն',
     'signup.preferredLanguage': 'Նախընտրած լեզու',
@@ -995,7 +995,7 @@ const translations = {
     'time.nextUpdate': 'Следующее',
 
     // Onboarding Guide
-    'onboarding.welcome': 'Добро пожаловать в RateSnap! 🎉',
+    'onboarding.welcome': 'Добро пожаловать в ExRatio! 🎉',
     'onboarding.welcomeDesc': 'Ваш профессиональный конвертер валют с курсами в реальном времени и расширенными функциями.',
     'onboarding.convert': 'Конвертируйте валюты мгновенно',
     'onboarding.convertDesc': 'Используйте основной конвертер для быстрого конвертирования между любыми валютами с курсами в реальном времени.',
@@ -1087,7 +1087,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'Создать аккаунт',
-    'signup.subtitle': 'Присоединяйтесь к RateSnap для синхронизации данных',
+    'signup.subtitle': 'Присоединяйтесь к ExRatio для синхронизации данных',
     'signup.usernameOptional': 'Имя пользователя (необязательно)',
     'signup.chooseUsername': 'Выберите имя пользователя',
     'signup.preferredLanguage': 'Предпочитаемый язык',
@@ -1349,7 +1349,7 @@ const translations = {
     'time.nextUpdate': 'Próxima',
 
     // Onboarding Guide
-    'onboarding.welcome': '¡Bienvenido a RateSnap! 🎉',
+    'onboarding.welcome': '¡Bienvenido a ExRatio! 🎉',
     'onboarding.welcomeDesc': 'Tu convertidor de moneda profesional con tasas en tiempo real y funciones avanzadas.',
     'onboarding.convert': 'Convierte Monedas Instantáneamente',
     'onboarding.convertDesc': 'Usa el convertidor principal para convertir rápidamente entre cualquier moneda con tasas de cambio en vivo.',
@@ -1424,7 +1424,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'Crear Cuenta',
-    'signup.subtitle': 'Únete a RateSnap para sincronizar tus datos',
+    'signup.subtitle': 'Únete a ExRatio para sincronizar tus datos',
     'signup.usernameOptional': 'Nombre de usuario (Opcional)',
     'signup.chooseUsername': 'Elige un nombre de usuario',
     'signup.preferredLanguage': 'Idioma preferido',
@@ -1701,7 +1701,7 @@ const translations = {
     'time.nextUpdate': '下次更新',
 
     // Onboarding Guide
-    'onboarding.welcome': '欢迎来到RateSnap！🎉',
+    'onboarding.welcome': '欢迎来到ExRatio！🎉',
     'onboarding.welcomeDesc': '您的专业货币转换器，具有实时汇率和高级功能。',
     'onboarding.convert': '即时转换货币',
     'onboarding.convertDesc': '使用主转换器快速转换任何货币之间的汇率，使用实时汇率。',
@@ -1776,7 +1776,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': '创建账户',
-    'signup.subtitle': '加入RateSnap以同步您的数据',
+    'signup.subtitle': '加入ExRatio以同步您的数据',
     'signup.usernameOptional': '用户名（可选）',
     'signup.chooseUsername': '选择用户名',
     'signup.preferredLanguage': '首选语言',
@@ -2054,7 +2054,7 @@ const translations = {
     'time.nextUpdate': 'अगला अपडेट',
 
     // Onboarding Guide
-    'onboarding.welcome': 'RateSnap में आपका स्वागत है! 🎉',
+    'onboarding.welcome': 'ExRatio में आपका स्वागत है! 🎉',
     'onboarding.welcomeDesc': 'रियल-टाइम दरों और उन्नत सुविधाओं के साथ आपका पेशेवर मुद्रा कन्वर्टर।',
     'onboarding.convert': 'मुद्राएं तुरंत बदलें',
     'onboarding.convertDesc': 'लाइव एक्सचेंज दरों के साथ किसी भी मुद्राओं के बीच तेजी से बदलने के लिए मुख्य कन्वर्टर का उपयोग करें।',
@@ -2129,7 +2129,7 @@ const translations = {
 
     // Sign Up Page
     'signup.createAccount': 'खाता बनाएं',
-    'signup.subtitle': 'अपना डेटा सिंक करने के लिए RateSnap से जुड़ें',
+    'signup.subtitle': 'अपना डेटा सिंक करने के लिए ExRatio से जुड़ें',
     'signup.usernameOptional': 'यूजरनेम (वैकल्पिक)',
     'signup.chooseUsername': 'यूजरनेम चुनें',
     'signup.preferredLanguage': 'पसंदीदा भाषा',

@@ -241,7 +241,7 @@ export default function HomeScreen() {
               textAlign: "right",
               letterSpacing: 0.5,
             }}>
-              RateSnap Dashboard
+              ExRatio Dashboard
             </ThemedText>
           </View>
           <View style={styles.headerRight}>
