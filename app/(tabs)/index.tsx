@@ -233,7 +233,7 @@ export default function HomeScreen() {
         {/* Dashboard Header - Fixed at top */}
         <View style={[styles.dashboardHeader, { shadowColor }]}>
           <View style={styles.titleContainer}>
-            <Logo size={36} showText={false} />
+            <Logo size={92} showText={false} />
             <ThemedText type="title" style={{
               fontSize: 22,
               fontWeight: "700",
@@ -596,8 +596,6 @@ const styles = StyleSheet.create({
 
   // Header styles
   dashboardHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
     backgroundColor: "transparent",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -609,9 +607,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: 12,
     marginBottom: 12,
-    paddingHorizontal: 4,
   },
   logoIcon: {
     width: 36,
@@ -664,7 +660,7 @@ const styles = StyleSheet.create({
   burgerMenu: {
     position: 'absolute',
     right: 1,
-    top: 7,
+    top: 20,
   },
 
   // Scroll content

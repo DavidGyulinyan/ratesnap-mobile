@@ -10,7 +10,7 @@ interface LogoProps {
   textSize?: number;
 }
 
-export default function Logo({ size = 24, showText = true, textSize = 18 }: LogoProps) {
+export default function Logo({ size = 36, showText = true, textSize = 26 }: LogoProps) {
   const colorScheme = useColorScheme();
   const { t } = useLanguage();
   const colors = Colors[colorScheme ?? 'light'];
