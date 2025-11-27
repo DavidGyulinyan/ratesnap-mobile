@@ -23,10 +23,10 @@ export const Colors = {
     colorAccent: accent,
     
     // Background colors
-    background: "#C3D3E2",
-    surface: "#DAE3EA",
-    surfaceSecondary: "#DAE3EA",
-    cardBackground: "#DAE3EA",
+    background: "#FFFFFF",
+    surface: "#F3F3F3",
+    surfaceSecondary: "#F3F3F3",
+    cardBackground: "#dae3eaa1",
     
     // Text colors
     text: "#1e293b",

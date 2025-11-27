@@ -28,7 +28,7 @@ export default function DashboardModal({
 
   return (
     <View style={[styles.modalContainer, style]}>
-      <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor }, styles.modalCard]}>
+      <View style={[{ backgroundColor: backgroundColor, borderColor: borderColor, shadowColor }, styles.modalCard]}>
         {/* Modal Header */}
         <View style={styles.modalHeader}>
           <View style={styles.modalTitleContainer}>
