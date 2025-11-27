@@ -6,6 +6,7 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -19,6 +20,9 @@ import { getAsyncStorage } from '@/lib/storage';
 import expoGoSafeNotificationService from '@/lib/expoGoSafeNotificationService';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import { useUserData } from '@/hooks/useUserData';
+import { useSavedRates, usePickedRates } from '@/hooks/useUserData';
+import SavedRates from '@/components/SavedRates';
+import CurrencyFlag from '@/components/CurrencyFlag';
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
@@ -34,6 +38,9 @@ export default function SettingsScreen() {
     clearAllData
   } = useUserData();
 
+  const { deleteRate: deleteSavedRate, deleteAllRates: deleteAllSavedRates } = useSavedRates();
+  const { deletePickedRate } = usePickedRates();
+
   // State for modals and forms
   const [showThemeSelection, setShowThemeSelection] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
@@ -41,6 +48,8 @@ export default function SettingsScreen() {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showContactSupport, setShowContactSupport] = useState(false);
+  const [showSavedRatesManagement, setShowSavedRatesManagement] = useState(false);
+  const [showPickedRatesManagement, setShowPickedRatesManagement] = useState(false);
 
   // Account info form state
   const [accountInfo, setAccountInfo] = useState({
@@ -897,6 +906,123 @@ ExRatio चुनने के लिए धन्यवाद!`
     );
   };
 
+  // Render picked rates management modal
+  const renderPickedRatesManagement = () => {
+    if (!showPickedRatesManagement) return null;
+
+    const handleDeletePickedRate = async (id: string) => {
+      Alert.alert(
+        'Delete Picked Rate',
+        'Are you sure you want to delete this picked rate?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              const success = await deletePickedRate(id);
+              if (!success) {
+                Alert.alert('Error', 'Failed to delete the picked rate.');
+              }
+            }
+          }
+        ]
+      );
+    };
+
+    const handleDeleteAllPickedRates = async () => {
+      Alert.alert(
+        'Delete All Picked Rates',
+        'Are you sure you want to delete all picked rates?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete All',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                // Delete all picked rates one by one
+                const deletePromises = pickedRates.pickedRates.map(rate => deletePickedRate(rate.id));
+                const results = await Promise.all(deletePromises);
+                const failedCount = results.filter(success => !success).length;
+
+                if (failedCount > 0) {
+                  Alert.alert('Warning', `Deleted ${results.length - failedCount} rates, but ${failedCount} failed.`);
+                } else {
+                  Alert.alert('Success', 'All picked rates deleted successfully.');
+                }
+              } catch (error) {
+                Alert.alert('Error', 'Failed to delete all picked rates.');
+              }
+            }
+          }
+        ]
+      );
+    };
+
+    return (
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <ThemedText style={styles.modalTitle}>Multi-Currency Rates</ThemedText>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowPickedRatesManagement(false)}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ maxHeight: 400 }}>
+          {pickedRates.pickedRates && pickedRates.pickedRates.length > 0 ? (
+            <ScrollView style={{ maxHeight: 300 }}>
+              {pickedRates.pickedRates.map((rate) => (
+                <View key={rate.id} style={[styles.settingItem, { marginVertical: 4 }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <CurrencyFlag currency={rate.from_currency} size={20} />
+                    <ThemedText style={[{ color: textSecondaryColor, marginHorizontal: 8 }]}>→</ThemedText>
+                    <CurrencyFlag currency={rate.to_currency} size={20} />
+                    <ThemedText style={[styles.settingValue, { marginLeft: 8 }]}>
+                      {new Date(rate.created_at).toLocaleDateString()}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    style={{
+                      width: 24,
+                      height: 24,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: 'rgba(239, 68, 68, 0.3)',
+                    }}
+                    onPress={() => handleDeletePickedRate(rate.id)}
+                  >
+                    <ThemedText style={{ fontSize: 14, fontWeight: 'bold', color: '#ef4444' }}>×</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {pickedRates.pickedRates.length > 1 && (
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: '#ef4444', marginTop: 16 }]}
+                  onPress={handleDeleteAllPickedRates}
+                >
+                  <ThemedText style={[styles.buttonText, { color: 'white' }]}>
+                    🗑️ Delete All Picked Rates
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          ) : (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <ThemedText style={styles.settingValue}>No picked rates</ThemedText>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   // Render terms of use modal
   const renderTerms = () => {
     if (!showTerms) return null;
@@ -918,6 +1044,115 @@ ExRatio चुनने के लिए धन्यवाद!`
             {getCurrentTerms()}
           </ThemedText>
         </ScrollView>
+      </View>
+    );
+  };
+
+  // Render saved rates management modal
+  const renderSavedRatesManagement = () => {
+    if (!showSavedRatesManagement) return null;
+
+    const handleDeleteRate = async (id: string) => {
+      Alert.alert(
+        'Delete Saved Rate',
+        'Are you sure you want to delete this saved rate?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              const success = await deleteSavedRate(id);
+              if (!success) {
+                Alert.alert('Error', 'Failed to delete the saved rate.');
+              }
+            }
+          }
+        ]
+      );
+    };
+
+    const handleDeleteAllRates = async () => {
+      Alert.alert(
+        'Delete All Saved Rates',
+        'Are you sure you want to delete all saved rates?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete All',
+            style: 'destructive',
+            onPress: async () => {
+              const success = await deleteAllSavedRates();
+              if (!success) {
+                Alert.alert('Error', 'Failed to delete all saved rates.');
+              }
+            }
+          }
+        ]
+      );
+    };
+
+    return (
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <ThemedText style={styles.modalTitle}>{t('saved.shortTitle')}</ThemedText>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowSavedRatesManagement(false)}
+          >
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ maxHeight: 400 }}>
+          {savedRates.savedRates && savedRates.savedRates.length > 0 ? (
+            <>
+              <ScrollView style={{ maxHeight: 300 }}>
+                {savedRates.savedRates.map((rate) => (
+                  <View key={rate.id} style={[styles.settingItem, { marginVertical: 4 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <CurrencyFlag currency={rate.from_currency} size={20} />
+                      <ThemedText style={[{ color: textSecondaryColor, marginHorizontal: 8 }]}>→</ThemedText>
+                      <CurrencyFlag currency={rate.to_currency} size={20} />
+                      <ThemedText style={[styles.settingValue, { marginLeft: 8 }]}>
+                        {new Date(rate.created_at).toLocaleDateString()}
+                      </ThemedText>
+                    </View>
+                    <TouchableOpacity
+                      style={{
+                        width: 24,
+                        height: 24,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: 'rgba(239, 68, 68, 0.3)',
+                      }}
+                      onPress={() => handleDeleteRate(rate.id)}
+                    >
+                      <ThemedText style={{ fontSize: 14, fontWeight: 'bold', color: '#ef4444' }}>×</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+              {savedRates.savedRates.length > 1 && (
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: '#ef4444', marginTop: 16 }]}
+                  onPress={handleDeleteAllRates}
+                >
+                  <ThemedText style={[styles.buttonText, { color: 'white' }]}>
+                    🗑️ Delete All Rates
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <ThemedText style={styles.settingValue}>No saved rates</ThemedText>
+            </View>
+          )}
+        </View>
       </View>
     );
   };
@@ -992,38 +1227,58 @@ ExRatio चुनने के लिए धन्यवाद!`
           </TouchableOpacity>
 
           {user && (
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: '#ef4444' }]}
-              onPress={() => {
-                Alert.alert(
-                  'Clear All Data',
-                  'This will permanently delete all your saved rates, alerts, history, and preferences. This action cannot be undone.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete Everything',
-                      style: 'destructive',
-                      onPress: async () => {
-                        try {
-                          const success = await clearAllData();
-                          if (success) {
-                            Alert.alert('Success', 'All data has been cleared.');
-                          } else {
+            <>
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton]}
+                onPress={() => setShowSavedRatesManagement(true)}
+              >
+                <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+                  ⭐ {t('saved.shortTitle')} ({savedRates.savedRates?.length || 0})
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton]}
+                onPress={() => setShowPickedRatesManagement(true)}
+              >
+                <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
+                  💱 Multi-Currency ({pickedRates.pickedRates?.length || 0})
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#ef4444' }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Clear All Data',
+                    'This will permanently delete all your saved rates, alerts, history, and preferences. This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Delete Everything',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            const success = await clearAllData();
+                            if (success) {
+                              Alert.alert('Success', 'All data has been cleared.');
+                            } else {
+                              Alert.alert('Error', 'Failed to clear all data.');
+                            }
+                          } catch (error) {
                             Alert.alert('Error', 'Failed to clear all data.');
                           }
-                        } catch (error) {
-                          Alert.alert('Error', 'Failed to clear all data.');
                         }
                       }
-                    }
-                  ]
-                );
-              }}
-            >
-              <ThemedText style={[styles.buttonText, { color: 'white' }]}>
-                🗑️ {t('settings.clearAllData')}
-              </ThemedText>
-            </TouchableOpacity>
+                    ]
+                  );
+                }}
+              >
+                <ThemedText style={[styles.buttonText, { color: 'white' }]}>
+                  🗑️ {t('settings.clearAllData')}
+                </ThemedText>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -1127,6 +1382,8 @@ ExRatio चुनने के लिए धन्यवाद!`
       {renderThemeSelection()}
       {renderNotificationSettings()}
       {renderTerms()}
+      {renderSavedRatesManagement()}
+      {renderPickedRatesManagement()}
       <ContactSupportModal
         visible={showContactSupport}
         onClose={() => setShowContactSupport(false)}

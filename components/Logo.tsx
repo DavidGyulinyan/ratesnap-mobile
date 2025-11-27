@@ -18,7 +18,7 @@ export default function Logo({ size = 36, showText = true, textSize = 26 }: Logo
   return (
     <View style={styles.logoContainer}>
       <Image
-        source={require('../assets/images/icon.png')}
+        source={require('../assets/images/splash-icon.png')}
         style={[
           styles.logoImage,
           {

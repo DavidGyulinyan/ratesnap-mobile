@@ -6,10 +6,10 @@
 import { Platform } from "react-native";
 
 // Modern color palette
-const primary = "#6366f1"; // Modern indigo
-const primaryDark = "#4f46e5";
+const primary = "#6B6ACD"; // Logo orange
+const primaryDark = "#E66A1A"; // Darker orange
 const secondary = "#06b6d4"; // Cyan
-const accent = "#f59e0b"; // Amber
+const accent = "#6B6ACD"; // Logo orange
 const success = "#10b981"; // Emerald
 const warning = "#f59e0b";
 const error = "#ef4444"; // Red
@@ -23,10 +23,10 @@ export const Colors = {
     colorAccent: accent,
     
     // Background colors
-    background: "#fafbff",
-    surface: "#ffffff",
-    surfaceSecondary: "#f8fafc",
-    cardBackground: "#ffffff",
+    background: "#C3D3E2",
+    surface: "#DAE3EA",
+    surfaceSecondary: "#DAE3EA",
+    cardBackground: "#DAE3EA",
     
     // Text colors
     text: "#1e293b",
@@ -54,10 +54,10 @@ export const Colors = {
     // Tab colors
     tabIconDefault: "#64748b",
     tabIconSelected: primary,
-    tabBackground: "#f8fafc",
+    tabBackground: "#DAE3EA",
     
     // Special backgrounds
-    headerBackground: "#ffffff",
+    headerBackground: "#DAE3EA",
     headerBorder: "#e2e8f0",
     
     // Status colors
