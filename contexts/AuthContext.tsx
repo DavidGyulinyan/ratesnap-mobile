@@ -1,10 +1,16 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getSupabaseClient } from '@/lib/supabase-safe';
-import { Session, User, AuthError } from '@supabase/supabase-js';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import alertCheckerService from '@/lib/alertCheckerService';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { getSupabaseClient } from "@/lib/supabase-safe";
+import { Session, User, AuthError } from "@supabase/supabase-js";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import alertCheckerService from "@/lib/alertCheckerService";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -12,7 +18,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, username?: string) => Promise<{ error?: AuthError }>;
+  signUp: (
+    email: string,
+    password: string,
+    username?: string
+  ) => Promise<{ error?: AuthError }>;
   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error?: AuthError }>;
@@ -23,7 +33,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,46 +43,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      console.error('Supabase client not available');
+      console.error("Supabase client not available");
       setLoading(false);
       return;
     }
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((error: any) => {
-      console.warn('Failed to get initial session:', error);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }: { data: { session: Session | null } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      })
+      .catch((error: any) => {
+        console.warn("Failed to get initial session:", error);
+        setLoading(false);
+      });
 
     // Listen for auth changes
     try {
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((event: any, session: Session | null) => {
-        console.log('Auth state changed:', event, session ? 'User authenticated' : 'No user');
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      } = supabase.auth.onAuthStateChange(
+        (event: any, session: Session | null) => {
+          console.log(
+            "Auth state changed:",
+            event,
+            session ? "User authenticated" : "No user"
+          );
 
-        if (session?.user) {
-          console.log('User authenticated:', session.user.email);
-          // Start alert checking for authenticated users
-          alertCheckerService.startChecking(60); // Check every 60 minutes
-        } else {
-          console.log('User signed out');
-          // Stop alert checking when user signs out
-          alertCheckerService.stopChecking();
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+
+          if (session?.user) {
+            console.log("User authenticated:", session.user.email);
+            // Start alert checking for authenticated users
+            alertCheckerService.startChecking(60); // Check every 60 minutes
+          } else {
+            console.log("User signed out");
+            // Stop alert checking when user signs out
+            alertCheckerService.stopChecking();
+          }
         }
-      });
+      );
 
       return () => subscription.unsubscribe();
     } catch (error) {
-      console.warn('Failed to set up auth state listener:', error);
+      console.warn("Failed to set up auth state listener:", error);
       setLoading(false);
     }
   }, []);
@@ -78,32 +99,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (email: string, password: string, username?: string) => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
       setLoading(true);
-      console.log('Starting sign up process for email:', email);
-      
+      console.log("Starting sign up process for email:", email);
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username: username || email.split('@')[0],
+            username: username || email.split("@")[0],
           },
         },
       });
 
       if (error) {
-        console.error('Sign up error:', error);
+        console.error("Sign up error:", error);
         return { error };
       }
 
-      console.log('Sign up successful, user data:', data.user ? 'User created' : 'Confirmation pending');
+      console.log(
+        "Sign up successful, user data:",
+        data.user ? "User created" : "Confirmation pending"
+      );
+
+      // Clear potentially conflicting local storage data on successful sign up
+      try {
+        const keysToRemove = [
+          "cachedExchangeRates", // Clear cached rates for new user
+          "onboardingCompleted", // Reset onboarding for new user
+          // Keep: 'hasSignedInBefore', 'rememberMe', 'language', 'theme' - these are user preferences
+        ];
+
+        await AsyncStorage.multiRemove(keysToRemove);
+        console.log("Cleared local storage data after successful sign up");
+      } catch (storageError) {
+        console.warn(
+          "Failed to clear local storage after sign up:",
+          storageError
+        );
+      }
+
       return {};
     } catch (error) {
-      console.error('Sign up catch error:', error);
+      console.error("Sign up catch error:", error);
       return { error: error as AuthError };
     } finally {
       setLoading(false);
@@ -113,12 +157,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signIn = async (email: string, password: string) => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
       setLoading(true);
-      console.log('Starting sign in process for email:', email);
+      console.log("Starting sign in process for email:", email);
 
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -127,45 +173,69 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (error) {
         // Handle email confirmation error specifically
-        if (error.message.includes('Email not confirmed') ||
-            error.message.includes('email_not_confirmed') ||
-            error.message.includes('not confirmed') ||
-            error.message.includes('Email link is invalid or has expired')) {
+        if (
+          error.message.includes("Email not confirmed") ||
+          error.message.includes("email_not_confirmed") ||
+          error.message.includes("not confirmed") ||
+          error.message.includes("Email link is invalid or has expired")
+        ) {
           // Don't log email confirmation errors to console since we handle them gracefully
           return {
             error: {
-              message: 'Please check your email and click the confirmation link before signing in. Didn\'t receive the email?',
-              name: 'EmailNotConfirmedError'
-            } as AuthError
+              message:
+                "Please check your email and click the confirmation link before signing in. Didn't receive the email?",
+              name: "EmailNotConfirmedError",
+            } as AuthError,
           };
         }
 
         // Handle invalid credentials
-        if (error.message.includes('Invalid login credentials') ||
-            error.message.includes('User not found') ||
-            error.message.includes('Invalid email or password')) {
+        if (
+          error.message.includes("Invalid login credentials") ||
+          error.message.includes("User not found") ||
+          error.message.includes("Invalid email or password")
+        ) {
           // Don't log invalid credentials errors to console since we handle them gracefully
           return {
             error: {
-              message: 'Invalid email or password. Please check your credentials and try again.',
-              name: 'InvalidCredentialsError'
-            } as AuthError
+              message:
+                "Invalid email or password. Please check your credentials and try again.",
+              name: "InvalidCredentialsError",
+            } as AuthError,
           };
         }
 
         // Log other unexpected errors
-        console.error('Sign in error:', error);
+        console.error("Sign in error:", error);
         return { error };
       }
 
-      console.log('Sign in successful');
+      console.log("Sign in successful");
+
+      // Clear potentially conflicting local storage data on successful authentication
+      try {
+        const keysToRemove = [
+          "cachedExchangeRates", // Clear cached rates to ensure fresh data for new user
+          "onboardingCompleted", // Reset onboarding for new user context
+          // Keep: 'hasSignedInBefore', 'rememberMe', 'language', 'theme' - these are user preferences
+        ];
+
+        await AsyncStorage.multiRemove(keysToRemove);
+        console.log("Cleared local storage data after successful sign in");
+      } catch (storageError) {
+        console.warn(
+          "Failed to clear local storage after sign in:",
+          storageError
+        );
+      }
+
       // Mark that user has signed in before for future sign-in screens
-      AsyncStorage.setItem('hasSignedInBefore', 'true').catch(error => {
-        console.warn('Failed to set hasSignedInBefore flag:', error);
+      AsyncStorage.setItem("hasSignedInBefore", "true").catch((error) => {
+        console.warn("Failed to set hasSignedInBefore flag:", error);
       });
       return {};
     } catch (error) {
-      console.error('Sign in catch error:', error);
+      console.error("Sign in catch error:", error);
       return { error: error as AuthError };
     } finally {
       setLoading(false);
@@ -175,19 +245,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = async () => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      console.error('Authentication service not available for sign out');
+      console.error("Authentication service not available for sign out");
       return;
     }
 
     try {
       setLoading(true);
-      console.log('Starting sign out process');
-      
+      console.log("Starting sign out process");
+
       await supabase.auth.signOut();
-      
-      console.log('Sign out successful');
+
+      console.log("Sign out successful");
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error("Error signing out:", error);
     } finally {
       setLoading(false);
     }
@@ -196,35 +266,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithGoogle = async () => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
       setLoading(true);
-      console.log('Starting Google sign in');
-      
+      console.log("Starting Google sign in");
+
       // Use the correct redirect URI format
       const redirectTo = AuthSession.makeRedirectUri({
         scheme: "ratesnap-mobile",
-        path: "auth/callback"
+        path: "auth/callback",
       });
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo,
         },
       });
 
       if (error) {
-        console.log('Google sign-in error:', error.message);
+        console.log("Google sign-in error:", error.message);
         return { error };
       }
 
-      console.log('Google sign in initiated successfully');
+      console.log("Google sign in initiated successfully");
       return {};
     } catch (error) {
-      console.error('Google sign in catch error:', error);
+      console.error("Google sign in catch error:", error);
       return { error: error as AuthError };
     } finally {
       setLoading(false);
@@ -234,35 +306,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signInWithApple = async () => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
       setLoading(true);
-      console.log('Starting Apple sign in');
-      
+      console.log("Starting Apple sign in");
+
       // Use the correct redirect URI format
       const redirectTo = AuthSession.makeRedirectUri({
         scheme: "ratesnap-mobile",
-        path: "auth/callback"
+        path: "auth/callback",
       });
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
+        provider: "apple",
         options: {
           redirectTo,
         },
       });
 
       if (error) {
-        console.log('Apple sign-in error:', error.message);
+        console.log("Apple sign-in error:", error.message);
         return { error };
       }
 
-      console.log('Apple sign in initiated successfully');
+      console.log("Apple sign in initiated successfully");
       return {};
     } catch (error) {
-      console.error('Apple sign in catch error:', error);
+      console.error("Apple sign in catch error:", error);
       return { error: error as AuthError };
     } finally {
       setLoading(false);
@@ -272,7 +346,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const resetPassword = async (email: string) => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
@@ -291,12 +367,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const resendConfirmationEmail = async (email: string) => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      return { error: { message: 'Authentication service not available' } as AuthError };
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
     }
 
     try {
       const { error } = await supabase.auth.resend({
-        type: 'signup',
+        type: "signup",
         email: email,
       });
 
@@ -329,7 +407,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
