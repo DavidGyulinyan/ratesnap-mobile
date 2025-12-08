@@ -1,54 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 import Constants from 'expo-constants';
-
-// Create a completely safe storage adapter that never throws errors
-const createSafeStorage = () => {
-  // In-memory storage as fallback
-  const memoryStore = new Map<string, string>();
-  
-  // Check if we're in a browser environment with localStorage
-  const isBrowser = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
-  
-  return {
-    getItem: async (key: string) => {
-      try {
-        if (isBrowser) {
-          return localStorage.getItem(key);
-        }
-        // Fallback to in-memory storage
-        return memoryStore.get(key) || null;
-      } catch (error) {
-        console.warn(`Storage getItem failed for key: ${key}`, error);
-        return null;
-      }
-    },
-    setItem: async (key: string, value: string) => {
-      try {
-        if (isBrowser) {
-          localStorage.setItem(key, value);
-        } else {
-          // Fallback to in-memory storage
-          memoryStore.set(key, value);
-        }
-      } catch (error) {
-        console.warn(`Storage setItem failed for key: ${key}`, error);
-      }
-    },
-    removeItem: async (key: string) => {
-      try {
-        if (isBrowser) {
-          localStorage.removeItem(key);
-        } else {
-          // Fallback to in-memory storage
-          memoryStore.delete(key);
-        }
-      } catch (error) {
-        console.warn(`Storage removeItem failed for key: ${key}`, error);
-      }
-    },
-  };
-};
+import { getAsyncStorage } from './storage';
 
 // Create Supabase client with safe initialization
 let supabaseClient: any = null;
@@ -74,7 +27,7 @@ export const getSupabaseClient = () => {
 
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        storage: createSafeStorage(),
+        storage: getAsyncStorage(),
         autoRefreshToken: true,  // Enable auto-refresh for proper session management
         persistSession: true,    // Enable session persistence
         detectSessionInUrl: true, // Enable OAuth URL detection

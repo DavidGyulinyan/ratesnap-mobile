@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
@@ -16,6 +17,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useConverterHistory } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserDataService } from "@/lib/userDataService";
 
 interface MultiCurrencyConverterProps {
   currenciesData: any;
@@ -48,29 +50,36 @@ export default function MultiCurrencyConverter({
   showAllTargets = false,
 }: MultiCurrencyConverterProps) {
   const [amount, setAmount] = useState<string>("1");
-  const [fromCurrency, setFromCurrency] = useState<string>(fromCurrencyProp || "");
+  const [fromCurrency, setFromCurrency] = useState<string>(
+    fromCurrencyProp || ""
+  );
   const [showFromCurrencyPicker, setShowFromCurrencyPicker] = useState(false);
-  const [conversionTargets, setConversionTargets] = useState<ConversionTarget[]>([]);
-  const [conversions, setConversions] = useState<{[key: string]: number}>({});
+  const [conversionTargets, setConversionTargets] = useState<
+    ConversionTarget[]
+  >([]);
+  const [conversions, setConversions] = useState<{ [key: string]: number }>({});
   const [currencyList, setCurrencyList] = useState<string[]>([]);
-  const [showTargetCurrencyPicker, setShowTargetCurrencyPicker] = useState(false);
+  const [showTargetCurrencyPicker, setShowTargetCurrencyPicker] =
+    useState(false);
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { saveConversion } = useConverterHistory();
+  const { saveConversion, converterHistory, refreshHistory } =
+    useConverterHistory();
 
   // Theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-  const primaryColor = useThemeColor({}, 'primary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
-  const errorColor = useThemeColor({}, 'error');
-  const shadowColor = '#000000'; // Use black for shadows
+  const backgroundColor = useThemeColor({}, "background");
+  const surfaceColor = useThemeColor({}, "surface");
+  const surfaceSecondaryColor = useThemeColor({}, "surfaceSecondary");
+  const primaryColor = useThemeColor({}, "primary");
+  const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
+  const borderColor = useThemeColor({}, "border");
+  const errorColor = useThemeColor({}, "error");
+  const shadowColor = "#000000"; // Use black for shadows
 
   // Storage key for multi-currency converter state
   const STORAGE_KEY = "multiCurrencyConverterState";
@@ -84,9 +93,12 @@ export default function MultiCurrencyConverter({
     fromCurrency,
     targetCount: conversionTargets.length,
     showAllTargets,
-    shouldShowShowMoreButton: showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems,
-    targets: conversionTargets.map(t => t.currency),
-    hasCurrenciesData: !!currenciesData
+    shouldShowShowMoreButton:
+      showMoreEnabled &&
+      !showAllTargets &&
+      conversionTargets.length > maxVisibleItems,
+    targets: conversionTargets.map((t) => t.currency),
+    hasCurrenciesData: !!currenciesData,
   });
 
   // Load available currencies
@@ -105,14 +117,23 @@ export default function MultiCurrencyConverter({
 
   // Update prop when fromCurrency changes
   useEffect(() => {
-    if (onFromCurrencyChange && fromCurrency && fromCurrency !== fromCurrencyProp) {
+    if (
+      onFromCurrencyChange &&
+      fromCurrency &&
+      fromCurrency !== fromCurrencyProp
+    ) {
       onFromCurrencyChange(fromCurrency);
     }
   }, [fromCurrency, onFromCurrencyChange, fromCurrencyProp]);
 
   // Calculate conversions
   const calculateConversions = useCallback(() => {
-    if (!currenciesData || !amount || parseFloat(amount) <= 0 || !fromCurrency) {
+    if (
+      !currenciesData ||
+      !amount ||
+      parseFloat(amount) <= 0 ||
+      !fromCurrency
+    ) {
       setConversions({});
       return;
     }
@@ -124,7 +145,7 @@ export default function MultiCurrencyConverter({
     }
 
     const inputAmount = parseFloat(amount);
-    const conversionResults: {[key: string]: number} = {};
+    const conversionResults: { [key: string]: number } = {};
 
     conversionTargets.forEach((target) => {
       if (currenciesData.conversion_rates?.[target.currency]) {
@@ -139,20 +160,39 @@ export default function MultiCurrencyConverter({
 
   // Save conversion to history when calculations change
   const saveConversionToHistory = useCallback(async () => {
-    if (user && amount && fromCurrency && conversionTargets.length > 0 && Object.keys(conversions).length > 0) {
+    if (
+      user &&
+      amount &&
+      fromCurrency &&
+      conversionTargets.length > 0 &&
+      Object.keys(conversions).length > 0
+    ) {
       try {
-        const targetCurrencies = conversionTargets.map(target => ({
+        const targetCurrencies = conversionTargets.map((target) => ({
           currency: target.currency,
           amount: conversions[target.currency] || 0,
-          rate: currenciesData?.conversion_rates?.[target.currency] || 0
+          rate: currenciesData?.conversion_rates?.[target.currency] || 0,
         }));
 
-        await saveConversion(fromCurrency, parseFloat(amount), targetCurrencies, conversions);
+        await saveConversion(
+          fromCurrency,
+          parseFloat(amount),
+          targetCurrencies,
+          conversions
+        );
       } catch (error) {
-        console.error('Error saving conversion to history:', error);
+        console.error("Error saving conversion to history:", error);
       }
     }
-  }, [user, amount, fromCurrency, conversionTargets, conversions, currenciesData, saveConversion]);
+  }, [
+    user,
+    amount,
+    fromCurrency,
+    conversionTargets,
+    conversions,
+    currenciesData,
+    saveConversion,
+  ]);
 
   useEffect(() => {
     calculateConversions();
@@ -165,83 +205,215 @@ export default function MultiCurrencyConverter({
     }
   }, [conversions, saveConversionToHistory]);
 
-  // Load saved state from storage
+  // Load saved state from storage or database
   const loadSavedState = useCallback(async () => {
     try {
       console.log("🔄 Loading saved multi-currency converter state...");
-      const savedState = await AsyncStorage.getItem(STORAGE_KEY);
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        const { amount: savedAmount, fromCurrency: savedFromCurrency, conversionTargets: savedTargets } = parsedState;
-        
-        console.log("📦 Saved state found:", { savedAmount, savedFromCurrency, savedTargetsCount: savedTargets?.length });
-        
-        // Load amount if available
-        if (savedAmount) {
-          setAmount(savedAmount);
-          console.log("✅ Loaded amount:", savedAmount);
-        }
-        
-        // Load fromCurrency if available and exists in currency list
-        if (savedFromCurrency && currencyList.includes(savedFromCurrency)) {
-          setFromCurrency(savedFromCurrency);
-          console.log("✅ Loaded fromCurrency:", savedFromCurrency);
-        }
-        
-        // Load target currencies only if they exist in current currency list
-        if (savedTargets && Array.isArray(savedTargets)) {
-          const validTargets = savedTargets.filter((target: ConversionTarget) =>
-            currencyList.includes(target.currency)
-          );
-          
-          if (validTargets.length > 0) {
-            setConversionTargets(validTargets);
-            console.log("✅ Loaded conversion targets:", validTargets.map(t => t.currency));
-          } else {
-            console.log("⚠️ No valid conversion targets found in current currency list");
+
+      if (user) {
+        // Authenticated user - load from database
+        console.log("👤 Authenticated user - loading from database");
+        const history = await UserDataService.getConverterHistory(1); // Get latest record
+        if (history && history.length > 0) {
+          const latestRecord = history[0];
+          console.log("📦 Database state found:", {
+            fromCurrency: latestRecord.from_currency,
+            amount: latestRecord.amount,
+            targetsCount: latestRecord.target_currencies?.length,
+          });
+
+          // Load amount
+          if (latestRecord.amount) {
+            setAmount(latestRecord.amount.toString());
+            console.log("✅ Loaded amount from DB:", latestRecord.amount);
           }
+
+          // Load fromCurrency if available and exists in currency list
+          if (
+            latestRecord.from_currency &&
+            currencyList.includes(latestRecord.from_currency)
+          ) {
+            setFromCurrency(latestRecord.from_currency);
+            console.log(
+              "✅ Loaded fromCurrency from DB:",
+              latestRecord.from_currency
+            );
+          }
+
+          // Load target currencies only if they exist in current currency list
+          if (
+            latestRecord.target_currencies &&
+            Array.isArray(latestRecord.target_currencies)
+          ) {
+            const validTargets = latestRecord.target_currencies
+              .filter((target: any) => currencyList.includes(target.currency))
+              .map((target: any) => ({
+                id: target.id || Date.now().toString() + Math.random(),
+                currency: target.currency,
+              }));
+
+            if (validTargets.length > 0) {
+              setConversionTargets(validTargets);
+              console.log(
+                "✅ Loaded conversion targets from DB:",
+                validTargets.map((t) => t.currency)
+              );
+            } else {
+              console.log(
+                "⚠️ No valid conversion targets found in current currency list"
+              );
+            }
+          }
+        } else {
+          console.log("ℹ️ No saved state found in database");
+          // For authenticated users with no database data, ensure state is cleared
+          setAmount("1"); // Keep default amount for new conversions
+          setFromCurrency("");
+          setConversionTargets([]);
         }
+        // Mark that data loading is complete
+        setHasLoadedData(true);
       } else {
-        console.log("ℹ️ No saved state found");
+        // Non-authenticated user - load from AsyncStorage
+        console.log("👤 Non-authenticated user - loading from AsyncStorage");
+        const savedState = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedState) {
+          const parsedState = JSON.parse(savedState);
+          const {
+            amount: savedAmount,
+            fromCurrency: savedFromCurrency,
+            conversionTargets: savedTargets,
+          } = parsedState;
+
+          console.log("📦 Saved state found:", {
+            savedAmount,
+            savedFromCurrency,
+            savedTargetsCount: savedTargets?.length,
+          });
+
+          // Load amount if available
+          if (savedAmount) {
+            setAmount(savedAmount);
+            console.log("✅ Loaded amount:", savedAmount);
+          }
+
+          // Load fromCurrency if available and exists in currency list
+          if (savedFromCurrency && currencyList.includes(savedFromCurrency)) {
+            setFromCurrency(savedFromCurrency);
+            console.log("✅ Loaded fromCurrency:", savedFromCurrency);
+          }
+
+          // Load target currencies only if they exist in current currency list
+          if (savedTargets && Array.isArray(savedTargets)) {
+            const validTargets = savedTargets.filter(
+              (target: ConversionTarget) =>
+                currencyList.includes(target.currency)
+            );
+
+            if (validTargets.length > 0) {
+              setConversionTargets(validTargets);
+              console.log(
+                "✅ Loaded conversion targets:",
+                validTargets.map((t) => t.currency)
+              );
+            } else {
+              console.log(
+                "⚠️ No valid conversion targets found in current currency list"
+              );
+            }
+          }
+        } else {
+          console.log("ℹ️ No saved state found in AsyncStorage");
+        }
+        // Mark that data loading is complete
+        setHasLoadedData(true);
       }
     } catch (error) {
-      console.error("❌ Error loading saved multi-currency converter state:", error);
+      console.error(
+        "❌ Error loading saved multi-currency converter state:",
+        error
+      );
     }
-  }, [currencyList]);
+  }, [currencyList, user]);
 
-  // Save current state to storage
+  // Save current state to storage or database
   const saveCurrentState = useCallback(async () => {
     try {
-      const stateToSave = {
-        amount,
-        fromCurrency,
-        conversionTargets,
-        timestamp: Date.now(),
-        version: "1.0"
-      };
-      
-      const serializedState = JSON.stringify(stateToSave);
-      console.log("💾 MultiCurrencyConverter: Attempting to save state:", stateToSave);
-      
-      await AsyncStorage.setItem(STORAGE_KEY, serializedState);
-      
-      console.log("✅ MultiCurrencyConverter: Successfully saved state to AsyncStorage");
-      console.log("💾 MultiCurrencyConverter: Saved multi-currency converter state:", {
-        amount,
-        fromCurrency,
-        targetCount: conversionTargets.length,
-        targets: conversionTargets.map(t => t.currency)
-      });
+      if (user) {
+        // Authenticated user - save state to database
+        console.log("👤 Authenticated user - saving state to database");
+
+        // Save converter state by calling saveConversion with empty results to update the record
+        const targetCurrencies = conversionTargets.map((target) => ({
+          currency: target.currency,
+          amount: 0, // Placeholder, will be updated when actual conversion happens
+          rate: 0, // Placeholder
+        }));
+
+        await saveConversion(
+          fromCurrency || "",
+          parseFloat(amount) || 0,
+          targetCurrencies,
+          {} // Empty results since we're just saving state
+        );
+
+        console.log(
+          "✅ MultiCurrencyConverter: Successfully saved state to database"
+        );
+        console.log(
+          "💾 MultiCurrencyConverter: Saved multi-currency converter state:",
+          {
+            amount,
+            fromCurrency,
+            targetCount: conversionTargets.length,
+            targets: conversionTargets.map((t) => t.currency),
+          }
+        );
+      } else {
+        // Non-authenticated user - save to AsyncStorage
+        console.log("👤 Non-authenticated user - saving to AsyncStorage");
+        const stateToSave = {
+          amount,
+          fromCurrency,
+          conversionTargets,
+          timestamp: Date.now(),
+          version: "1.0",
+        };
+
+        const serializedState = JSON.stringify(stateToSave);
+        console.log(
+          "💾 MultiCurrencyConverter: Attempting to save state:",
+          stateToSave
+        );
+
+        await AsyncStorage.setItem(STORAGE_KEY, serializedState);
+
+        console.log(
+          "✅ MultiCurrencyConverter: Successfully saved state to AsyncStorage"
+        );
+        console.log(
+          "💾 MultiCurrencyConverter: Saved multi-currency converter state:",
+          {
+            amount,
+            fromCurrency,
+            targetCount: conversionTargets.length,
+            targets: conversionTargets.map((t) => t.currency),
+          }
+        );
+      }
     } catch (error) {
-      console.error("❌ MultiCurrencyConverter: Error saving multi-currency converter state:", error);
+      console.error(
+        "❌ MultiCurrencyConverter: Error saving multi-currency converter state:",
+        error
+      );
       // Don't throw error to prevent breaking the user flow
     }
-  }, [amount, fromCurrency, conversionTargets]);
+  }, [amount, fromCurrency, conversionTargets, user, saveConversion]);
 
   // Track component lifecycle
   useEffect(() => {
     console.log("🚀 MultiCurrencyConverter: Component mounted");
-    
+
     return () => {
       console.log("🔄 MultiCurrencyConverter: Component unmounting");
     };
@@ -260,16 +432,24 @@ export default function MultiCurrencyConverter({
         // Test read
         const readData = await AsyncStorage.getItem(testKey);
         if (readData) {
-          console.log("✅ MultiCurrencyConverter: Test read successful:", readData);
-          
+          console.log(
+            "✅ MultiCurrencyConverter: Test read successful:",
+            readData
+          );
+
           // Clean up test data
           await AsyncStorage.removeItem(testKey);
           console.log("✅ MultiCurrencyConverter: Test cleanup successful");
         } else {
-          console.error("❌ MultiCurrencyConverter: Test read failed - no data found");
+          console.error(
+            "❌ MultiCurrencyConverter: Test read failed - no data found"
+          );
         }
       } catch (error) {
-        console.error("❌ MultiCurrencyConverter: AsyncStorage test failed:", error);
+        console.error(
+          "❌ MultiCurrencyConverter: AsyncStorage test failed:",
+          error
+        );
       }
     };
 
@@ -278,126 +458,313 @@ export default function MultiCurrencyConverter({
 
   // Fallback loading mechanism - load immediately when component mounts
   useEffect(() => {
-    console.log("🚀 MultiCurrencyConverter: Component mounted, starting fallback loading");
-    
+    console.log(
+      "🚀 MultiCurrencyConverter: Component mounted, starting fallback loading"
+    );
+
     const loadStateFallback = async () => {
       try {
-        console.log("📖 MultiCurrencyConverter: Attempting to read from AsyncStorage with key:", STORAGE_KEY);
-        const savedState = await AsyncStorage.getItem(STORAGE_KEY);
-        
-        if (savedState) {
-          console.log("💾 MultiCurrencyConverter: Found saved state data:", savedState);
-          const parsedState = JSON.parse(savedState);
-          const { amount: savedAmount, fromCurrency: savedFromCurrency, conversionTargets: savedTargets } = parsedState;
-          
-          console.log("🔍 MultiCurrencyConverter: Parsed saved state:", {
-            savedAmount,
-            savedFromCurrency,
-            savedTargets,
-            targetCount: savedTargets?.length || 0
-          });
-          
-          // Set state immediately, validation will happen when currencies are loaded
-          if (savedAmount) {
-            setAmount(savedAmount);
-            console.log("✅ MultiCurrencyConverter: Set amount to:", savedAmount);
+        if (user) {
+          // Authenticated user - load from database
+          console.log("👤 Authenticated user - fallback loading from database");
+          const history = await UserDataService.getConverterHistory(1);
+          if (history && history.length > 0) {
+            const latestRecord = history[0];
+            console.log(
+              "💾 MultiCurrencyConverter: Found database state data:",
+              {
+                fromCurrency: latestRecord.from_currency,
+                amount: latestRecord.amount,
+                targetsCount: latestRecord.target_currencies?.length,
+              }
+            );
+
+            // Set state immediately, validation will happen when currencies are loaded
+            if (latestRecord.amount) {
+              setAmount(latestRecord.amount.toString());
+              console.log(
+                "✅ MultiCurrencyConverter: Set amount to:",
+                latestRecord.amount
+              );
+            }
+
+            if (latestRecord.from_currency) {
+              setFromCurrency(latestRecord.from_currency);
+              console.log(
+                "✅ MultiCurrencyConverter: Set fromCurrency to:",
+                latestRecord.from_currency
+              );
+            }
+
+            if (
+              latestRecord.target_currencies &&
+              Array.isArray(latestRecord.target_currencies)
+            ) {
+              const targetsWithIds = latestRecord.target_currencies.map(
+                (target: any) => ({
+                  id: target.id || Date.now().toString() + Math.random(),
+                  currency: target.currency,
+                })
+              );
+              setConversionTargets(targetsWithIds);
+              console.log(
+                "✅ MultiCurrencyConverter: Set conversionTargets to:",
+                targetsWithIds.map((t) => t.currency)
+              );
+            }
+
+            console.log(
+              "🔄 MultiCurrencyConverter: Fallback loading from database completed"
+            );
+          } else {
+            console.log(
+              "ℹ️ MultiCurrencyConverter: No saved state found in database"
+            );
           }
-          
-          if (savedFromCurrency) {
-            setFromCurrency(savedFromCurrency);
-            console.log("✅ MultiCurrencyConverter: Set fromCurrency to:", savedFromCurrency);
-          }
-          
-          if (savedTargets && Array.isArray(savedTargets)) {
-            setConversionTargets(savedTargets);
-            console.log("✅ MultiCurrencyConverter: Set conversionTargets to:", savedTargets.map(t => t.currency));
-          }
-          
-          console.log("🔄 MultiCurrencyConverter: Fallback loading completed");
+          // Mark that data loading is complete
+          setHasLoadedData(true);
         } else {
-          console.log("ℹ️ MultiCurrencyConverter: No saved state found in AsyncStorage");
+          // Non-authenticated user - load from AsyncStorage
+          console.log(
+            "📖 MultiCurrencyConverter: Attempting to read from AsyncStorage with key:",
+            STORAGE_KEY
+          );
+          const savedState = await AsyncStorage.getItem(STORAGE_KEY);
+
+          if (savedState) {
+            console.log(
+              "💾 MultiCurrencyConverter: Found saved state data:",
+              savedState
+            );
+            const parsedState = JSON.parse(savedState);
+            const {
+              amount: savedAmount,
+              fromCurrency: savedFromCurrency,
+              conversionTargets: savedTargets,
+            } = parsedState;
+
+            console.log("🔍 MultiCurrencyConverter: Parsed saved state:", {
+              savedAmount,
+              savedFromCurrency,
+              savedTargets,
+              targetCount: savedTargets?.length || 0,
+            });
+
+            // Set state immediately, validation will happen when currencies are loaded
+            if (savedAmount) {
+              setAmount(savedAmount);
+              console.log(
+                "✅ MultiCurrencyConverter: Set amount to:",
+                savedAmount
+              );
+            }
+
+            if (savedFromCurrency) {
+              setFromCurrency(savedFromCurrency);
+              console.log(
+                "✅ MultiCurrencyConverter: Set fromCurrency to:",
+                savedFromCurrency
+              );
+            }
+
+            if (savedTargets && Array.isArray(savedTargets)) {
+              setConversionTargets(savedTargets);
+              console.log(
+                "✅ MultiCurrencyConverter: Set conversionTargets to:",
+                savedTargets.map((t) => t.currency)
+              );
+            }
+
+            console.log(
+              "🔄 MultiCurrencyConverter: Fallback loading completed"
+            );
+          } else {
+            console.log(
+              "ℹ️ MultiCurrencyConverter: No saved state found in AsyncStorage"
+            );
+          }
+          // Mark that data loading is complete
+          setHasLoadedData(true);
         }
       } catch (error) {
-        console.error("❌ MultiCurrencyConverter: Error in fallback loading:", error);
+        console.error(
+          "❌ MultiCurrencyConverter: Error in fallback loading:",
+          error
+        );
       }
     };
-    
+
     loadStateFallback();
-  }, []);
+  }, [user]);
 
   // Enhanced persistence mechanism with force refresh
   useEffect(() => {
-    console.log("🔄 MultiCurrencyConverter: Enhanced persistence mechanism running...");
-    
+    console.log(
+      "🔄 MultiCurrencyConverter: Enhanced persistence mechanism running..."
+    );
+
     const forceRefreshPersistedData = async () => {
-      console.log("🔄 MultiCurrencyConverter: Force refreshing persisted data...");
-      
+      console.log(
+        "🔄 MultiCurrencyConverter: Force refreshing persisted data..."
+      );
+
       try {
-        // Force reload from AsyncStorage
-        const savedState = await AsyncStorage.getItem(STORAGE_KEY);
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          const { amount: savedAmount, fromCurrency: savedFromCurrency, conversionTargets: savedTargets } = parsedState;
-          
-          console.log("🔍 MultiCurrencyConverter: Force refresh - loaded state:", {
-            savedAmount,
-            savedFromCurrency,
-            savedTargetsCount: savedTargets?.length || 0
-          });
-          
-          // Always set the targets, even if they might be filtered later
-          if (savedTargets && Array.isArray(savedTargets)) {
-            console.log("✅ MultiCurrencyConverter: Force setting conversionTargets:", savedTargets.map(t => t.currency));
-            setConversionTargets(savedTargets);
+        if (user) {
+          // Authenticated user - force reload from database
+          console.log("👤 Authenticated user - force refresh from database");
+          const history = await UserDataService.getConverterHistory(1);
+          if (history && history.length > 0) {
+            const latestRecord = history[0];
+            console.log(
+              "🔍 MultiCurrencyConverter: Force refresh from DB - loaded state:",
+              {
+                fromCurrency: latestRecord.from_currency,
+                amount: latestRecord.amount,
+                targetsCount: latestRecord.target_currencies?.length || 0,
+              }
+            );
+
+            // Always set the targets, even if they might be filtered later
+            if (
+              latestRecord.target_currencies &&
+              Array.isArray(latestRecord.target_currencies)
+            ) {
+              const targetsWithIds = latestRecord.target_currencies.map(
+                (target: any) => ({
+                  id: target.id || Date.now().toString() + Math.random(),
+                  currency: target.currency,
+                })
+              );
+              console.log(
+                "✅ MultiCurrencyConverter: Force setting conversionTargets from DB:",
+                targetsWithIds.map((t) => t.currency)
+              );
+              setConversionTargets(targetsWithIds);
+            }
+
+            if (latestRecord.amount) {
+              setAmount(latestRecord.amount.toString());
+            }
+
+            if (latestRecord.from_currency) {
+              setFromCurrency(latestRecord.from_currency);
+            }
+          } else {
+            console.log(
+              "ℹ️ MultiCurrencyConverter: No saved state found in database during force refresh"
+            );
           }
-          
-          if (savedAmount) {
-            setAmount(savedAmount);
-          }
-          
-          if (savedFromCurrency) {
-            setFromCurrency(savedFromCurrency);
-          }
+          // Mark that data loading is complete
+          setHasLoadedData(true);
         } else {
-          console.log("ℹ️ MultiCurrencyConverter: No saved state found during force refresh");
+          // Non-authenticated user - force reload from AsyncStorage
+          console.log(
+            "👤 Non-authenticated user - force refresh from AsyncStorage"
+          );
+          const savedState = await AsyncStorage.getItem(STORAGE_KEY);
+          if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            const {
+              amount: savedAmount,
+              fromCurrency: savedFromCurrency,
+              conversionTargets: savedTargets,
+            } = parsedState;
+
+            console.log(
+              "🔍 MultiCurrencyConverter: Force refresh - loaded state:",
+              {
+                savedAmount,
+                savedFromCurrency,
+                savedTargetsCount: savedTargets?.length || 0,
+              }
+            );
+
+            // Always set the targets, even if they might be filtered later
+            if (savedTargets && Array.isArray(savedTargets)) {
+              console.log(
+                "✅ MultiCurrencyConverter: Force setting conversionTargets:",
+                savedTargets.map((t) => t.currency)
+              );
+              setConversionTargets(savedTargets);
+            }
+
+            if (savedAmount) {
+              setAmount(savedAmount);
+            }
+
+            if (savedFromCurrency) {
+              setFromCurrency(savedFromCurrency);
+            }
+          } else {
+            console.log(
+              "ℹ️ MultiCurrencyConverter: No saved state found during force refresh"
+            );
+          }
+          // Mark that data loading is complete
+          setHasLoadedData(true);
         }
       } catch (error) {
-        console.error("❌ MultiCurrencyConverter: Error during force refresh:", error);
+        console.error(
+          "❌ MultiCurrencyConverter: Error during force refresh:",
+          error
+        );
       }
     };
 
     // Run immediately when component mounts
     forceRefreshPersistedData();
-  }, []);
+  }, [user]);
 
   // Validate and clean up loaded state when currency list is available
   useEffect(() => {
     if (currencyList.length > 0) {
-      console.log("💱 MultiCurrencyConverter: Currency list loaded, validating loaded state...");
-      console.log("📋 MultiCurrencyConverter: Current currency list length:", currencyList.length);
-      console.log("🔍 MultiCurrencyConverter: Current fromCurrency:", fromCurrency);
-      console.log("🎯 MultiCurrencyConverter: Current conversionTargets:", conversionTargets.map(t => t.currency));
-      
+      console.log(
+        "💱 MultiCurrencyConverter: Currency list loaded, validating loaded state..."
+      );
+      console.log(
+        "📋 MultiCurrencyConverter: Current currency list length:",
+        currencyList.length
+      );
+      console.log(
+        "🔍 MultiCurrencyConverter: Current fromCurrency:",
+        fromCurrency
+      );
+      console.log(
+        "🎯 MultiCurrencyConverter: Current conversionTargets:",
+        conversionTargets.map((t) => t.currency)
+      );
+
       // Clean up invalid currencies in fromCurrency
       if (fromCurrency && !currencyList.includes(fromCurrency)) {
-        console.log("⚠️ MultiCurrencyConverter: fromCurrency not in current list, clearing...");
+        console.log(
+          "⚠️ MultiCurrencyConverter: fromCurrency not in current list, clearing..."
+        );
         setFromCurrency("");
       }
-      
+
       // Clean up invalid currencies in conversionTargets
-      const validTargets = conversionTargets.filter(target =>
+      const validTargets = conversionTargets.filter((target) =>
         currencyList.includes(target.currency)
       );
-      
-      console.log("🧹 MultiCurrencyConverter: Valid targets after filtering:", validTargets.map(t => t.currency));
-      
+
+      console.log(
+        "🧹 MultiCurrencyConverter: Valid targets after filtering:",
+        validTargets.map((t) => t.currency)
+      );
+
       if (validTargets.length !== conversionTargets.length) {
-        console.log("🔧 MultiCurrencyConverter: Cleaning up invalid target currencies, removing", conversionTargets.length - validTargets.length, "invalid ones");
+        console.log(
+          "🔧 MultiCurrencyConverter: Cleaning up invalid target currencies, removing",
+          conversionTargets.length - validTargets.length,
+          "invalid ones"
+        );
         setConversionTargets(validTargets);
       } else {
-        console.log("✅ MultiCurrencyConverter: All conversion targets are valid");
+        console.log(
+          "✅ MultiCurrencyConverter: All conversion targets are valid"
+        );
       }
-      
+
       console.log("✅ MultiCurrencyConverter: State validation completed");
     }
   }, [currencyList, fromCurrency, conversionTargets]);
@@ -409,28 +776,59 @@ export default function MultiCurrencyConverter({
       amount,
       fromCurrency,
       targetCount: conversionTargets.length,
-      targets: conversionTargets.map(t => t.currency)
+      targets: conversionTargets.map((t) => t.currency),
     });
-    
+
     // Add a small delay to avoid excessive saves during rapid changes
     const timeoutId = setTimeout(() => {
-      if (amount || fromCurrency || conversionTargets.length > 0) {
-        saveCurrentState();
+      // Only save after data has been loaded to prevent saving initial/default state
+      if (hasLoadedData) {
+        if (amount || fromCurrency || conversionTargets.length > 0) {
+          saveCurrentState();
+        }
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [amount, fromCurrency, conversionTargets, saveCurrentState]);
+  }, [
+    amount,
+    fromCurrency,
+    conversionTargets,
+    saveCurrentState,
+    hasLoadedData,
+  ]);
+
+  // Refresh data when component becomes focused (for authenticated users)
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        console.log(
+          "🔄 MultiCurrencyConverter: Component focused, refreshing data from database..."
+        );
+        loadSavedState();
+      }
+    }, [user, loadSavedState])
+  );
+
+  // Refresh data when user authentication state changes
+  useEffect(() => {
+    console.log(
+      "🔄 MultiCurrencyConverter: User authentication state changed, refreshing data..."
+    );
+    loadSavedState();
+  }, [user, loadSavedState]);
 
   // Add new target currency
   const addTargetCurrency = (currency: string) => {
     // Check if currency is already in the list
-    const isDuplicate = conversionTargets.some(target => target.currency === currency);
+    const isDuplicate = conversionTargets.some(
+      (target) => target.currency === currency
+    );
     if (isDuplicate) {
       Alert.alert(
-        t('error.duplicateCurrency'),
-        `${currency} ${t('multi.alreadyInList')}`,
-        [{ text: t('common.ok'), style: "default" }]
+        t("error.duplicateCurrency"),
+        `${currency} ${t("multi.alreadyInList")}`,
+        [{ text: t("common.ok"), style: "default" }]
       );
       setShowTargetCurrencyPicker(false);
       setEditingTargetId(null);
@@ -448,23 +846,21 @@ export default function MultiCurrencyConverter({
 
   // Remove target currency
   const removeTargetCurrency = (id: string) => {
-    setConversionTargets(conversionTargets.filter(target => target.id !== id));
+    setConversionTargets(
+      conversionTargets.filter((target) => target.id !== id)
+    );
   };
 
   // Remove all target currencies
   const removeAllTargetCurrencies = () => {
-    Alert.alert(
-      t('common.delete'),
-      t('saved.deleteAllConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => setConversionTargets([])
-        }
-      ]
-    );
+    Alert.alert(t("common.delete"), t("saved.deleteAllConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: () => setConversionTargets([]),
+      },
+    ]);
   };
 
   // Handle "From" currency selection
@@ -477,11 +873,9 @@ export default function MultiCurrencyConverter({
   const handleTargetCurrencySelect = (currency: string) => {
     if (editingTargetId) {
       // Update existing target
-      setConversionTargets(targets => 
-        targets.map(target => 
-          target.id === editingTargetId 
-            ? { ...target, currency }
-            : target
+      setConversionTargets((targets) =>
+        targets.map((target) =>
+          target.id === editingTargetId ? { ...target, currency } : target
         )
       );
       setEditingTargetId(null);
@@ -500,15 +894,27 @@ export default function MultiCurrencyConverter({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[{ backgroundColor: surfaceColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.card]}>
+      <View
+        style={[
+          {
+            backgroundColor: surfaceColor,
+            borderColor: primaryColor,
+            shadowColor: shadowColor,
+          },
+          styles.card,
+        ]}
+      >
         {!inModal && (
           <View style={styles.header}>
             {onClose && (
               <TouchableOpacity
                 style={[
-                  { backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor },
+                  {
+                    backgroundColor: surfaceSecondaryColor,
+                    shadowColor: shadowColor,
+                  },
                   styles.closeButton,
-                  closeButtonPressed && { backgroundColor: borderColor }
+                  closeButtonPressed && { backgroundColor: borderColor },
                 ]}
                 onPressIn={() => setCloseButtonPressed(true)}
                 onPressOut={() => setCloseButtonPressed(false)}
@@ -517,11 +923,15 @@ export default function MultiCurrencyConverter({
                   setCloseButtonPressed(false);
                 }}
               >
-                <ThemedText style={[
-                  { color: textColor },
-                  styles.closeButtonText,
-                  closeButtonPressed && { color: textSecondaryColor }
-                ]}>×</ThemedText>
+                <ThemedText
+                  style={[
+                    { color: textColor },
+                    styles.closeButtonText,
+                    closeButtonPressed && { color: textSecondaryColor },
+                  ]}
+                >
+                  ×
+                </ThemedText>
               </TouchableOpacity>
             )}
           </View>
@@ -529,34 +939,59 @@ export default function MultiCurrencyConverter({
 
         {/* Amount Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.amount')}</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>
+            {t("multi.amount")}
+          </ThemedText>
           <TextInput
-            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.amountInput]}
+            style={[
+              {
+                backgroundColor: surfaceColor,
+                borderColor: borderColor,
+                color: textColor,
+              },
+              styles.amountInput,
+            ]}
             value={amount}
             onChangeText={setAmount}
             keyboardType="numeric"
-            placeholder={t('converter.enterAmount')}
+            placeholder={t("converter.enterAmount")}
             placeholderTextColor={textSecondaryColor}
           />
         </View>
 
         {/* From Currency Input */}
         <View style={styles.inputGroup}>
-          <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.from')}</ThemedText>
+          <ThemedText style={[{ color: textColor }, styles.label]}>
+            {t("multi.from")}
+          </ThemedText>
           <TouchableOpacity
-            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.currencyButton]}
+            style={[
+              {
+                backgroundColor: surfaceColor,
+                borderColor: borderColor,
+                shadowColor: shadowColor,
+              },
+              styles.currencyButton,
+            ]}
             onPress={() => setShowFromCurrencyPicker(true)}
           >
             {fromCurrency ? (
               <>
                 <CurrencyFlag currency={fromCurrency} size={20} />
-                <ThemedText style={[{ color: textColor }, styles.currencyButtonText]}>
+                <ThemedText
+                  style={[{ color: textColor }, styles.currencyButtonText]}
+                >
                   {fromCurrency}
                 </ThemedText>
               </>
             ) : (
-              <ThemedText style={[{ color: textSecondaryColor }, styles.currencyButtonPlaceholder]}>
-                {t('multi.selectCurrency')}
+              <ThemedText
+                style={[
+                  { color: textSecondaryColor },
+                  styles.currencyButtonPlaceholder,
+                ]}
+              >
+                {t("multi.selectCurrency")}
               </ThemedText>
             )}
           </TouchableOpacity>
@@ -565,65 +1000,137 @@ export default function MultiCurrencyConverter({
         {/* Target Currencies Section */}
         <View style={styles.targetsSection}>
           <View style={styles.targetsHeader}>
-            <ThemedText style={[{ color: textColor }, styles.label]}>{t('multi.convertTo')}</ThemedText>
+            <ThemedText style={[{ color: textColor }, styles.label]}>
+              {t("multi.convertTo")}
+            </ThemedText>
             <TouchableOpacity
-              style={[{ backgroundColor: surfaceSecondaryColor, borderColor: primaryColor, shadowColor: shadowColor }, styles.addButton]}
+              style={[
+                {
+                  backgroundColor: surfaceSecondaryColor,
+                  borderColor: primaryColor,
+                  shadowColor: shadowColor,
+                },
+                styles.addButton,
+              ]}
               onPress={() => {
                 setEditingTargetId(null);
                 setShowTargetCurrencyPicker(true);
               }}
             >
-              <ThemedText style={[{ color: primaryColor }, styles.addButtonText]}>{t('multi.addCurrency')}</ThemedText>
+              <ThemedText
+                style={[{ color: primaryColor }, styles.addButtonText]}
+              >
+                {t("multi.addCurrency")}
+              </ThemedText>
             </TouchableOpacity>
           </View>
 
           {conversionTargets.length === 0 ? (
-            <View style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor }, styles.emptyState]}>
-              <ThemedText style={[{ color: textSecondaryColor }, styles.emptyStateText]}>
-                {t('multi.emptyState')}
+            <View
+              style={[
+                {
+                  backgroundColor: surfaceSecondaryColor,
+                  borderColor: borderColor,
+                },
+                styles.emptyState,
+              ]}
+            >
+              <ThemedText
+                style={[{ color: textSecondaryColor }, styles.emptyStateText]}
+              >
+                {t("multi.emptyState")}
               </ThemedText>
             </View>
           ) : (
             <>
               <View style={styles.targetsList}>
                 {(() => {
-                  const visibleTargets = showAllTargets ? conversionTargets.slice(0, 20) : conversionTargets.slice(0, maxVisibleItems);
-                  console.log('🎨 Rendering targets:', {
+                  const visibleTargets = showAllTargets
+                    ? conversionTargets.slice(0, 20)
+                    : conversionTargets.slice(0, maxVisibleItems);
+                  console.log("🎨 Rendering targets:", {
                     totalTargets: conversionTargets.length,
                     showAllTargets,
                     visibleCount: visibleTargets.length,
                     maxVisible: maxVisibleItems,
                     maxWhenExpanded: 20,
-                    shouldShowButton: showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems,
-                    targetsList: visibleTargets.map(t => t.currency)
+                    shouldShowButton:
+                      showMoreEnabled &&
+                      !showAllTargets &&
+                      conversionTargets.length > maxVisibleItems,
+                    targetsList: visibleTargets.map((t) => t.currency),
                   });
-                  
+
                   // Force a rerender by adding a key based on showAllTargets
                   return (
-                    <View key={`targets-${showAllTargets ? 'all' : 'limited'}`}>
+                    <View key={`targets-${showAllTargets ? "all" : "limited"}`}>
                       {visibleTargets.map((target) => (
-                        <View key={target.id} style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetItem]}>
+                        <View
+                          key={target.id}
+                          style={[
+                            {
+                              backgroundColor: surfaceSecondaryColor,
+                              borderColor: borderColor,
+                              shadowColor: shadowColor,
+                            },
+                            styles.targetItem,
+                          ]}
+                        >
                           <TouchableOpacity
-                            style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.targetCurrencyButton]}
+                            style={[
+                              {
+                                backgroundColor: surfaceColor,
+                                borderColor: borderColor,
+                                shadowColor: shadowColor,
+                              },
+                              styles.targetCurrencyButton,
+                            ]}
                             onPress={() => editTargetCurrency(target.id)}
                           >
-                            <CurrencyFlag currency={target.currency} size={18} />
-                            <ThemedText style={[{ color: textColor }, styles.targetCurrencyText]}>
+                            <CurrencyFlag
+                              currency={target.currency}
+                              size={18}
+                            />
+                            <ThemedText
+                              style={[
+                                { color: textColor },
+                                styles.targetCurrencyText,
+                              ]}
+                            >
                               {target.currency}
                             </ThemedText>
                           </TouchableOpacity>
 
                           <View style={styles.conversionResult}>
-                            <ThemedText style={[{ color: primaryColor }, styles.conversionAmount]}>
-                              {conversions[target.currency]?.toFixed(4) || "---"}
+                            <ThemedText
+                              style={[
+                                { color: primaryColor },
+                                styles.conversionAmount,
+                              ]}
+                            >
+                              {conversions[target.currency]?.toFixed(4) ||
+                                "---"}
                             </ThemedText>
                           </View>
 
                           <TouchableOpacity
-                            style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.removeButton]}
+                            style={[
+                              {
+                                backgroundColor: errorColor,
+                                shadowColor: errorColor,
+                              },
+                              styles.removeButton,
+                            ]}
                             onPress={() => removeTargetCurrency(target.id)}
                           >
-                            <ThemedText style={[{ color: textColor }, styles.removeButtonText]}>×</ThemedText>
+                            <ThemedText
+                              style={[
+                                { color: textColor },
+                                styles.removeButtonText,
+                              ]}
+                            >
+                              ×
+                            </ThemedText>
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -632,22 +1139,35 @@ export default function MultiCurrencyConverter({
                 })()}
               </View>
 
-              {showMoreEnabled && !showAllTargets && conversionTargets.length > maxVisibleItems && (
-                <View style={{ marginTop: 12, alignItems: 'center' }}>
-                  <TouchableOpacity
-                    style={[{ backgroundColor: surfaceSecondaryColor, shadowColor: shadowColor }, styles.showMoreButton]}
-                    onPress={() => {
-                      if (onShowMore) {
-                        onShowMore();
-                      }
-                    }}
-                  >
-                    <ThemedText style={[{ color: primaryColor }, styles.showMoreText]}>
-                      {t('common.showMore').replace('more', `up to 20 target currencies`) + ' →'}
-                    </ThemedText>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {showMoreEnabled &&
+                !showAllTargets &&
+                conversionTargets.length > maxVisibleItems && (
+                  <View style={{ marginTop: 12, alignItems: "center" }}>
+                    <TouchableOpacity
+                      style={[
+                        {
+                          backgroundColor: surfaceSecondaryColor,
+                          shadowColor: shadowColor,
+                        },
+                        styles.showMoreButton,
+                      ]}
+                      onPress={() => {
+                        if (onShowMore) {
+                          onShowMore();
+                        }
+                      }}
+                    >
+                      <ThemedText
+                        style={[{ color: primaryColor }, styles.showMoreText]}
+                      >
+                        {t("common.showMore").replace(
+                          "more",
+                          `up to 20 target currencies`
+                        ) + " →"}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
               {conversionTargets.length > 1 && (
                 <DeleteAllButton
@@ -674,7 +1194,12 @@ export default function MultiCurrencyConverter({
       <CurrencyPicker
         visible={showTargetCurrencyPicker}
         currencies={currencyList}
-        selectedCurrency={editingTargetId ? conversionTargets.find(t => t.id === editingTargetId)?.currency || "" : ""}
+        selectedCurrency={
+          editingTargetId
+            ? conversionTargets.find((t) => t.id === editingTargetId)
+                ?.currency || ""
+            : ""
+        }
         onSelect={handleTargetCurrencySelect}
         onClose={() => {
           setShowTargetCurrencyPicker(false);
@@ -696,7 +1221,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent:'flex-end',
+    justifyContent: "flex-end",
     marginBottom: 20,
   },
   title: {
@@ -708,20 +1233,18 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 32,
     height: 32,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: "#f3f4f6",
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonActive: {
-  },
+  closeButtonActive: {},
   closeButtonText: {
     fontSize: 18,
-    color: '#6b7280',
+    color: "#6b7280",
     fontWeight: "bold",
   },
-  closeButtonTextActive: {
-  },
+  closeButtonTextActive: {},
   inputGroup: {
     marginBottom: 16,
   },
