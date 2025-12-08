@@ -90,21 +90,14 @@ export function useSavedRates(): UseSavedRatesReturn {
       }
 
       if (user) {
-        // Authenticated user - try to load from database and merge with local
+        // Authenticated user - use only database data
         try {
           const dbRates = await UserDataService.getSavedRates();
-          // Merge: prefer database rates, but include local rates that aren't in database
-          const mergedRates = [...dbRates];
-          localRates.forEach(localRate => {
-            if (!mergedRates.find(dbRate => dbRate.from_currency === localRate.from_currency && dbRate.to_currency === localRate.to_currency)) {
-              mergedRates.push(localRate);
-            }
-          });
-          setSavedRates(mergedRates);
+          setSavedRates(dbRates);
         } catch (dbError) {
-          // If database fails, fall back to local storage
-          console.warn('Database load failed, using local storage:', dbError);
-          setSavedRates(localRates);
+          // If database fails, show empty list (no fallback to local storage)
+          console.warn('Database load failed for authenticated user:', dbError);
+          setSavedRates([]);
         }
       } else {
         // Non-authenticated user - use only local storage
