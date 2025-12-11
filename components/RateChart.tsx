@@ -40,7 +40,10 @@ export default function RateChart({
   const [error, setError] = useState<string | null>(null);
 
   const { t } = useLanguage();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // Use safer dimensions with fallbacks
+  const dimensions = useWindowDimensions();
+  const screenWidth = dimensions?.width || 400;
+  const screenHeight = dimensions?.height || 800;
 
   // Theme colors
   const backgroundColor = useThemeColor({}, "background");
@@ -138,7 +141,7 @@ export default function RateChart({
 
   const chartData = formatChartData();
 
-  // Simple line chart component
+  // Simple line chart component with fallback
   const SimpleLineChart = ({
     data,
     labels,
@@ -193,129 +196,185 @@ export default function RateChart({
       );
     }
 
-    const minValue = Math.min(...validData);
-    const maxValue = Math.max(...validData);
-    const range = maxValue - minValue || 1;
-    const padding = 20;
-    const chartWidth = Math.max(width - padding * 2, 100);
-    const chartHeight = Math.max(height - padding * 2, 100);
+    // Try to render SVG chart, fallback to simple text display if it fails
+    try {
+      const minValue = Math.min(...validData);
+      const maxValue = Math.max(...validData);
+      const range = maxValue - minValue || 1;
+      const padding = 20;
+      const chartWidth = Math.max(width - padding * 2, 100);
+      const chartHeight = Math.max(height - padding * 2, 100);
 
-    const points = validData
-      .map((value, index) => {
-        const x = padding + (index / (validData.length - 1)) * chartWidth;
-        const y = padding + ((maxValue - value) / range) * chartHeight;
-        return `${x},${y}`;
-      })
-      .join(" ");
+      const points = validData
+        .map((value, index) => {
+          const x = padding + (index / (validData.length - 1)) * chartWidth;
+          const y = padding + ((maxValue - value) / range) * chartHeight;
+          return `${x},${y}`;
+        })
+        .join(" ");
 
-    return (
-      <View
-        style={{
-          width,
-          height,
-          backgroundColor: surfaceColor,
-          borderRadius: 12,
-        }}
-      >
+      return (
         <View
           style={{
-            flex: 1,
-            justifyContent: "space-between",
-            paddingHorizontal: padding,
-            paddingVertical: padding,
+            width,
+            height,
+            backgroundColor: surfaceColor,
+            borderRadius: 12,
           }}
         >
-          {/* Y-axis labels */}
-          <ThemedText
-            style={{
-              fontSize: 10,
-              color: textSecondaryColor,
-              position: "absolute",
-              left: 5,
-              top: padding,
-            }}
-          >
-            {maxValue.toFixed(4)}
-          </ThemedText>
-          <ThemedText
-            style={{
-              fontSize: 10,
-              color: textSecondaryColor,
-              position: "absolute",
-              left: 5,
-              bottom: padding,
-            }}
-          >
-            {minValue.toFixed(4)}
-          </ThemedText>
-
-          {/* Chart area */}
-          <View style={{ flex: 1, marginLeft: 30 }}>
-            <Svg
-              width={chartWidth}
-              height={chartHeight}
-              style={{ position: "absolute" }}
-            >
-              {/* Grid lines */}
-              <Line
-                x1="0"
-                y1="0"
-                x2={chartWidth}
-                y2="0"
-                stroke={borderColor}
-                strokeWidth="1"
-                opacity="0.3"
-              />
-              <Line
-                x1="0"
-                y1={chartHeight / 2}
-                x2={chartWidth}
-                y2={chartHeight / 2}
-                stroke={borderColor}
-                strokeWidth="1"
-                opacity="0.3"
-              />
-              <Line
-                x1="0"
-                y1={chartHeight}
-                x2={chartWidth}
-                y2={chartHeight}
-                stroke={borderColor}
-                strokeWidth="1"
-                opacity="0.3"
-              />
-
-              {/* Line */}
-              <Polyline
-                points={points}
-                fill="none"
-                stroke={primaryColor}
-                strokeWidth="2"
-              />
-            </Svg>
-          </View>
-
-          {/* X-axis labels */}
           <View
             style={{
-              flexDirection: "row",
+              flex: 1,
               justifyContent: "space-between",
-              marginTop: 5,
-              marginLeft: 30,
+              paddingHorizontal: padding,
+              paddingVertical: padding,
             }}
           >
-            {labels.slice(0, 5).map((label, index) => (
-              <ThemedText
-                key={index}
-                style={{ fontSize: 8, color: textSecondaryColor }}
+            {/* Y-axis labels */}
+            <ThemedText
+              style={{
+                fontSize: 10,
+                color: textSecondaryColor,
+                position: "absolute",
+                left: 5,
+                top: padding,
+              }}
+            >
+              {maxValue.toFixed(4)}
+            </ThemedText>
+            <ThemedText
+              style={{
+                fontSize: 10,
+                color: textSecondaryColor,
+                position: "absolute",
+                left: 5,
+                bottom: padding,
+              }}
+            >
+              {minValue.toFixed(4)}
+            </ThemedText>
+
+            {/* Chart area */}
+            <View style={{ flex: 1, marginLeft: 30 }}>
+              <Svg
+                width={chartWidth}
+                height={chartHeight}
+                style={{ position: "absolute" }}
               >
-                {label}
-              </ThemedText>
-            ))}
+                {/* Grid lines */}
+                <Line
+                  x1="0"
+                  y1="0"
+                  x2={chartWidth}
+                  y2="0"
+                  stroke={borderColor}
+                  strokeWidth="1"
+                  opacity="0.3"
+                />
+                <Line
+                  x1="0"
+                  y1={chartHeight / 2}
+                  x2={chartWidth}
+                  y2={chartHeight / 2}
+                  stroke={borderColor}
+                  strokeWidth="1"
+                  opacity="0.3"
+                />
+                <Line
+                  x1="0"
+                  y1={chartHeight}
+                  x2={chartWidth}
+                  y2={chartHeight}
+                  stroke={borderColor}
+                  strokeWidth="1"
+                  opacity="0.3"
+                />
+
+                {/* Line */}
+                <Polyline
+                  points={points}
+                  fill="none"
+                  stroke={primaryColor}
+                  strokeWidth="2"
+                />
+              </Svg>
+            </View>
+
+            {/* X-axis labels */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 5,
+                marginLeft: 30,
+              }}
+            >
+              {labels.slice(0, 5).map((label, index) => (
+                <ThemedText
+                  key={index}
+                  style={{ fontSize: 8, color: textSecondaryColor }}
+                >
+                  {label}
+                </ThemedText>
+              ))}
+            </View>
           </View>
         </View>
-      </View>
-    );
+      );
+    } catch (svgError) {
+      // Fallback to simple text-based chart
+      console.warn(
+        "SVG chart failed in standalone build, using text fallback:",
+        svgError
+      );
+      return (
+        <View
+          style={{
+            width,
+            height,
+            backgroundColor: surfaceColor,
+            borderRadius: 12,
+            padding: 16,
+          }}
+        >
+          <ThemedText
+            style={{
+              fontSize: 14,
+              color: textColor,
+              fontWeight: "600",
+              marginBottom: 12,
+            }}
+          >
+            Rate Trend ({validData.length} points)
+          </ThemedText>
+          <ScrollView style={{ flex: 1 }}>
+            {validData.slice(-10).map((rate, index) => (
+              <View
+                key={index}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingVertical: 4,
+                  borderBottomWidth:
+                    index < validData.slice(-10).length - 1 ? 1 : 0,
+                  borderBottomColor: borderColor,
+                }}
+              >
+                <ThemedText style={{ fontSize: 12, color: textSecondaryColor }}>
+                  {labels[validData.length - 10 + index] ||
+                    `Point ${validData.length - 10 + index + 1}`}
+                </ThemedText>
+                <ThemedText
+                  style={{ fontSize: 12, color: textColor, fontWeight: "600" }}
+                >
+                  {rate.toFixed(4)}
+                </ThemedText>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      );
+    }
   };
 
   const getCurrentRate = () => {
