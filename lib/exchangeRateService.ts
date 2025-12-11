@@ -17,8 +17,9 @@ class ExchangeRateService {
   private apiKey: string;
 
   constructor() {
-    this.apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || '';
-    this.apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY || '';
+    // Use fallback values since the API configuration might not be set up
+    this.apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL || 'https://api.currencyfreaks.com';
+    this.apiKey = Constants.expoConfig?.extra?.apiKey || process.env.EXPO_PUBLIC_API_KEY || 'demo_key';
   }
 
   /**

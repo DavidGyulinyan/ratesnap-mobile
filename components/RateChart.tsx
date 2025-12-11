@@ -91,7 +91,11 @@ export default function RateChart({
   useEffect(() => {
     const period = timePeriods.find((p) => p.key === selectedPeriod);
     if (period) {
-      fetchHistoricalData(period.days);
+      fetchHistoricalData(period.days).catch((error) => {
+        console.error("Failed to fetch historical data:", error);
+        setError("Failed to load chart data");
+        setLoading(false);
+      });
     }
   }, [selectedPeriod, fetchHistoricalData]);
 
@@ -146,18 +150,59 @@ export default function RateChart({
     width: number;
     height: number;
   }) => {
-    if (data.length === 0) return null;
+    // Safety checks
+    if (!data || data.length === 0 || !Array.isArray(data)) {
+      return (
+        <View
+          style={{
+            width,
+            height,
+            backgroundColor: surfaceColor,
+            borderRadius: 12,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ThemedText style={{ fontSize: 12, color: textSecondaryColor }}>
+            No data to display
+          </ThemedText>
+        </View>
+      );
+    }
 
-    const minValue = Math.min(...data);
-    const maxValue = Math.max(...data);
+    // Filter out invalid values
+    const validData = data.filter(
+      (val) => typeof val === "number" && !isNaN(val) && isFinite(val)
+    );
+    if (validData.length === 0) {
+      return (
+        <View
+          style={{
+            width,
+            height,
+            backgroundColor: surfaceColor,
+            borderRadius: 12,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ThemedText style={{ fontSize: 12, color: textSecondaryColor }}>
+            Invalid data
+          </ThemedText>
+        </View>
+      );
+    }
+
+    const minValue = Math.min(...validData);
+    const maxValue = Math.max(...validData);
     const range = maxValue - minValue || 1;
     const padding = 20;
-    const chartWidth = width - padding * 2;
-    const chartHeight = height - padding * 2;
+    const chartWidth = Math.max(width - padding * 2, 100);
+    const chartHeight = Math.max(height - padding * 2, 100);
 
-    const points = data
+    const points = validData
       .map((value, index) => {
-        const x = padding + (index / (data.length - 1)) * chartWidth;
+        const x = padding + (index / (validData.length - 1)) * chartWidth;
         const y = padding + ((maxValue - value) / range) * chartHeight;
         return `${x},${y}`;
       })
@@ -259,7 +304,7 @@ export default function RateChart({
               marginLeft: 30,
             }}
           >
-            {labels.map((label, index) => (
+            {labels.slice(0, 5).map((label, index) => (
               <ThemedText
                 key={index}
                 style={{ fontSize: 8, color: textSecondaryColor }}
@@ -336,129 +381,163 @@ export default function RateChart({
     );
   }
 
-  return (
-    <ThemedView style={[styles.container, style]}>
-      <View style={styles.header}>
-        <ThemedText
-          style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}
-        >
-          {baseCurrency}/{targetCurrency} Chart
-        </ThemedText>
-      </View>
-
-      {/* Current Rate Display */}
-      <View style={styles.rateDisplay}>
-        <View
-          style={[
-            styles.rateInfo,
-            {
-              flexDirection: screenWidth < 400 ? "column" : "row",
-              alignItems: screenWidth < 400 ? "flex-start" : "center",
-            },
-          ]}
-        >
+  try {
+    return (
+      <ThemedView style={[styles.container, style]}>
+        <View style={styles.header}>
           <ThemedText
-            style={[
-              styles.currentRate,
-              { fontSize: screenWidth < 400 ? 18 : 20 },
-            ]}
+            style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}
           >
-            {getCurrentRate()?.toFixed(4)} {targetCurrency}
+            {baseCurrency}/{targetCurrency} Chart
           </ThemedText>
-          {rateChange && (
-            <ThemedText
-              style={[
-                styles.rateChange,
-                {
-                  color: rateChange.isPositive ? "#10b981" : "#ef4444",
-                  fontSize: screenWidth < 400 ? 11 : 12,
-                  marginTop: screenWidth < 400 ? 4 : 0,
-                  marginLeft: screenWidth < 400 ? 0 : 8,
-                },
-              ]}
-            >
-              {rateChange.isPositive ? "↗" : "↘"} {rateChange.value.toFixed(2)}%
-            </ThemedText>
-          )}
         </View>
-        <ThemedText
-          style={[styles.rateLabel, { fontSize: screenWidth < 400 ? 11 : 12 }]}
-        >
-          1 {baseCurrency} = {getCurrentRate()?.toFixed(4)} {targetCurrency}
-        </ThemedText>
-      </View>
 
-      {/* Time Period Selector */}
-      <View style={[styles.periodSelector, { flexDirection: "row" }]}>
-        {timePeriods.map((period) => (
-          <TouchableOpacity
-            key={period.key}
-            style={[
-              styles.periodButton,
-              {
-                backgroundColor:
-                  selectedPeriod === period.key ? primaryColor : surfaceColor,
-                borderColor: borderColor,
-                flex: 1,
-                minWidth: 50,
-                marginVertical: 0,
-                marginHorizontal: 1,
-              },
-            ]}
-            onPress={() => setSelectedPeriod(period.key)}
-          >
-            <ThemedText
-              style={[
-                styles.periodButtonText,
-                {
-                  color: selectedPeriod === period.key ? "#ffffff" : textColor,
-                  fontSize: screenWidth < 400 ? 11 : 12,
-                },
-              ]}
-            >
-              {period.label}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Chart */}
-      <View style={[styles.chartContainer, { width: screenWidth - 60 }]}>
-        {chartData.labels.length > 0 ? (
-          <SimpleLineChart
-            data={chartData.data}
-            labels={chartData.labels}
-            width={screenWidth - 60}
-            height={Math.min(screenHeight * 0.25, 240)}
-          />
-        ) : (
+        {/* Current Rate Display */}
+        <View style={styles.rateDisplay}>
           <View
             style={[
-              styles.noDataContainer,
-              { height: Math.min(screenHeight * 0.25, 240) },
+              styles.rateInfo,
+              {
+                flexDirection: screenWidth < 400 ? "column" : "row",
+                alignItems: screenWidth < 400 ? "flex-start" : "center",
+              },
             ]}
           >
-            <ThemedText style={styles.noDataText}>
-              {t("chart.noData")}
+            <ThemedText
+              style={[
+                styles.currentRate,
+                { fontSize: screenWidth < 400 ? 18 : 20 },
+              ]}
+            >
+              {getCurrentRate()?.toFixed(4)} {targetCurrency}
             </ThemedText>
+            {rateChange && (
+              <ThemedText
+                style={[
+                  styles.rateChange,
+                  {
+                    color: rateChange.isPositive ? "#10b981" : "#ef4444",
+                    fontSize: screenWidth < 400 ? 11 : 12,
+                    marginTop: screenWidth < 400 ? 4 : 0,
+                    marginLeft: screenWidth < 400 ? 0 : 8,
+                  },
+                ]}
+              >
+                {rateChange.isPositive ? "↗" : "↘"}{" "}
+                {rateChange.value.toFixed(2)}%
+              </ThemedText>
+            )}
           </View>
-        )}
-      </View>
+          <ThemedText
+            style={[
+              styles.rateLabel,
+              { fontSize: screenWidth < 400 ? 11 : 12 },
+            ]}
+          >
+            1 {baseCurrency} = {getCurrentRate()?.toFixed(4)} {targetCurrency}
+          </ThemedText>
+        </View>
 
-      {/* Chart Info */}
-      <View style={styles.chartInfo}>
-        <ThemedText
-          style={[
-            styles.chartInfoText,
-            { fontSize: screenWidth < 400 ? 9 : 10 },
-          ]}
-        >
-          {t("chart.showingDataFor")} {selectedPeriod.toLowerCase()} •{" "}
-          {historicalData.length} {t("chart.dataPoints")}
-        </ThemedText>
-      </View>
-    </ThemedView>
-  );
+        {/* Time Period Selector */}
+        <View style={[styles.periodSelector, { flexDirection: "row" }]}>
+          {timePeriods.map((period) => (
+            <TouchableOpacity
+              key={period.key}
+              style={[
+                styles.periodButton,
+                {
+                  backgroundColor:
+                    selectedPeriod === period.key ? primaryColor : surfaceColor,
+                  borderColor: borderColor,
+                  flex: 1,
+                  minWidth: 50,
+                  marginVertical: 0,
+                  marginHorizontal: 1,
+                },
+              ]}
+              onPress={() => setSelectedPeriod(period.key)}
+            >
+              <ThemedText
+                style={[
+                  styles.periodButtonText,
+                  {
+                    color:
+                      selectedPeriod === period.key ? "#ffffff" : textColor,
+                    fontSize: screenWidth < 400 ? 11 : 12,
+                  },
+                ]}
+              >
+                {period.label}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Chart */}
+        <View style={[styles.chartContainer, { width: screenWidth - 60 }]}>
+          {chartData.labels.length > 0 ? (
+            <SimpleLineChart
+              data={chartData.data}
+              labels={chartData.labels}
+              width={screenWidth - 60}
+              height={Math.min(screenHeight * 0.25, 240)}
+            />
+          ) : (
+            <View
+              style={[
+                styles.noDataContainer,
+                { height: Math.min(screenHeight * 0.25, 240) },
+              ]}
+            >
+              <ThemedText style={styles.noDataText}>
+                {t("chart.noData")}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+
+        {/* Chart Info */}
+        <View style={styles.chartInfo}>
+          <ThemedText
+            style={[
+              styles.chartInfoText,
+              { fontSize: screenWidth < 400 ? 9 : 10 },
+            ]}
+          >
+            {t("chart.showingDataFor")} {selectedPeriod.toLowerCase()} •{" "}
+            {historicalData.length} {t("chart.dataPoints")}
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  } catch (error) {
+    console.error("RateChart render error:", error);
+    return (
+      <ThemedView style={[styles.container, style]}>
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>
+            {baseCurrency}/{targetCurrency} Chart
+          </ThemedText>
+        </View>
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorText}>
+            Failed to load chart. Please try again.
+          </ThemedText>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: primaryColor }]}
+            onPress={() => {
+              const period = timePeriods.find((p) => p.key === selectedPeriod);
+              if (period) fetchHistoricalData(period.days);
+            }}
+          >
+            <ThemedText style={styles.retryButtonText}>
+              {t("chart.retry")}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
