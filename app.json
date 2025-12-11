@@ -71,14 +71,7 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-mail-composer",
-      [
-        "react-native-svg",
-        {
-          "ios": {},
-          "android": {}
-        }
-      ]
+      "expo-mail-composer"
     ],
 
     "experiments": {

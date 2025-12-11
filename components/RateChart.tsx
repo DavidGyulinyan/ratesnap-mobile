@@ -1,11 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Alert, useWindowDimensions } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useLanguage } from '@/contexts/LanguageContext';
-import exchangeRateService, { HistoricalRateData } from '@/lib/exchangeRateService';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  ScrollView,
+  Alert,
+  useWindowDimensions,
+} from "react-native";
+import Svg, { Polyline, Line } from "react-native-svg";
+import { ThemedText } from "./themed-text";
+import { ThemedView } from "./themed-view";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useLanguage } from "@/contexts/LanguageContext";
+import exchangeRateService, {
+  HistoricalRateData,
+} from "@/lib/exchangeRateService";
 
 interface RateChartProps {
   baseCurrency: string;
@@ -14,56 +24,72 @@ interface RateChartProps {
   style?: any;
 }
 
-type TimePeriod = '7D' | '30D' | '90D' | '1Y';
+type TimePeriod = "7D" | "30D" | "90D" | "1Y";
 
-export default function RateChart({ baseCurrency, targetCurrency, onClose, style }: RateChartProps) {
-  const [historicalData, setHistoricalData] = useState<HistoricalRateData[]>([]);
+export default function RateChart({
+  baseCurrency,
+  targetCurrency,
+  onClose,
+  style,
+}: RateChartProps) {
+  const [historicalData, setHistoricalData] = useState<HistoricalRateData[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30D');
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("30D");
   const [error, setError] = useState<string | null>(null);
 
   const { t } = useLanguage();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   // Theme colors
-  const backgroundColor = useThemeColor({}, 'background');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const primaryColor = useThemeColor({}, 'primary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
+  const backgroundColor = useThemeColor({}, "background");
+  const surfaceColor = useThemeColor({}, "surface");
+  const primaryColor = useThemeColor({}, "primary");
+  const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
+  const borderColor = useThemeColor({}, "border");
 
   const timePeriods: { key: TimePeriod; label: string; days: number }[] = [
-    { key: '7D', label: '7D', days: 7 },
-    { key: '30D', label: '30D', days: 30 },
-    { key: '90D', label: '90D', days: 90 },
-    { key: '1Y', label: '1Y', days: 365 },
+    { key: "7D", label: "7D", days: 7 },
+    { key: "30D", label: "30D", days: 30 },
+    { key: "90D", label: "90D", days: 90 },
+    { key: "1Y", label: "1Y", days: 365 },
   ];
 
-  const fetchHistoricalData = useCallback(async (days: number) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchHistoricalData = useCallback(
+    async (days: number) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      console.log(`📊 Fetching chart data: ${baseCurrency}/${targetCurrency} for ${days} days`);
-      const data = await exchangeRateService.getHistoricalRates(baseCurrency, targetCurrency, days);
+        console.log(
+          `📊 Fetching chart data: ${baseCurrency}/${targetCurrency} for ${days} days`
+        );
+        const data = await exchangeRateService.getHistoricalRates(
+          baseCurrency,
+          targetCurrency,
+          days
+        );
 
-      if (data.rates && data.rates.length > 0) {
-        setHistoricalData(data.rates);
-        console.log(`✅ Loaded ${data.rates.length} data points for chart`);
-      } else {
-        setError('No historical data available');
+        if (data.rates && data.rates.length > 0) {
+          setHistoricalData(data.rates);
+          console.log(`✅ Loaded ${data.rates.length} data points for chart`);
+        } else {
+          setError("No historical data available");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching historical data:", err);
+        setError("Failed to load chart data");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('❌ Error fetching historical data:', err);
-      setError('Failed to load chart data');
-    } finally {
-      setLoading(false);
-    }
-  }, [baseCurrency, targetCurrency]);
+    },
+    [baseCurrency, targetCurrency]
+  );
 
   useEffect(() => {
-    const period = timePeriods.find(p => p.key === selectedPeriod);
+    const period = timePeriods.find((p) => p.key === selectedPeriod);
     if (period) {
       fetchHistoricalData(period.days);
     }
@@ -71,10 +97,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
 
   const formatChartData = () => {
     if (!historicalData || historicalData.length === 0) {
-      return {
-        labels: [],
-        datasets: [{ data: [] }]
-      };
+      return { labels: [], data: [] };
     }
 
     // Responsive label count based on screen width
@@ -83,61 +106,172 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
 
     const labels = historicalData
       .filter((_, index) => index % step === 0)
-      .map(item => {
+      .map((item) => {
         const date = new Date(item.date);
-        if (selectedPeriod === '7D') {
-          return screenWidth < 400 ? date.toLocaleDateString('en-US', { weekday: 'narrow' }) : date.toLocaleDateString('en-US', { weekday: 'short' });
+        if (selectedPeriod === "7D") {
+          return screenWidth < 400
+            ? date.toLocaleDateString("en-US", { weekday: "narrow" })
+            : date.toLocaleDateString("en-US", { weekday: "short" });
         } else {
           return screenWidth < 400
-            ? date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
-            : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            ? date.toLocaleDateString("en-US", {
+                month: "numeric",
+                day: "numeric",
+              })
+            : date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
         }
       });
 
     const data = historicalData
       .filter((_, index) => index % step === 0)
-      .map(item => item.rate);
+      .map((item) => item.rate);
 
-    return {
-      labels,
-      datasets: [{
-        data,
-        color: () => primaryColor,
-        strokeWidth: screenWidth < 400 ? 1.5 : 2,
-      }]
-    };
+    return { labels, data };
   };
 
   const chartData = formatChartData();
 
-  const chartConfig = {
-    backgroundColor: surfaceColor,
-    backgroundGradientFrom: surfaceColor,
-    backgroundGradientTo: surfaceColor,
-    decimalPlaces: 4,
-    color: (opacity = 1) => `rgba(${hexToRgb(primaryColor)}, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(${hexToRgb(textColor)}, ${opacity})`,
-    style: {
-      borderRadius: 16,
-    },
-    propsForDots: {
-      r: '4',
-      strokeWidth: '2',
-      stroke: primaryColor,
-    },
-  };
+  // Simple line chart component
+  const SimpleLineChart = ({
+    data,
+    labels,
+    width,
+    height,
+  }: {
+    data: number[];
+    labels: string[];
+    width: number;
+    height: number;
+  }) => {
+    if (data.length === 0) return null;
 
-  // Helper function to convert hex to rgb
-  function hexToRgb(hex: string): string {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-      const r = parseInt(result[1], 16);
-      const g = parseInt(result[2], 16);
-      const b = parseInt(result[3], 16);
-      return `${r}, ${g}, ${b}`;
-    }
-    return '59, 130, 246'; // Default blue
-  }
+    const minValue = Math.min(...data);
+    const maxValue = Math.max(...data);
+    const range = maxValue - minValue || 1;
+    const padding = 20;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+
+    const points = data
+      .map((value, index) => {
+        const x = padding + (index / (data.length - 1)) * chartWidth;
+        const y = padding + ((maxValue - value) / range) * chartHeight;
+        return `${x},${y}`;
+      })
+      .join(" ");
+
+    return (
+      <View
+        style={{
+          width,
+          height,
+          backgroundColor: surfaceColor,
+          borderRadius: 12,
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "space-between",
+            paddingHorizontal: padding,
+            paddingVertical: padding,
+          }}
+        >
+          {/* Y-axis labels */}
+          <ThemedText
+            style={{
+              fontSize: 10,
+              color: textSecondaryColor,
+              position: "absolute",
+              left: 5,
+              top: padding,
+            }}
+          >
+            {maxValue.toFixed(4)}
+          </ThemedText>
+          <ThemedText
+            style={{
+              fontSize: 10,
+              color: textSecondaryColor,
+              position: "absolute",
+              left: 5,
+              bottom: padding,
+            }}
+          >
+            {minValue.toFixed(4)}
+          </ThemedText>
+
+          {/* Chart area */}
+          <View style={{ flex: 1, marginLeft: 30 }}>
+            <Svg
+              width={chartWidth}
+              height={chartHeight}
+              style={{ position: "absolute" }}
+            >
+              {/* Grid lines */}
+              <Line
+                x1="0"
+                y1="0"
+                x2={chartWidth}
+                y2="0"
+                stroke={borderColor}
+                strokeWidth="1"
+                opacity="0.3"
+              />
+              <Line
+                x1="0"
+                y1={chartHeight / 2}
+                x2={chartWidth}
+                y2={chartHeight / 2}
+                stroke={borderColor}
+                strokeWidth="1"
+                opacity="0.3"
+              />
+              <Line
+                x1="0"
+                y1={chartHeight}
+                x2={chartWidth}
+                y2={chartHeight}
+                stroke={borderColor}
+                strokeWidth="1"
+                opacity="0.3"
+              />
+
+              {/* Line */}
+              <Polyline
+                points={points}
+                fill="none"
+                stroke={primaryColor}
+                strokeWidth="2"
+              />
+            </Svg>
+          </View>
+
+          {/* X-axis labels */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 5,
+              marginLeft: 30,
+            }}
+          >
+            {labels.map((label, index) => (
+              <ThemedText
+                key={index}
+                style={{ fontSize: 8, color: textSecondaryColor }}
+              >
+                {label}
+              </ThemedText>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   const getCurrentRate = () => {
     if (historicalData.length === 0) return null;
@@ -155,7 +289,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
     const change = ((current - previous) / previous) * 100;
     return {
       value: change,
-      isPositive: change >= 0
+      isPositive: change >= 0,
     };
   };
 
@@ -170,7 +304,7 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
           </ThemedText>
         </View>
         <View style={styles.loadingContainer}>
-          <ThemedText>{t('common.loading')}</ThemedText>
+          <ThemedText>{t("common.loading")}</ThemedText>
         </View>
       </ThemedView>
     );
@@ -189,11 +323,13 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: primaryColor }]}
             onPress={() => {
-              const period = timePeriods.find(p => p.key === selectedPeriod);
+              const period = timePeriods.find((p) => p.key === selectedPeriod);
               if (period) fetchHistoricalData(period.days);
             }}
           >
-            <ThemedText style={styles.retryButtonText}>{t('chart.retry')}</ThemedText>
+            <ThemedText style={styles.retryButtonText}>
+              {t("chart.retry")}
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </ThemedView>
@@ -203,61 +339,83 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
   return (
     <ThemedView style={[styles.container, style]}>
       <View style={styles.header}>
-        <ThemedText style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}>
+        <ThemedText
+          style={[styles.title, { fontSize: screenWidth < 400 ? 14 : 16 }]}
+        >
           {baseCurrency}/{targetCurrency} Chart
         </ThemedText>
       </View>
 
       {/* Current Rate Display */}
       <View style={styles.rateDisplay}>
-        <View style={[styles.rateInfo, { flexDirection: screenWidth < 400 ? 'column' : 'row', alignItems: screenWidth < 400 ? 'flex-start' : 'center' }]}>
-          <ThemedText style={[styles.currentRate, { fontSize: screenWidth < 400 ? 18 : 20 }]}>
+        <View
+          style={[
+            styles.rateInfo,
+            {
+              flexDirection: screenWidth < 400 ? "column" : "row",
+              alignItems: screenWidth < 400 ? "flex-start" : "center",
+            },
+          ]}
+        >
+          <ThemedText
+            style={[
+              styles.currentRate,
+              { fontSize: screenWidth < 400 ? 18 : 20 },
+            ]}
+          >
             {getCurrentRate()?.toFixed(4)} {targetCurrency}
           </ThemedText>
           {rateChange && (
-            <ThemedText style={[
-              styles.rateChange,
-              {
-                color: rateChange.isPositive ? '#10b981' : '#ef4444',
-                fontSize: screenWidth < 400 ? 11 : 12,
-                marginTop: screenWidth < 400 ? 4 : 0,
-                marginLeft: screenWidth < 400 ? 0 : 8,
-              }
-            ]}>
-              {rateChange.isPositive ? '↗' : '↘'} {rateChange.value.toFixed(2)}%
+            <ThemedText
+              style={[
+                styles.rateChange,
+                {
+                  color: rateChange.isPositive ? "#10b981" : "#ef4444",
+                  fontSize: screenWidth < 400 ? 11 : 12,
+                  marginTop: screenWidth < 400 ? 4 : 0,
+                  marginLeft: screenWidth < 400 ? 0 : 8,
+                },
+              ]}
+            >
+              {rateChange.isPositive ? "↗" : "↘"} {rateChange.value.toFixed(2)}%
             </ThemedText>
           )}
         </View>
-        <ThemedText style={[styles.rateLabel, { fontSize: screenWidth < 400 ? 11 : 12 }]}>
+        <ThemedText
+          style={[styles.rateLabel, { fontSize: screenWidth < 400 ? 11 : 12 }]}
+        >
           1 {baseCurrency} = {getCurrentRate()?.toFixed(4)} {targetCurrency}
         </ThemedText>
       </View>
 
       {/* Time Period Selector */}
-      <View style={[styles.periodSelector, { flexDirection: 'row' }]}>
+      <View style={[styles.periodSelector, { flexDirection: "row" }]}>
         {timePeriods.map((period) => (
           <TouchableOpacity
             key={period.key}
             style={[
               styles.periodButton,
               {
-                backgroundColor: selectedPeriod === period.key ? primaryColor : surfaceColor,
+                backgroundColor:
+                  selectedPeriod === period.key ? primaryColor : surfaceColor,
                 borderColor: borderColor,
                 flex: 1,
                 minWidth: 50,
                 marginVertical: 0,
                 marginHorizontal: 1,
-              }
+              },
             ]}
             onPress={() => setSelectedPeriod(period.key)}
           >
-            <ThemedText style={[
-              styles.periodButtonText,
-              {
-                color: selectedPeriod === period.key ? '#ffffff' : textColor,
-                fontSize: screenWidth < 400 ? 11 : 12,
-              }
-            ]}>
+            <ThemedText
+              style={[
+                styles.periodButtonText,
+                {
+                  color: selectedPeriod === period.key ? "#ffffff" : textColor,
+                  fontSize: screenWidth < 400 ? 11 : 12,
+                },
+              ]}
+            >
               {period.label}
             </ThemedText>
           </TouchableOpacity>
@@ -267,29 +425,36 @@ export default function RateChart({ baseCurrency, targetCurrency, onClose, style
       {/* Chart */}
       <View style={[styles.chartContainer, { width: screenWidth - 60 }]}>
         {chartData.labels.length > 0 ? (
-          <LineChart
-            data={chartData}
+          <SimpleLineChart
+            data={chartData.data}
+            labels={chartData.labels}
             width={screenWidth - 60}
             height={Math.min(screenHeight * 0.25, 240)}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-            withDots={false}
-            withInnerLines={false}
-            withOuterLines={false}
-            withShadow={false}
           />
         ) : (
-          <View style={[styles.noDataContainer, { height: Math.min(screenHeight * 0.25, 240) }]}>
-            <ThemedText style={styles.noDataText}>{t('chart.noData')}</ThemedText>
+          <View
+            style={[
+              styles.noDataContainer,
+              { height: Math.min(screenHeight * 0.25, 240) },
+            ]}
+          >
+            <ThemedText style={styles.noDataText}>
+              {t("chart.noData")}
+            </ThemedText>
           </View>
         )}
       </View>
 
       {/* Chart Info */}
       <View style={styles.chartInfo}>
-        <ThemedText style={[styles.chartInfoText, { fontSize: screenWidth < 400 ? 9 : 10 }]}>
-          {t('chart.showingDataFor')} {selectedPeriod.toLowerCase()} • {historicalData.length} {t('chart.dataPoints')}
+        <ThemedText
+          style={[
+            styles.chartInfoText,
+            { fontSize: screenWidth < 400 ? 9 : 10 },
+          ]}
+        >
+          {t("chart.showingDataFor")} {selectedPeriod.toLowerCase()} •{" "}
+          {historicalData.length} {t("chart.dataPoints")}
         </ThemedText>
       </View>
     </ThemedView>
@@ -302,56 +467,56 @@ const styles = StyleSheet.create({
     padding: 12,
     margin: 6,
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
-    maxWidth: '100%',
-    alignSelf: 'center',
+    maxWidth: "100%",
+    alignSelf: "center",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     flex: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   closeButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: 8,
   },
   closeButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 32,
     height: 360, // Fixed height to match loaded chart + other content (240px chart + 120px for rate display, period selector, etc.)
   },
   errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 32,
     height: 360, // Same height as loading container for consistency
   },
   errorText: {
     fontSize: 14,
-    color: '#ef4444',
+    color: "#ef4444",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
     paddingHorizontal: 16,
   },
   retryButton: {
@@ -360,27 +525,27 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   retryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: "#ffffff",
+    fontWeight: "600",
     fontSize: 14,
   },
   rateDisplay: {
     marginBottom: 12,
   },
   rateInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   currentRate: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginRight: 8,
   },
   rateChange: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   rateLabel: {
     fontSize: 12,
@@ -388,10 +553,10 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   periodSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
     gap: 4,
   },
   periodButton: {
@@ -402,40 +567,40 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     marginHorizontal: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   periodButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   chartContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   chart: {
     borderRadius: 12,
     marginVertical: 4,
   },
   noDataContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    width: '100%',
+    backgroundColor: "rgba(0,0,0,0.05)",
+    width: "100%",
   },
   noDataText: {
     fontSize: 14,
     opacity: 0.6,
   },
   chartInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 8,
   },
   chartInfoText: {
     fontSize: 10,
     opacity: 0.6,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 14,
   },
 });
