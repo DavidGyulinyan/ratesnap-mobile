@@ -21,6 +21,7 @@
           }
         ],
         "NSUserNotificationsUsageDescription": "RateSnap needs notification access to send you alerts when your saved exchange rates reach your target values.",
+        "NSLocationWhenInUseUsageDescription": "RateSnap needs location access to detect your local currency for better user experience.",
         "UNUserNotificationCenterDelegate": true
       }
     },
@@ -45,7 +46,9 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "package": "com.davidgyulinyan.ratesnapmobile"
     },
