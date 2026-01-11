@@ -7,7 +7,6 @@ import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
 import RateAlertManager from "@/components/RateAlertManager";
-import RateChart from "@/components/RateChart";
 import MathCalculator from "@/components/MathCalculator";
 import OnboardingGuide from "@/components/OnboardingGuide";
 import { ThemedText } from "@/components/themed-text";
@@ -60,27 +59,30 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates }, rateAlerts: { rateAlerts, refreshAlerts } } = useUserData();
+  const {
+    savedRates: { savedRates, deleteRate, deleteAllRates, refreshRates },
+    rateAlerts: { rateAlerts, refreshAlerts },
+  } = useUserData();
 
   // Theme colors - must be called at top level
-  const primaryColor = useThemeColor({}, 'primary');
-  const textInverseColor = useThemeColor({}, 'textInverse');
-  const backgroundColor = useThemeColor({}, 'background');
-  const surfaceColor = useThemeColor({}, 'surface');
-  const surfaceSecondaryColor = useThemeColor({}, 'surfaceSecondary');
-  const textColor = useThemeColor({}, 'text');
-  const textSecondaryColor = useThemeColor({}, 'textSecondary');
-  const borderColor = useThemeColor({}, 'border');
-  const shadowColor = '#000000'; // Use black for shadows
+  const primaryColor = useThemeColor({}, "primary");
+  const textInverseColor = useThemeColor({}, "textInverse");
+  const backgroundColor = useThemeColor({}, "background");
+  const surfaceColor = useThemeColor({}, "surface");
+  const surfaceSecondaryColor = useThemeColor({}, "surfaceSecondary");
+  const textColor = useThemeColor({}, "text");
+  const textSecondaryColor = useThemeColor({}, "textSecondary");
+  const borderColor = useThemeColor({}, "border");
+  const shadowColor = "#000000"; // Use black for shadows
 
   const [currentView, setCurrentView] = useState<"dashboard" | "converter">(
     "dashboard"
   );
   const [showMultiCurrency, setShowMultiCurrency] = useState(false);
-  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] = useState(false);
+  const [multiCurrencyShowAllTargets, setMultiCurrencyShowAllTargets] =
+    useState(false);
   const [showSavedRates, setShowSavedRates] = useState(false);
   const [showRateAlerts, setShowRateAlerts] = useState(false);
-  const [showCharts, setShowCharts] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -133,19 +135,25 @@ export default function HomeScreen() {
 
   const checkOnboardingStatus = async () => {
     try {
-      const onboardingCompleted = await AsyncStorage.getItem('onboardingCompleted');
+      const onboardingCompleted = await AsyncStorage.getItem(
+        "onboardingCompleted"
+      );
 
       // Show onboarding if:
       // 1. User hasn't completed onboarding, OR
       // 2. User account was created very recently (within last 24 hours)
-      const shouldShowOnboarding = !onboardingCompleted ||
-        (user && user.created_at && (Date.now() - new Date(user.created_at).getTime()) < 24 * 60 * 60 * 1000);
+      const shouldShowOnboarding =
+        !onboardingCompleted ||
+        (user &&
+          user.created_at &&
+          Date.now() - new Date(user.created_at).getTime() <
+            24 * 60 * 60 * 1000);
 
       if (shouldShowOnboarding && user) {
         setShowOnboarding(true);
       }
     } catch (error) {
-      console.error('Failed to check onboarding status:', error);
+      console.error("Failed to check onboarding status:", error);
     }
   };
 
@@ -174,18 +182,14 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      loadExchangeRates(),
-      refreshRates()
-    ]);
+    await Promise.all([loadExchangeRates(), refreshRates()]);
     setRefreshing(false);
   };
-
 
   const deleteSavedRate = async (id: string | number) => {
     const success = await deleteRate(id.toString());
     if (!success) {
-      Alert.alert('Error', 'Failed to delete rate. Please try again.');
+      Alert.alert("Error", "Failed to delete rate. Please try again.");
     }
   };
 
@@ -203,20 +207,21 @@ export default function HomeScreen() {
         onPress: async () => {
           const success = await deleteAllRates();
           if (!success) {
-            Alert.alert('Error', 'Failed to delete all rates. Please try again.');
+            Alert.alert(
+              "Error",
+              "Failed to delete all rates. Please try again."
+            );
           }
         },
       },
     ]);
   };
 
-
   const handleCalculatorResult = (result: number): void => {
-    console.log('Calculator result:', result);
+    console.log("Calculator result:", result);
     // You can use this result for currency conversion or other calculations
-    Alert.alert('Calculation Result', `Result: ${result}`);
+    Alert.alert("Calculation Result", `Result: ${result}`);
   };
-
 
   const renderMainContent = (): React.ReactElement => {
     if (currentView === "converter") {
@@ -234,13 +239,16 @@ export default function HomeScreen() {
         <View style={[styles.dashboardHeader, { shadowColor }]}>
           <View style={styles.titleContainer}>
             <Logo size={36} showText={false} />
-            <ThemedText type="title" style={{
-              fontSize: 22,
-              fontWeight: "700",
-              color: "#1894EE",
-              textAlign: "right",
-              letterSpacing: 0.5,
-            }}>
+            <ThemedText
+              type="title"
+              style={{
+                fontSize: 22,
+                fontWeight: "700",
+                color: "#1894EE",
+                textAlign: "right",
+                letterSpacing: 0.5,
+              }}
+            >
               RateSnap Dashboard
             </ThemedText>
           </View>
@@ -259,97 +267,110 @@ export default function HomeScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-           {/* Quick Actions - Redesigned for better UX */}
-           <View style={styles.quickActionsContainer}>
-             <ThemedText style={[{ color: textColor }, styles.quickActionsTitle]}>
-               {t("dashboard.quickActions")}
-             </ThemedText>
-             <ScrollView
-               horizontal
-               showsHorizontalScrollIndicator={false}
-               contentContainerStyle={styles.quickActionsScrollContent}
-               style={styles.quickActionsScrollView}
-             >
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showConverter && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowConverter(!showConverter)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerConverter]}>
-                   <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
-                 </View>
-               </TouchableOpacity>
+          {/* Quick Actions - Redesigned for better UX */}
+          <View style={styles.quickActionsContainer}>
+            <ThemedText
+              style={[{ color: textColor }, styles.quickActionsTitle]}
+            >
+              {t("dashboard.quickActions")}
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsScrollContent}
+              style={styles.quickActionsScrollView}
+            >
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor },
+                  styles.quickActionCard,
+                  showConverter && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowConverter(!showConverter)}
+              >
+                <View
+                  style={[
+                    styles.quickActionIconContainer,
+                    styles.iconContainerConverter,
+                  ]}
+                >
+                  <ThemedText style={styles.quickActionIcon}>🔄</ThemedText>
+                </View>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showCalculator && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowCalculator(!showCalculator)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerCalculator]}>
-                   <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
-                 </View>
-               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor },
+                  styles.quickActionCard,
+                  showCalculator && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowCalculator(!showCalculator)}
+              >
+                <View
+                  style={[
+                    styles.quickActionIconContainer,
+                    styles.iconContainerCalculator,
+                  ]}
+                >
+                  <ThemedText style={styles.quickActionIcon}>🧮</ThemedText>
+                </View>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showMultiCurrency && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowMultiCurrency(!showMultiCurrency)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerMulti]}>
-                   <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
-                 </View>
-               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor },
+                  styles.quickActionCard,
+                  showMultiCurrency && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowMultiCurrency(!showMultiCurrency)}
+              >
+                <View
+                  style={[
+                    styles.quickActionIconContainer,
+                    styles.iconContainerMulti,
+                  ]}
+                >
+                  <ThemedText style={styles.quickActionIcon}>📊</ThemedText>
+                </View>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showSavedRates && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowSavedRates(!showSavedRates)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerSaved]}>
-                   <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
-                 </View>
-               </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor },
+                  styles.quickActionCard,
+                  showSavedRates && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowSavedRates(!showSavedRates)}
+              >
+                <View
+                  style={[
+                    styles.quickActionIconContainer,
+                    styles.iconContainerSaved,
+                  ]}
+                >
+                  <ThemedText style={styles.quickActionIcon}>💾</ThemedText>
+                </View>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showRateAlerts && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowRateAlerts(!showRateAlerts)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerAlerts]}>
-                   <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
-                 </View>
-               </TouchableOpacity>
-
-               <TouchableOpacity
-                 style={[
-                   { backgroundColor: surfaceColor },
-                   styles.quickActionCard,
-                   showCharts && styles.quickActionCardActive,
-                 ]}
-                 onPress={() => setShowCharts(!showCharts)}
-               >
-                 <View style={[styles.quickActionIconContainer, styles.iconContainerCharts]}>
-                   <ThemedText style={styles.quickActionIcon}>📈</ThemedText>
-                 </View>
-               </TouchableOpacity>
-
-             </ScrollView>
-           </View>
+              <TouchableOpacity
+                style={[
+                  { backgroundColor: surfaceColor },
+                  styles.quickActionCard,
+                  showRateAlerts && styles.quickActionCardActive,
+                ]}
+                onPress={() => setShowRateAlerts(!showRateAlerts)}
+              >
+                <View
+                  style={[
+                    styles.quickActionIconContainer,
+                    styles.iconContainerAlerts,
+                  ]}
+                >
+                  <ThemedText style={styles.quickActionIcon}>🚨</ThemedText>
+                </View>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
 
           {/* Inline Multi-Currency Converter - Using Shared Component */}
           {showMultiCurrency && (
@@ -451,16 +472,15 @@ export default function HomeScreen() {
               icon="🚨"
               onClose={() => setShowRateAlerts(false)}
             >
-
               <RateAlertManager
-                savedRates={savedRates.map(rate => ({
+                savedRates={savedRates.map((rate) => ({
                   id: rate.id,
                   fromCurrency: rate.from_currency,
                   toCurrency: rate.to_currency,
                   rate: rate.rate,
                   timestamp: new Date(rate.created_at).getTime(),
                   hasAlert: false, // This might need to be updated based on actual alert data
-                  alertSettings: undefined
+                  alertSettings: undefined,
                 }))}
                 onRatesUpdate={() => {
                   refreshAlerts();
@@ -471,23 +491,13 @@ export default function HomeScreen() {
             </DashboardModal>
           )}
 
-          {/* Charts Section */}
-          {showCharts && (
-            <DashboardModal
-              title={t("charts.title")}
-              icon="📈"
-              onClose={() => setShowCharts(false)}
-            >
-              <RateChart
-                baseCurrency="USD"
-                targetCurrency="AMD"
-                onClose={() => setShowCharts(false)}
-              />
-            </DashboardModal>
-          )}
-
           {/* Features Preview */}
-          <View style={[{ backgroundColor: surfaceColor, borderColor: borderColor }, styles.featuresSection]}>
+          <View
+            style={[
+              { backgroundColor: surfaceColor, borderColor: borderColor },
+              styles.featuresSection,
+            ]}
+          >
             <ThemedText style={[{ color: textColor }, styles.sectionTitle]}>
               ✨ {t("dashboard.features")}
             </ThemedText>
@@ -495,10 +505,17 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📊</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
+                  <ThemedText
+                    style={[{ color: textColor }, styles.featureTitle]}
+                  >
                     {t("feature.multiCurrency.title")}
                   </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
+                  <ThemedText
+                    style={[
+                      { color: textSecondaryColor },
+                      styles.featureDescription,
+                    ]}
+                  >
                     {t("feature.multiCurrency.desc")}
                   </ThemedText>
                 </View>
@@ -507,10 +524,17 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🧮</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
+                  <ThemedText
+                    style={[{ color: textColor }, styles.featureTitle]}
+                  >
                     {t("feature.calculator.title")}
                   </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
+                  <ThemedText
+                    style={[
+                      { color: textSecondaryColor },
+                      styles.featureDescription,
+                    ]}
+                  >
                     {t("feature.calculator.desc")}
                   </ThemedText>
                 </View>
@@ -519,10 +543,17 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>📱</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
+                  <ThemedText
+                    style={[{ color: textColor }, styles.featureTitle]}
+                  >
                     {t("feature.offline.title")}
                   </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
+                  <ThemedText
+                    style={[
+                      { color: textSecondaryColor },
+                      styles.featureDescription,
+                    ]}
+                  >
                     {t("feature.offline.desc")}
                   </ThemedText>
                 </View>
@@ -531,10 +562,17 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>🌍</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
+                  <ThemedText
+                    style={[{ color: textColor }, styles.featureTitle]}
+                  >
                     {t("feature.location.title")}
                   </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
+                  <ThemedText
+                    style={[
+                      { color: textSecondaryColor },
+                      styles.featureDescription,
+                    ]}
+                  >
                     {t("feature.location.desc")}
                   </ThemedText>
                 </View>
@@ -543,10 +581,17 @@ export default function HomeScreen() {
               <View style={styles.featureItem}>
                 <ThemedText style={styles.featureIcon}>💾</ThemedText>
                 <View style={styles.featureContent}>
-                  <ThemedText style={[{ color: textColor }, styles.featureTitle]}>
+                  <ThemedText
+                    style={[{ color: textColor }, styles.featureTitle]}
+                  >
                     {t("feature.caching.title")}
                   </ThemedText>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.featureDescription]}>
+                  <ThemedText
+                    style={[
+                      { color: textSecondaryColor },
+                      styles.featureDescription,
+                    ]}
+                  >
                     {t("feature.caching.desc")}
                   </ThemedText>
                 </View>
@@ -563,11 +608,7 @@ export default function HomeScreen() {
 
   // Show onboarding for new users
   if (showOnboarding) {
-    return (
-      <OnboardingGuide
-        onComplete={() => setShowOnboarding(false)}
-      />
-    );
+    return <OnboardingGuide onComplete={() => setShowOnboarding(false)} />;
   }
 
   return (
@@ -657,12 +698,12 @@ const styles = StyleSheet.create({
     backdropFilter: "blur(8px)",
   },
   headerRight: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     top: 16,
   },
   burgerMenu: {
-    position: 'absolute',
+    position: "absolute",
     right: 1,
     top: 7,
   },
@@ -729,9 +770,6 @@ const styles = StyleSheet.create({
   iconContainerAlerts: {
     backgroundColor: "#fa709a",
   },
-  iconContainerCharts: {
-    backgroundColor: "#6366f1",
-  },
   quickActionIcon: {
     fontSize: 16,
     textAlign: "center",
@@ -787,7 +825,6 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 60,
   },
-
 
   // State styles
   emptyState: {
@@ -1009,6 +1046,4 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
   },
-
-
 });
