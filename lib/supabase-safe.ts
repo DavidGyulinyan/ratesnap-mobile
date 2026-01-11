@@ -12,26 +12,29 @@ export const getSupabaseClient = () => {
   }
 
   try {
-    const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || 
-                        process.env.EXPO_PUBLIC_SUPABASE_URL || 
-                        'https://jprafkemftjqrzsrtuui.supabase.co';
-    
-    const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || 
-                           process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
-                           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E';
+    const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl ||
+                         process.env.EXPO_PUBLIC_SUPABASE_URL ||
+                         'https://jprafkemftjqrzsrtuui.supabase.co';
+
+    const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey ||
+                            process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+                            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcmFma2VtZnRqcXJ6c3J0dXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzE0NDQsImV4cCI6MjA3ODEwNzQ0NH0.sUFyszymQ-oQiGUgNY-qsKx8ND22l0Qjg4Ld8BMd77E';
 
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error('Missing Supabase environment variables');
       return null;
     }
 
+    // Check if we're in a server-side rendering environment
+    const isServerSide = typeof window === 'undefined';
+
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: getAsyncStorage(),
-        autoRefreshToken: true,  // Enable auto-refresh for proper session management
-        persistSession: true,    // Enable session persistence
-        detectSessionInUrl: true, // Enable OAuth URL detection
-        flowType: 'pkce',        // Use PKCE flow for better security
+        autoRefreshToken: !isServerSide,  // Disable auto-refresh during SSR
+        persistSession: !isServerSide,    // Disable session persistence during SSR
+        detectSessionInUrl: !isServerSide, // Disable URL detection during SSR
+        flowType: isServerSide ? 'implicit' : 'pkce', // Use implicit flow for SSR
       },
     });
 
@@ -42,28 +45,6 @@ export const getSupabaseClient = () => {
   }
 };
 
-// Export the client directly for compatibility
-export const supabase = getSupabaseClient();
-
-// Setup auth state listener after client is created
-if (supabase) {
-  console.log('✅ Supabase client initialized successfully');
-  
-  setTimeout(() => {
-    try {
-      // Setup auth state listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-        console.log('🔵 Auth state changed:', event, session ? 'Session active' : 'No session');
-      });
-      
-      console.log('✅ Auth state listener setup successfully');
-    } catch (error) {
-      console.warn('Failed to set up auth state listener:', error);
-    }
-  }, 500);
-} else {
-  console.error('🔴 Failed to initialize Supabase client');
-}
 
 // Database types (keep the same)
 export interface User {

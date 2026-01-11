@@ -1,4 +1,3 @@
-import { supabase } from './supabase';
 import { getSupabaseClient } from './supabase-safe';
 import { User } from '@supabase/supabase-js';
 
