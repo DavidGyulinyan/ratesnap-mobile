@@ -8,6 +8,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "ratesnap-mobile",
     "userInterfaceStyle": "automatic",
+    "jsEngine": "jsc",
 
     "ios": {
       "supportsTablet": true,
