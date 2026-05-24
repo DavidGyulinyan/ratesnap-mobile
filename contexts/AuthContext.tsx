@@ -23,6 +23,13 @@ import {
   reauthenticateOAuthForDeletion,
 } from "@/lib/accountDeletionAuth";
 import { isPasswordPolicyValid } from "@/lib/passwordPolicy";
+import {
+  PROFILE_SYNC_FAILED,
+  updateProfileEmail,
+  updateProfileUsername,
+  upsertProfileFromAuthUser,
+  usernameFromAuthUser,
+} from "@/lib/userProfileService";
 import { completeNativeOAuthExchange } from "@/lib/supabaseNativeOAuth";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -119,6 +126,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
             console.log("User authenticated:", session.user.email);
             // Start alert checking for authenticated users
             alertCheckerService.startChecking(60); // Check every 60 minutes
+            if (
+              event === "SIGNED_IN" ||
+              event === "USER_UPDATED" ||
+              event === "INITIAL_SESSION"
+            ) {
+              void upsertProfileFromAuthUser(session.user).catch((e) =>
+                console.warn("upsertProfileFromAuthUser:", e)
+              );
+            }
           } else {
             console.log("User signed out");
             // Stop alert checking when user signs out
@@ -215,6 +231,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         console.warn(
           "Failed to clear local storage after sign up:",
           storageError
+        );
+      }
+
+      if (data.user) {
+        void upsertProfileFromAuthUser(data.user).catch((e) =>
+          console.warn("upsertProfileFromAuthUser after signUp:", e)
         );
       }
 
@@ -674,6 +696,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const needsEmailConfirmation = Boolean(
         data.user && data.user.email?.toLowerCase() !== trimmed
       );
+
+      if (data.user?.email?.toLowerCase() === trimmed) {
+        const metaUsername = (
+          data.user.user_metadata?.username as string | undefined
+        )?.trim();
+        const { error: profileErr } = await updateProfileEmail(
+          currentUser.id,
+          trimmed,
+          metaUsername || usernameFromAuthUser(data.user)
+        );
+        if (profileErr === PROFILE_SYNC_FAILED) {
+          return {
+            error: {
+              message: PROFILE_SYNC_FAILED,
+              name: "ProfileSyncError",
+            } as AuthError,
+          };
+        }
+      } else if (data.user) {
+        void upsertProfileFromAuthUser(data.user).catch((e) =>
+          console.warn("upsertProfileFromAuthUser after changeEmail:", e)
+        );
+      }
+
       return { needsEmailConfirmation: needsEmailConfirmation || true };
     } catch (error) {
       return { error: error as AuthError };
@@ -729,10 +775,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data: authData, error } = await supabase.auth.updateUser({
         data: { username: trimmed },
       });
       if (error) return { error };
+
+      const refreshed = authData.user ?? currentUser;
+      const { error: profileErr } = await updateProfileUsername(
+        refreshed.id,
+        trimmed,
+        refreshed.email ?? currentUser.email
+      );
+      if (profileErr === PROFILE_SYNC_FAILED) {
+        return {
+          error: {
+            message: PROFILE_SYNC_FAILED,
+            name: "ProfileSyncError",
+          } as AuthError,
+        };
+      }
+
+      if (authData.user) {
+        setUser(authData.user);
+      }
       return {};
     } catch (error) {
       return { error: error as AuthError };
@@ -757,6 +822,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       if (error) {
         return { error };
+      }
+
+      const {
+        data: { user: confirmedUser },
+      } = await supabase.auth.getUser();
+      if (confirmedUser) {
+        void upsertProfileFromAuthUser(confirmedUser).catch((e) =>
+          console.warn("upsertProfileFromAuthUser after confirmSignup:", e)
+        );
       }
 
       return {};

@@ -56,7 +56,17 @@ npx expo run:android
 ## 5. Add widgets on device
 
 **iOS:** Long-press home screen → **+** → **Capital** → **Capital Rates**  
-**Android:** Long-press home screen → **Widgets** → **Capital — Rate** or **Capital — Saved rates**
+**Android:** Long-press home screen → **Widgets** → search **Capital** → **Capital rates** or **Capital saved**
+
+## Troubleshooting: widgets not in the phone picker
+
+| Symptom | Cause | Fix |
+|---------|--------|-----|
+| No “Capital” in widget list | Running **Expo Go** (`npx expo start` + Expo Go app) | Build a native app: `npx expo prebuild --clean` then `npx expo run:android` / `eas build --profile development` and install that APK/IPA |
+| No widgets after switching from Expo Go | Old binary without widget native code | Uninstall Expo Go build; install the new dev/release build |
+| Still missing after install | Prebuild done before widget plugins were added | `npx expo prebuild --clean` and rebuild |
+
+The in-app screen **Settings → Home screen widgets** shows a banner when you are on Expo Go.
 
 Then open **Settings → Home screen widgets → Sync widget data** (Pro).
 

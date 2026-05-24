@@ -152,6 +152,9 @@ export default function SettingsScreen() {
         ? t('signup.passwordRequirements')
         : t('settings.passwordOAuthUnavailable');
     }
+    if (code === 'PROFILE_SYNC_FAILED' || error.name === 'ProfileSyncError') {
+      return t('settings.accountProfileSyncFailed');
+    }
     return error.message?.trim() || t('settings.accountUpdateFailed');
   };
 
