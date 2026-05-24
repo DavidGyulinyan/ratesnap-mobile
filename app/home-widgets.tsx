@@ -6,10 +6,8 @@ import { usePro } from "@/contexts/ProContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useUserData } from "@/hooks/useUserData";
 import {
-  isExpoGo,
-  isHomeScreenWidgetsBuild,
-  isOsWidgetNativeSupported,
   osWidgetBuildRequiredMessageKey,
+  osWidgetsReadyOnDevice,
 } from "@/lib/osWidgets/platform";
 import { buildOsWidgetSnapshot } from "@/lib/osWidgets/snapshot";
 import {
@@ -144,7 +142,7 @@ export default function HomeWidgetsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {!isHomeScreenWidgetsBuild() ? (
+        {!osWidgetsReadyOnDevice() ? (
           <View style={[styles.banner, { backgroundColor: hexToRgba(primaryColor, 0.12), borderColor }]}>
             <Ionicons name="information-circle-outline" size={22} color={primaryColor} style={styles.bannerIcon} />
             <ThemedText style={[styles.bannerText, { color: textColor }]}>

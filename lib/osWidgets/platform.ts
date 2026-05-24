@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { Platform } from "react-native";
+import { NativeModules, Platform } from "react-native";
 
 /** OS home-screen widgets require a native dev/production build. */
 export function isOsWidgetNativeSupported(): boolean {
@@ -12,16 +12,39 @@ export function isExpoGo(): boolean {
 }
 
 /**
+ * True when react-native-android-widget native code is linked in this APK/IPA.
+ * OTA updates (eas update) cannot add this — only a new eas build / expo run can.
+ */
+export function hasOsWidgetNativeModule(): boolean {
+  if (Platform.OS === "android") {
+    return NativeModules.AndroidWidget != null;
+  }
+  if (Platform.OS === "ios") {
+    // iOS widget extension is separate; expo-widgets loads only in native builds.
+    return !isExpoGo();
+  }
+  return false;
+}
+
+/**
  * True when the app is not Expo Go (dev client, local run, or store build).
- * Widgets still only appear if that binary was built after `expo prebuild` with widget plugins.
  */
 export function isHomeScreenWidgetsBuild(): boolean {
   if (!isOsWidgetNativeSupported()) return false;
   return !isExpoGo();
 }
 
-export function osWidgetBuildRequiredMessageKey(): "osWidgets.requiresExpoGo" | "osWidgets.requiresDevBuild" | "osWidgets.unsupportedPlatform" {
+export function osWidgetsReadyOnDevice(): boolean {
+  return isHomeScreenWidgetsBuild() && hasOsWidgetNativeModule();
+}
+
+export function osWidgetBuildRequiredMessageKey():
+  | "osWidgets.requiresExpoGo"
+  | "osWidgets.requiresNativeRebuild"
+  | "osWidgets.requiresDevBuild"
+  | "osWidgets.unsupportedPlatform" {
   if (!isOsWidgetNativeSupported()) return "osWidgets.unsupportedPlatform";
   if (isExpoGo()) return "osWidgets.requiresExpoGo";
+  if (!hasOsWidgetNativeModule()) return "osWidgets.requiresNativeRebuild";
   return "osWidgets.requiresDevBuild";
 }
