@@ -6,6 +6,7 @@ import { usePro } from "@/contexts/ProContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useUserData } from "@/hooks/useUserData";
 import {
+  isOsWidgetNativeSupported,
   osWidgetBuildRequiredMessageKey,
   osWidgetsReadyOnDevice,
 } from "@/lib/osWidgets/platform";
@@ -282,12 +283,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: Layout.screenPadding,
+    paddingHorizontal: Layout.spaceMd,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   scroll: {
-    padding: Layout.screenPadding,
+    padding: Layout.spaceMd,
     paddingBottom: 40,
   },
   banner: {
