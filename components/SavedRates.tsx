@@ -202,55 +202,78 @@ export default function SavedRates({
     const changeUp = change != null && live != null && live >= saved;
 
     return (
-    <TouchableOpacity
-      key={rate.id || index}
-      style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.savedRateItem]}
-      onPress={() => onSelectRate?.(rate.from_currency, rate.to_currency)}
-    >
-      <View style={styles.savedRateContent}>
-        <View style={styles.savedRateHeader}>
-          <CurrencyFlag currency={rate.from_currency} size={20} />
-          <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
-          <CurrencyFlag currency={rate.to_currency} size={20} />
-        </View>
-        <ThemedText style={[{ color: textColor }, styles.pairCodes]} numberOfLines={1}>
-          {rate.from_currency} → {rate.to_currency}
-        </ThemedText>
-        <ThemedText style={[{ color: textSecondaryColor }, styles.rateMeta]} numberOfLines={1}>
-          {t("saved.pairAt")} {formatGroupedNumber(saved, 4)}
-        </ThemedText>
-        {live != null ? (
+      <TouchableOpacity
+        key={rate.id || index}
+        style={[
+          {
+            backgroundColor: surfaceSecondaryColor,
+            borderColor,
+            shadowColor,
+          },
+          styles.savedRateItem,
+        ]}
+        onPress={() => onSelectRate?.(rate.from_currency, rate.to_currency)}
+      >
+        <View style={styles.savedRateContent}>
+          <View style={styles.savedRateHeader}>
+            <CurrencyFlag currency={rate.from_currency} size={20} />
+            <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>
+              →
+            </ThemedText>
+            <CurrencyFlag currency={rate.to_currency} size={20} />
+          </View>
           <ThemedText
-            style={[
-              { color: changeUp ? "#16a34a" : "#dc2626" },
-              styles.rateMeta,
-            ]}
+            style={[{ color: textColor }, styles.pairCodes]}
             numberOfLines={1}
           >
-            {t("saved.now")} {formatGroupedNumber(live, 4)}
-            {change ? ` (${change})` : ""}
+            {rate.from_currency} → {rate.to_currency}
           </ThemedText>
+          <ThemedText
+            style={[{ color: textSecondaryColor }, styles.rateMeta]}
+            numberOfLines={1}
+          >
+            {t("saved.pairAt")} {formatGroupedNumber(saved, 4)}
+          </ThemedText>
+          {live != null ? (
+            <ThemedText
+              style={[
+                { color: changeUp ? "#16a34a" : "#dc2626" },
+                styles.rateMeta,
+              ]}
+              numberOfLines={1}
+            >
+              {t("saved.now")} {formatGroupedNumber(live, 4)}
+              {change ? ` (${change})` : ""}
+            </ThemedText>
+          ) : null}
+          <ThemedText
+            style={[{ color: textSecondaryColor }, styles.savedRateDate]}
+            numberOfLines={1}
+          >
+            {t("saved.savedOn")} {formatDateTimeDDMMYY(rate.created_at)}
+          </ThemedText>
+        </View>
+        {showDeleteButtons ? (
+          <TouchableOpacity
+            style={[
+              styles.deleteButton,
+              deletingId === rate.id && styles.deleteButtonDisabled,
+            ]}
+            onPress={() => handleDeleteRate(rate.id)}
+            disabled={deletingId === rate.id}
+          >
+            <ThemedText
+              style={[
+                styles.deleteButtonText,
+                deletingId === rate.id && styles.deleteButtonTextDisabled,
+              ]}
+            >
+              {deletingId === rate.id ? "..." : "x"}
+            </ThemedText>
+          </TouchableOpacity>
         ) : null}
-        <ThemedText style={[{ color: textSecondaryColor }, styles.savedRateDate]} numberOfLines={1}>
-          {t("saved.savedOn")} {formatDateTimeDDMMYY(rate.created_at)}
-        </ThemedText>
-      </View>
-      {showDeleteButtons && (
-        <TouchableOpacity
-          style={[styles.deleteButton, deletingId === rate.id && styles.deleteButtonDisabled]}
-          onPress={() => handleDeleteRate(rate.id)}
-          disabled={deletingId === rate.id}
-        >
-          <ThemedText style={[
-            styles.deleteButtonText,
-            deletingId === rate.id && styles.deleteButtonTextDisabled
-          ]}>
-            {deletingId === rate.id ? "..." : "x"}
-          </ThemedText>
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
   };
 
   const visibleRates =
