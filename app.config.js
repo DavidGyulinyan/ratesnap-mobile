@@ -40,7 +40,7 @@ module.exports = ({ config }) => ({
         widgets: [
           {
             name: "CapitalRatePair",
-            label: "Capital — Rate",
+            label: "Capital rates",
             description: "Live rate for a currency pair you choose.",
             minWidth: "180dp",
             minHeight: "110dp",
@@ -51,7 +51,7 @@ module.exports = ({ config }) => ({
           },
           {
             name: "CapitalSavedRates",
-            label: "Capital — Saved rates",
+            label: "Capital saved",
             description: "Your saved currency pairs at a glance.",
             minWidth: "320dp",
             minHeight: "120dp",

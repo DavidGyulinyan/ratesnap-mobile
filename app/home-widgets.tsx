@@ -7,7 +7,9 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useUserData } from "@/hooks/useUserData";
 import {
   isExpoGo,
+  isHomeScreenWidgetsBuild,
   isOsWidgetNativeSupported,
+  osWidgetBuildRequiredMessageKey,
 } from "@/lib/osWidgets/platform";
 import { buildOsWidgetSnapshot } from "@/lib/osWidgets/snapshot";
 import {
@@ -142,9 +144,12 @@ export default function HomeWidgetsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {isExpoGo() ? (
+        {!isHomeScreenWidgetsBuild() ? (
           <View style={[styles.banner, { backgroundColor: hexToRgba(primaryColor, 0.12), borderColor }]}>
-            <ThemedText style={{ color: textColor }}>{t("osWidgets.requiresDevBuild")}</ThemedText>
+            <Ionicons name="information-circle-outline" size={22} color={primaryColor} style={styles.bannerIcon} />
+            <ThemedText style={[styles.bannerText, { color: textColor }]}>
+              {t(osWidgetBuildRequiredMessageKey())}
+            </ThemedText>
           </View>
         ) : null}
 
@@ -288,11 +293,16 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   banner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
     borderWidth: 1,
     borderRadius: 14,
     padding: 14,
     marginBottom: 16,
   },
+  bannerIcon: { marginTop: 1 },
+  bannerText: { flex: 1, lineHeight: 22 },
   card: {
     borderWidth: 1,
     borderRadius: 18,
