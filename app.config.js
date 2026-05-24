@@ -18,6 +18,7 @@ module.exports = ({ config }) => ({
   },
   plugins: [
     ...(base.plugins ?? []),
+    "expo-dev-client",
     [
       "expo-widgets",
       {
