@@ -1382,6 +1382,7 @@ export default function HomeScreen() {
           >
             <SavedRates
               savedRates={savedRates}
+              ratesData={currenciesData}
               showSavedRates={true}
               onToggleVisibility={() => {
                 setShowSavedRates(false);

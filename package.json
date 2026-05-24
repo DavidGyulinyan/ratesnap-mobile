@@ -16,6 +16,7 @@
     "lint": "expo lint",
     "build:android": "eas build --platform android --profile production",
     "build:android:preview": "eas build --platform android --profile preview",
+    "build:android:widgets": "eas build --platform android --profile preview --non-interactive",
     "submit:android": "eas submit --platform android --profile production --latest"
   },
   "dependencies": {
