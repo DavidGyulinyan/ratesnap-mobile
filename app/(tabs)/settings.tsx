@@ -26,6 +26,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import CurrencyFlag from '@/components/CurrencyFlag';
 import { formatDateTimeDDMMYY } from "@/lib/dateFormat";
+import { formatGroupedNumber } from "@/lib/numberFormat";
 import {
   getPrivacyPolicyText,
   type PrivacyPolicyLanguage,
@@ -1134,9 +1135,17 @@ Capital предоставляет инструменты конвертации
                       <CurrencyFlag currency={rate.from_currency} size={20} />
                       <ThemedText style={[{ color: textSecondaryColor, marginHorizontal: 8 }]}>→</ThemedText>
                       <CurrencyFlag currency={rate.to_currency} size={20} />
-                      <ThemedText style={[styles.settingValue, { marginLeft: 8 }]}>
-                        {new Date(rate.created_at).toLocaleDateString()}
-                      </ThemedText>
+                      <View style={{ marginLeft: 8, flex: 1 }}>
+                        <ThemedText style={[styles.settingValue, { fontWeight: '600' }]}>
+                          {rate.from_currency} → {rate.to_currency}
+                        </ThemedText>
+                        <ThemedText style={{ color: textSecondaryColor, fontSize: 13 }}>
+                          {t('saved.pairAt')} {formatGroupedNumber(Number(rate.rate), 4)}
+                        </ThemedText>
+                        <ThemedText style={{ color: textSecondaryColor, fontSize: 12 }}>
+                          {t('saved.savedOn')} {formatDateTimeDDMMYY(rate.created_at)}
+                        </ThemedText>
+                      </View>
                     </View>
                     <TouchableOpacity
                       style={{

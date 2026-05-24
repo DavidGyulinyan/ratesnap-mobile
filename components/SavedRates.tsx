@@ -7,7 +7,9 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDateDDMMYY } from "@/lib/dateFormat";
+import { formatDateTimeDDMMYY } from "@/lib/dateFormat";
+import { crossRateForPair } from "@/lib/exchangeRateResolve";
+import type { CachedExchangeRates } from "@/lib/liveExchangeRates";
 import { formatGroupedNumber } from "@/lib/numberFormat";
 
 interface SavedRate {
@@ -35,6 +37,11 @@ interface SavedRatesProps {
   forceUseHook?: boolean; // Force use hook data instead of prop
   showDeleteButtons?: boolean; // Show delete buttons for each item
   onShareableMessageChange?: (message: string | null) => void;
+  /** When set, cards show live rate and change since saved. */
+  ratesData?: Pick<
+    CachedExchangeRates,
+    "conversion_rates" | "cba_conversion_rates"
+  > | null;
 }
 
 export default function SavedRates({
@@ -53,6 +60,7 @@ export default function SavedRates({
   forceUseHook = false,
   showDeleteButtons = false,
   onShareableMessageChange,
+  ratesData,
 }: SavedRatesProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -72,6 +80,20 @@ export default function SavedRates({
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const formatRateChange = (saved: number, live: number): string | null => {
+    if (!Number.isFinite(saved) || saved <= 0 || !Number.isFinite(live)) {
+      return null;
+    }
+    const pct = ((live - saved) / saved) * 100;
+    const sign = pct >= 0 ? "+" : "";
+    return `${sign}${pct.toFixed(2)}%`;
+  };
+
+  const liveRateForPair = (from: string, to: string): number | null => {
+    if (!ratesData?.conversion_rates) return null;
+    return crossRateForPair(from, to, ratesData);
+  };
+
   useEffect(() => {
     if (!inModal || !onShareableMessageChange) return;
     const list = forceUseHook
@@ -83,10 +105,19 @@ export default function SavedRates({
     }
     const lines = [
       t("saved.title"),
-      ...list.map(
-        (r) =>
-          `• ${r.from_currency} → ${r.to_currency}: ${formatGroupedNumber(Number(r.rate), 4)}`
-      ),
+      ...list.map((r) => {
+        const saved = Number(r.rate);
+        const live = liveRateForPair(r.from_currency, r.to_currency);
+        const savedStr = formatGroupedNumber(saved, 4);
+        let line = `• ${r.from_currency} → ${r.to_currency}: ${savedStr}`;
+        if (live != null) {
+          const change = formatRateChange(saved, live);
+          line += ` (${t("saved.now")}: ${formatGroupedNumber(live, 4)}`;
+          if (change) line += `, ${change}`;
+          line += ")";
+        }
+        return line;
+      }),
     ];
     onShareableMessageChange(lines.join("\n"));
   }, [
@@ -97,6 +128,7 @@ export default function SavedRates({
     propSavedRates,
     user,
     t,
+    ratesData,
   ]);
 
   const handleDeleteRate = async (id: string) => {
@@ -163,7 +195,13 @@ export default function SavedRates({
     }
   };
   
-  const renderSavedRateItem = (rate: SavedRate, index: number) => (
+  const renderSavedRateItem = (rate: SavedRate, index: number) => {
+    const saved = Number(rate.rate);
+    const live = liveRateForPair(rate.from_currency, rate.to_currency);
+    const change = live != null ? formatRateChange(saved, live) : null;
+    const changeUp = change != null && live != null && live >= saved;
+
+    return (
     <TouchableOpacity
       key={rate.id || index}
       style={[{ backgroundColor: surfaceSecondaryColor, borderColor: borderColor, shadowColor: shadowColor }, styles.savedRateItem]}
@@ -175,11 +213,26 @@ export default function SavedRates({
           <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
           <CurrencyFlag currency={rate.to_currency} size={20} />
         </View>
-        <ThemedText style={[{ color: primaryColor }, styles.rateValue]}>
-          {formatGroupedNumber(rate.rate, 4)}
+        <ThemedText style={[{ color: textColor }, styles.pairCodes]} numberOfLines={1}>
+          {rate.from_currency} → {rate.to_currency}
         </ThemedText>
-        <ThemedText style={[{ color: textSecondaryColor }, styles.savedRateDate]}>
-          {formatDateDDMMYY(rate.created_at)}
+        <ThemedText style={[{ color: textSecondaryColor }, styles.rateMeta]} numberOfLines={1}>
+          {t("saved.pairAt")} {formatGroupedNumber(saved, 4)}
+        </ThemedText>
+        {live != null ? (
+          <ThemedText
+            style={[
+              { color: changeUp ? "#16a34a" : "#dc2626" },
+              styles.rateMeta,
+            ]}
+            numberOfLines={1}
+          >
+            {t("saved.now")} {formatGroupedNumber(live, 4)}
+            {change ? ` (${change})` : ""}
+          </ThemedText>
+        ) : null}
+        <ThemedText style={[{ color: textSecondaryColor }, styles.savedRateDate]} numberOfLines={1}>
+          {t("saved.savedOn")} {formatDateTimeDDMMYY(rate.created_at)}
         </ThemedText>
       </View>
       {showDeleteButtons && (
@@ -198,6 +251,7 @@ export default function SavedRates({
       )}
     </TouchableOpacity>
   );
+  };
 
   const visibleRates =
     showMoreEnabled && savedRates.length > maxVisibleItems
@@ -328,7 +382,7 @@ const styles = StyleSheet.create({
   },
   savedRateItem: {
     width: '48%',
-    aspectRatio: 1,
+    minHeight: 128,
     justifyContent: "center",
     alignItems: "center",
     padding: 12,
@@ -349,10 +403,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  rateValue: {
+  pairCodes: {
     fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontWeight: "700",
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  rateMeta: {
+    fontSize: 10,
+    marginBottom: 2,
   },
   savedRatesTitle: {
     fontSize: 16,

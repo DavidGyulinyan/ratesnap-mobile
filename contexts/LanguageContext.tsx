@@ -221,6 +221,8 @@ const translations = {
     'saved.deleteAll': 'Delete All',
     'saved.noRates': 'No saved rates yet. Convert currencies and click "Save This Rate" to add some!',
     'saved.savedOn': 'Saved on',
+    'saved.pairAt': 'Saved @',
+    'saved.now': 'Now',
     'saved.at': 'at',
     'saved.rate': 'saved rate',
     'saved.rates': 'saved rates',
@@ -934,6 +936,8 @@ const translations = {
     'saved.shortTitle': 'Պահպանված', // Short version for constrained layouts
     'saved.noRates': 'Դեռ չկան պահպանված զույգեր: Փոխանակեք արժույթները և սեղմեք "Պահպանել այս դրույքը" որպեսզի ավելացնեք:',
     'saved.savedOn': 'Պահպանվել է',
+    'saved.pairAt': 'Պահպանված @',
+    'saved.now': 'Այժմ',
     'saved.at': 'ժամը',
     'saved.rate': 'պահպանված դրույք',
     'saved.rates': 'պահպանված դրույքներ',
@@ -1503,6 +1507,8 @@ const translations = {
     'saved.shortTitle': 'Сохраненные', // Short version for constrained layouts
     'saved.noRates': 'Пока нет сохраненных курсов. Конвертируйте валюты и нажмите "Сохранить этот курс", чтобы добавить!',
     'saved.savedOn': 'Сохранено',
+    'saved.pairAt': 'Сохранено @',
+    'saved.now': 'Сейчас',
     'saved.at': 'в',
     'saved.rate': 'сохраненный курс',
     'saved.rates': 'сохраненные курсы',
