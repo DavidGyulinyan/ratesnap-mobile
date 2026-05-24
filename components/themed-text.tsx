@@ -1,12 +1,33 @@
-import React from 'react';
-import { StyleSheet, Text, type TextProps } from "react-native";
+import React from "react";
+import { Platform, Text, type TextProps } from "react-native";
 
+import { MAX_FONT_SIZE_MULTIPLIER, scaledLineHeight } from "@/lib/accessibilityFontScaling";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: "default" | "title" | "defaultSemiBold" | "subtitle" | "link" | "caption";
+  /** When true, users can select and copy this text on mobile (long-press). */
+  copyable?: boolean;
+};
+
+const TYPE_STYLES = {
+  default: { fontSize: 16, fontWeight: "400" as const },
+  defaultSemiBold: { fontSize: 16, fontWeight: "600" as const },
+  title: { fontSize: 28, fontWeight: "700" as const, letterSpacing: -0.3 },
+  subtitle: { fontSize: 18, fontWeight: "600" as const },
+  caption: { fontSize: 13, fontWeight: "500" as const, opacity: 0.92 },
+  link: { fontSize: 16, fontWeight: "400" as const },
+} as const;
+
+const MIN_FONT_BY_TYPE: Record<keyof typeof TYPE_STYLES, number> = {
+  default: 14,
+  defaultSemiBold: 14,
+  title: 28,
+  subtitle: 16,
+  caption: 12,
+  link: 14,
 };
 
 export function ThemedText({
@@ -14,6 +35,8 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
+  copyable,
+  selectable,
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
@@ -21,59 +44,30 @@ export function ThemedText({
 
   /** Armenian script reads better with a slight size reduction. */
   const fontSizeAdjustment = -2;
+  const base = TYPE_STYLES[type];
+  const fontSize = Math.max(
+    MIN_FONT_BY_TYPE[type],
+    base.fontSize + fontSizeAdjustment
+  );
+  const typeStyle = {
+    ...base,
+    fontSize,
+    lineHeight: scaledLineHeight(fontSize),
+    ...(type === "link" ? { color: linkTint } : null),
+  };
 
   return (
     <Text
+      allowFontScaling
+      maxFontSizeMultiplier={MAX_FONT_SIZE_MULTIPLIER}
+      selectable={copyable ?? selectable}
       style={[
         { color },
-        type === "default" ? { ...styles.default, fontSize: Math.max(14, styles.default.fontSize + fontSizeAdjustment) } : undefined,
-        type === "title" ? { ...styles.title, fontSize: Math.max(28, styles.title.fontSize + fontSizeAdjustment) } : undefined,
-        type === "defaultSemiBold" ? { ...styles.defaultSemiBold, fontSize: Math.max(14, styles.defaultSemiBold.fontSize + fontSizeAdjustment) } : undefined,
-        type === "subtitle" ? { ...styles.subtitle, fontSize: Math.max(16, styles.subtitle.fontSize + fontSizeAdjustment) } : undefined,
-        type === "link"
-          ? {
-              ...styles.link,
-              color: linkTint,
-              fontSize: Math.max(14, styles.link.fontSize + fontSizeAdjustment),
-            }
-          : undefined,
-        type === "caption" ? { ...styles.caption, fontSize: Math.max(12, styles.caption.fontSize + fontSizeAdjustment) } : undefined,
+        typeStyle,
+        Platform.OS === "android" ? { includeFontPadding: false } : null,
         style,
       ]}
       {...rest}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "600",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    lineHeight: 36,
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    lineHeight: 24,
-  },
-  caption: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "500",
-    opacity: 0.92,
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-  },
-});

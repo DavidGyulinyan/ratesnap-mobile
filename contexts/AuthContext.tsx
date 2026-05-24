@@ -22,6 +22,7 @@ import {
   getAccountDeletionAuthKind,
   reauthenticateOAuthForDeletion,
 } from "@/lib/accountDeletionAuth";
+import { isPasswordPolicyValid } from "@/lib/passwordPolicy";
 import { completeNativeOAuthExchange } from "@/lib/supabaseNativeOAuth";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -56,6 +57,15 @@ interface AuthContextType {
   ) => Promise<{ error?: AuthError }>;
   /** Increments when local form drafts are cleared (e.g. after sign-out). */
   formDraftResetEpoch: number;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<{ error?: AuthError }>;
+  changeEmail: (
+    newEmail: string,
+    options?: { password?: string }
+  ) => Promise<{ error?: AuthError; needsEmailConfirmation?: boolean }>;
+  changeUsername: (username: string) => Promise<{ error?: AuthError }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -521,6 +531,214 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const reauthenticateWithPassword = async (
+    supabase: SupabaseClient,
+    email: string,
+    password: string
+  ): Promise<{ error?: AuthError }> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      const m = (error.message ?? "").toLowerCase();
+      if (
+        m.includes("invalid") ||
+        m.includes("invalid_credentials") ||
+        error.name === "InvalidCredentialsError"
+      ) {
+        return {
+          error: {
+            message: "INVALID_CURRENT_PASSWORD",
+            name: "InvalidCredentialsError",
+          } as AuthError,
+        };
+      }
+      return { error };
+    }
+    return {};
+  };
+
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ) => {
+    const supabase = getSupabaseClient() as SupabaseClient | null;
+    if (!supabase) {
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
+    }
+
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (!currentUser?.email) {
+      return {
+        error: { message: "You must be signed in." } as AuthError,
+      };
+    }
+    if (getAccountDeletionAuthKind(currentUser) !== "password") {
+      return {
+        error: {
+          message: "PASSWORD_AUTH_REQUIRED",
+          name: "UnsupportedAuth",
+        } as AuthError,
+      };
+    }
+    if (!isPasswordPolicyValid(newPassword)) {
+      return {
+        error: {
+          message: "PASSWORD_POLICY_FAILED",
+          name: "PasswordPolicyError",
+        } as AuthError,
+      };
+    }
+
+    try {
+      const { error: reauthErr } = await reauthenticateWithPassword(
+        supabase,
+        currentUser.email,
+        currentPassword.trim()
+      );
+      if (reauthErr) return { error: reauthErr };
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) return { error };
+      return {};
+    } catch (error) {
+      return { error: error as AuthError };
+    }
+  };
+
+  const changeEmail = async (
+    newEmail: string,
+    options?: { password?: string }
+  ) => {
+    const supabase = getSupabaseClient() as SupabaseClient | null;
+    if (!supabase) {
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
+    }
+
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      return {
+        error: {
+          message: "INVALID_EMAIL",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (!currentUser?.email) {
+      return {
+        error: { message: "You must be signed in." } as AuthError,
+      };
+    }
+    if (trimmed === currentUser.email.toLowerCase()) {
+      return {
+        error: {
+          message: "EMAIL_UNCHANGED",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+
+    const kind = getAccountDeletionAuthKind(currentUser);
+    if (kind === "password") {
+      const pw = options?.password?.trim();
+      if (!pw) {
+        return {
+          error: {
+            message: "PASSWORD_REQUIRED",
+            name: "PasswordRequired",
+          } as AuthError,
+        };
+      }
+      const { error: reauthErr } = await reauthenticateWithPassword(
+        supabase,
+        currentUser.email,
+        pw
+      );
+      if (reauthErr) return { error: reauthErr };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({ email: trimmed });
+      if (error) return { error };
+
+      const needsEmailConfirmation = Boolean(
+        data.user && data.user.email?.toLowerCase() !== trimmed
+      );
+      return { needsEmailConfirmation: needsEmailConfirmation || true };
+    } catch (error) {
+      return { error: error as AuthError };
+    }
+  };
+
+  const changeUsername = async (username: string) => {
+    const supabase = getSupabaseClient() as SupabaseClient | null;
+    if (!supabase) {
+      return {
+        error: { message: "Authentication service not available" } as AuthError,
+      };
+    }
+
+    const trimmed = username.trim();
+    if (trimmed.length < 2 || trimmed.length > 32) {
+      return {
+        error: {
+          message: "USERNAME_LENGTH",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+      return {
+        error: {
+          message: "USERNAME_INVALID",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (!currentUser) {
+      return {
+        error: { message: "You must be signed in." } as AuthError,
+      };
+    }
+
+    const current =
+      (currentUser.user_metadata?.username as string | undefined)?.trim() ||
+      currentUser.email?.split("@")[0] ||
+      "";
+    if (trimmed === current) {
+      return {
+        error: {
+          message: "USERNAME_UNCHANGED",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { username: trimmed },
+      });
+      if (error) return { error };
+      return {};
+    } catch (error) {
+      return { error: error as AuthError };
+    }
+  };
+
   const confirmSignupWithOtp = async (email: string, token: string) => {
     const supabase = getSupabaseClient();
     if (!supabase) {
@@ -561,6 +779,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     resendConfirmationEmail,
     confirmSignupWithOtp,
     formDraftResetEpoch,
+    changePassword,
+    changeEmail,
+    changeUsername,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

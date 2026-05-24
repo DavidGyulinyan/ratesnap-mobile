@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: 16,
     gap: 12,
   },
@@ -99,12 +99,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    lineHeight: 24,
     flex: 1,
+    flexShrink: 1,
   },
   closeButton: {
     width: 36,
-    height: 36,
+    minHeight: 36,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",

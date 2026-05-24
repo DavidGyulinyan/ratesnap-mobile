@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -10,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AppTextInput } from "@/components/AppTextInput";
 import QuickActionModal, {
   type QuickActionModalMenuItem,
 } from "@/components/QuickActionModal";
@@ -94,7 +94,7 @@ function LoanField({
       >
         {label}
       </ThemedText>
-      <TextInput
+      <AppTextInput
         value={displayValue}
         onChangeText={handleChange}
         keyboardType={keyboardType ?? "decimal-pad"}
@@ -139,6 +139,7 @@ function LoanRowKV({
         {label}
       </ThemedText>
       <ThemedText
+        copyable
         type="defaultSemiBold"
         numberOfLines={3}
         ellipsizeMode="tail"

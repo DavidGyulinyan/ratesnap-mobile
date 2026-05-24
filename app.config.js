@@ -1,91 +1,67 @@
-const fs = require("fs");
-const path = require("path");
-const appJson = require("./app.json");
-const pkg = require("./package.json");
+// @ts-check
+const base = require("./app.json").expo;
 
-const GOOGLE_SERVICES_FILE = "./google-services.json";
-const hasGoogleServices = fs.existsSync(
-  path.join(__dirname, GOOGLE_SERVICES_FILE)
-);
-
-const NOTIFICATION_ICON = "./assets/images/app-notification-icon.png";
-const NOTIFICATION_COLOR = "#F07E25";
-
-const LOCATION_PERMISSION =
-  "Capital uses your location to suggest your local currency for conversions.";
-
-function pluginName(entry) {
-  return Array.isArray(entry) ? entry[0] : entry;
-}
+const APP_GROUP = "group.com.davidgyulinyan.exratiomobile.widgets";
+const IOS_WIDGET_BUNDLE_ID = "com.davidgyulinyan.exratiomobile.widgets";
 
 /** @type {import('expo/config').ExpoConfig} */
-module.exports = () => {
-  const { expo } = appJson;
-
-  const { notifications: _deprecatedNotifications, ...expoBase } = expo;
-
-  const updates = { ...(expo.updates ?? {}) };
-  delete updates.channel;
-
-  const basePlugins = (expo.plugins ?? []).filter(
-    (p) =>
-      pluginName(p) !== "expo-notifications" &&
-      pluginName(p) !== "expo-location" &&
-      pluginName(p) !== "expo-build-properties"
-  );
-
-  const plugins = [
-    ...basePlugins,
+module.exports = ({ config }) => ({
+  ...base,
+  ...config,
+  ios: {
+    ...base.ios,
+    ...config.ios,
+    entitlements: {
+      ...(config.ios?.entitlements ?? {}),
+      "com.apple.security.application-groups": [APP_GROUP],
+    },
+  },
+  plugins: [
+    ...(base.plugins ?? []),
     [
-      "expo-notifications",
+      "expo-widgets",
       {
-        icon: NOTIFICATION_ICON,
-        color: NOTIFICATION_COLOR,
-        iosDisplayInForeground: true,
+        bundleIdentifier: IOS_WIDGET_BUNDLE_ID,
+        groupIdentifier: APP_GROUP,
+        widgets: [
+          {
+            name: "CapitalRates",
+            displayName: "Capital Rates",
+            description: "Live FX rates and saved pairs at a glance.",
+            contentMarginsDisabled: false,
+            supportedFamilies: ["systemSmall", "systemMedium"],
+          },
+        ],
       },
     ],
     [
-      "expo-location",
+      "react-native-android-widget",
       {
-        locationWhenInUsePermission: LOCATION_PERMISSION,
+        widgets: [
+          {
+            name: "CapitalRatePair",
+            label: "Capital — Rate",
+            description: "Live rate for a currency pair you choose.",
+            minWidth: "180dp",
+            minHeight: "110dp",
+            targetCellWidth: 2,
+            targetCellHeight: 2,
+            widgetFeatures: "reconfigurable",
+            updatePeriodMillis: 1800000,
+          },
+          {
+            name: "CapitalSavedRates",
+            label: "Capital — Saved rates",
+            description: "Your saved currency pairs at a glance.",
+            minWidth: "320dp",
+            minHeight: "120dp",
+            targetCellWidth: 4,
+            targetCellHeight: 2,
+            widgetFeatures: "reconfigurable|configuration_optional",
+            updatePeriodMillis: 1800000,
+          },
+        ],
       },
     ],
-    [
-      "expo-build-properties",
-      {
-        android: {
-          compileSdkVersion: 35,
-          targetSdkVersion: 35,
-          minSdkVersion: 24,
-        },
-      },
-    ],
-  ];
-
-  const versionCode = parseInt(process.env.ANDROID_VERSION_CODE ?? "1", 10);
-
-  return {
-    ...expoBase,
-    version: pkg.version,
-    updates,
-    plugins,
-    android: {
-      ...expo.android,
-      versionCode: Number.isFinite(versionCode) ? versionCode : 1,
-      ...(hasGoogleServices
-        ? { googleServicesFile: GOOGLE_SERVICES_FILE }
-        : {}),
-    },
-    ios: {
-      ...expo.ios,
-      buildNumber: process.env.IOS_BUILD_NUMBER ?? "1",
-    },
-    extra: {
-      ...expo.extra,
-      apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "",
-      apiKey: process.env.EXPO_PUBLIC_API_KEY ?? "",
-      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
-      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
-    },
-  };
-};
+  ],
+});

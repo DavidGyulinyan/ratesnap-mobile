@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { CopyableDisplayField } from "./AppTextInput";
 import { ThemedView } from "./themed-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -991,20 +992,24 @@ export default function MathCalculator({
             }
           ]}>
             {getEquationPreviewText() ? (
-              <Text
+              <CopyableDisplayField
+                multiline
+                numberOfLines={2}
+                value={getEquationPreviewText()}
                 style={[
                   styles.equationText,
+                  styles.copyableDisplayInput,
                   { color: textSecondaryColor },
                 ]}
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {getEquationPreviewText()}
-              </Text>
+              />
             ) : null}
-            <Text
+            <CopyableDisplayField
+              multiline
+              numberOfLines={4}
+              value={getMainValueText()}
               style={[
                 styles.displayText,
+                styles.copyableDisplayInput,
                 {
                   fontSize: getDisplayFontSize(),
                   lineHeight: getDisplayFontSize() * 1.15,
@@ -1012,11 +1017,7 @@ export default function MathCalculator({
                   textAlign: "right",
                 },
               ]}
-              numberOfLines={4}
-              minimumFontScale={0.75}
-            >
-              {getMainValueText()}
-            </Text>
+            />
           </View>
         </View>
 
@@ -1272,6 +1273,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginBottom: 6,
     includeFontPadding: false,
+  },
+  copyableDisplayInput: {
+    width: "100%",
+    padding: 0,
+    margin: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
   },
   menuBackdrop: {
     flex: 1,
