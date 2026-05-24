@@ -1,7 +1,12 @@
+/**
+ * Entry point — register Android home-screen widgets only when native code exists.
+ * OTA updates (eas update) cannot add the widget native module; calling register*
+ * without it can crash the app immediately on launch.
+ */
 if (typeof globalThis !== 'undefined') {
   try {
-    const { Platform } = require('react-native');
-    if (Platform.OS === 'android') {
+    const { NativeModules, Platform } = require('react-native');
+    if (Platform.OS === 'android' && NativeModules.AndroidWidget != null) {
       const {
         registerWidgetConfigurationScreen,
         registerWidgetTaskHandler,
@@ -12,8 +17,10 @@ if (typeof globalThis !== 'undefined') {
       registerWidgetTaskHandler(widgetTaskHandler);
       registerWidgetConfigurationScreen(OsWidgetConfigurationScreen);
     }
-  } catch {
-    /* widgets unavailable in Expo Go */
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('[widgets] Android widget registration skipped:', error);
+    }
   }
 }
 

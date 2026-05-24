@@ -4,6 +4,11 @@ const base = require("./app.json").expo;
 const APP_GROUP = "group.com.davidgyulinyan.exratiomobile.widgets";
 const IOS_WIDGET_BUNDLE_ID = "com.davidgyulinyan.exratiomobile.widgets";
 
+/** Dev-only — store/preview builds should not ship expo-dev-client (startup issues on device). */
+const isDevClientBuild =
+  process.env.EAS_BUILD_PROFILE === "development" ||
+  process.env.EXPO_PUBLIC_USE_DEV_CLIENT === "1";
+
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = ({ config }) => ({
   ...base,
@@ -18,7 +23,7 @@ module.exports = ({ config }) => ({
   },
   plugins: [
     ...(base.plugins ?? []),
-    "expo-dev-client",
+    ...(isDevClientBuild ? ["expo-dev-client"] : []),
     [
       "expo-widgets",
       {
