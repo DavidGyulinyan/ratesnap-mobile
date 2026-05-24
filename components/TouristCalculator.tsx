@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { AppTextInput } from "./AppTextInput";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ThemedText } from "@/components/themed-text";
@@ -460,7 +461,7 @@ function Field(props: {
       <ThemedText type="caption" style={{ color: textSecondaryColor, marginBottom: 6 }}>
         {label}
       </ThemedText>
-      <TextInput
+      <AppTextInput
         value={display}
         onChangeText={handleChange}
         keyboardType="decimal-pad"
@@ -488,7 +489,7 @@ function RowKV(props: {
       <ThemedText style={{ color: textSecondaryColor, flex: 1 }} numberOfLines={2}>
         {label}
       </ThemedText>
-      <ThemedText type="defaultSemiBold" style={{ color: textColor }}>
+      <ThemedText copyable type="defaultSemiBold" style={{ color: textColor }}>
         {value}
       </ThemedText>
     </View>

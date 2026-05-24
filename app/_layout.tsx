@@ -1,4 +1,5 @@
 import "@/lib/webCryptoPolyfill";
+import "@/lib/accessibilityFontScaling";
 import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
 import { Stack } from 'expo-router';
@@ -12,6 +13,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { AppLockProvider } from '@/contexts/AppLockContext';
+import { ProProvider } from '@/contexts/ProContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,6 +28,7 @@ function AppContent() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
+        <ProProvider>
         <View style={{ flex: 1, backgroundColor }}>
           <View style={{ flex: 1, backgroundColor: "transparent" }}>
             <Stack screenOptions={{
@@ -43,10 +46,13 @@ function AppContent() {
               <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
               <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
               <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="capital-pro" options={{ presentation: 'card' }} />
+              <Stack.Screen name="home-widgets" options={{ presentation: 'card' }} />
             </Stack>
           </View>
           <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />
         </View>
+        </ProProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

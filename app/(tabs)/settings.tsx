@@ -13,6 +13,9 @@ import { Layout, hexToRgba } from '@/constants/theme';
 import ContactSupportModal from '@/components/ContactSupportModal';
 import DangerZoneModal from '@/components/DangerZoneModal';
 import DeleteAccountPasswordModal from '@/components/DeleteAccountPasswordModal';
+import AccountUpdateModal, {
+  type AccountUpdateMode,
+} from '@/components/AccountUpdateModal';
 import { getAccountDeletionAuthKind } from '@/lib/accountDeletionAuth';
 import type { AuthError } from '@supabase/supabase-js';
 import {
@@ -27,12 +30,15 @@ import {
   getPrivacyPolicyText,
   type PrivacyPolicyLanguage,
 } from "@/lib/legal/privacyPolicy";
+import { usePro } from "@/contexts/ProContext";
+
 export default function SettingsScreen() {
-  const { user, signOut, deleteAccount } = useAuth();
+  const { user, signOut, deleteAccount, changePassword, changeEmail, changeUsername } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
   const { themePreference, setThemePreference } = useTheme();
   const { lockSupported, lockEnabled, prefsReady, enableAppLock, disableAppLock } = useAppLock();
+  const { isPro } = usePro();
   const { savedRates, pickedRates, clearAllData } = useUserData();
 
   const { deleteRate: deleteSavedRate, deleteAllRates: deleteAllSavedRates } = useSavedRates();
@@ -50,6 +56,11 @@ export default function SettingsScreen() {
   const [deleteAccountBusy, setDeleteAccountBusy] = useState(false);
   const [showDangerZoneModal, setShowDangerZoneModal] = useState(false);
   const [showDeletePasswordModal, setShowDeletePasswordModal] = useState(false);
+  const [accountUpdateMode, setAccountUpdateMode] = useState<AccountUpdateMode | null>(null);
+
+  const hasPasswordAuth = user
+    ? getAccountDeletionAuthKind(user) === 'password'
+    : false;
 
   const [notificationSettings, setNotificationSettings] = useState({
     enabled: true,
@@ -123,6 +134,55 @@ export default function SettingsScreen() {
     } catch {
       Alert.alert('Error', 'Failed to sign out. Please try again.');
     }
+  };
+
+  const resolveAccountUpdateErrorMessage = (error: AuthError) => {
+    const code = error.message?.trim() ?? '';
+    if (code === 'INVALID_CURRENT_PASSWORD' || error.name === 'InvalidCredentialsError') {
+      return t('settings.accountUpdateInvalidPassword');
+    }
+    if (code === 'INVALID_EMAIL') return t('settings.accountUpdateInvalidEmail');
+    if (code === 'EMAIL_UNCHANGED') return t('settings.accountUpdateEmailUnchanged');
+    if (code === 'USERNAME_UNCHANGED') return t('settings.accountUpdateUsernameUnchanged');
+    if (code === 'USERNAME_INVALID' || code === 'USERNAME_LENGTH') {
+      return t('settings.accountUpdateUsernameInvalid');
+    }
+    if (code === 'PASSWORD_AUTH_REQUIRED' || code === 'PASSWORD_POLICY_FAILED') {
+      return code === 'PASSWORD_POLICY_FAILED'
+        ? t('signup.passwordRequirements')
+        : t('settings.passwordOAuthUnavailable');
+    }
+    return error.message?.trim() || t('settings.accountUpdateFailed');
+  };
+
+  const handleChangePassword = async (currentPassword: string, newPassword: string) => {
+    const { error } = await changePassword(currentPassword, newPassword);
+    if (error) {
+      return { errorMessage: resolveAccountUpdateErrorMessage(error) };
+    }
+    setAccountUpdateMode(null);
+    Alert.alert(t('common.success'), t('settings.passwordChangedSuccess'));
+    return {};
+  };
+
+  const handleChangeEmail = async (newEmail: string, password?: string) => {
+    const { error } = await changeEmail(newEmail, password ? { password } : undefined);
+    if (error) {
+      return { errorMessage: resolveAccountUpdateErrorMessage(error) };
+    }
+    setAccountUpdateMode(null);
+    Alert.alert(t('common.success'), t('settings.emailChangePending'));
+    return {};
+  };
+
+  const handleChangeUsername = async (username: string) => {
+    const { error } = await changeUsername(username);
+    if (error) {
+      return { errorMessage: resolveAccountUpdateErrorMessage(error) };
+    }
+    setAccountUpdateMode(null);
+    Alert.alert(t('common.success'), t('settings.usernameChangedSuccess'));
+    return {};
   };
 
   const resolveDeleteAccountErrorMessage = (error: AuthError) => {
@@ -1311,25 +1371,53 @@ Capital предоставляет инструменты конвертации
           <View style={styles.section}>
             <ThemedText style={styles.sectionTitle}>{t('settings.accountInfo')}</ThemedText>
             <View style={{ gap: 8 }}>
-              <View style={styles.settingItem}>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => setAccountUpdateMode('username')}
+                activeOpacity={0.75}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                   <Ionicons name="person-outline" size={22} color={primaryColor} />
                   <ThemedText style={styles.settingItemText}>{t('auth.username')}</ThemedText>
                 </View>
-                <ThemedText style={styles.settingValue} numberOfLines={1}>
-                  {user.user_metadata?.username || user.email?.split('@')[0]}
-                </ThemedText>
-              </View>
+                <View style={styles.rowTrailing}>
+                  <ThemedText style={styles.settingValue} numberOfLines={1}>
+                    {user.user_metadata?.username || user.email?.split('@')[0]}
+                  </ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+                </View>
+              </TouchableOpacity>
 
-              <View style={styles.settingItem}>
+              <TouchableOpacity
+                style={styles.settingItem}
+                onPress={() => setAccountUpdateMode('email')}
+                activeOpacity={0.75}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
                   <Ionicons name="mail-outline" size={22} color={primaryColor} />
                   <ThemedText style={styles.settingItemText}>{t('auth.email')}</ThemedText>
                 </View>
-                <ThemedText style={styles.settingValue} numberOfLines={1}>
-                  {user.email}
-                </ThemedText>
-              </View>
+                <View style={styles.rowTrailing}>
+                  <ThemedText style={styles.settingValue} numberOfLines={1}>
+                    {user.email}
+                  </ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+                </View>
+              </TouchableOpacity>
+
+              {hasPasswordAuth ? (
+                <TouchableOpacity
+                  style={styles.settingItem}
+                  onPress={() => setAccountUpdateMode('password')}
+                  activeOpacity={0.75}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                    <Ionicons name="lock-closed-outline" size={22} color={primaryColor} />
+                    <ThemedText style={styles.settingItemText}>{t('settings.changePassword')}</ThemedText>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+                </TouchableOpacity>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -1396,10 +1484,61 @@ Capital предоставляет инструменты конвертации
           </View>
         </View>
 
-        {/* About & support */}
+        {/* Capital Pro & support */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>{t('settings.aboutSupport')}</ThemedText>
           <View style={{ gap: 8 }}>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => router.push('/capital-pro')}
+              activeOpacity={0.75}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <Ionicons name="sparkles-outline" size={22} color={primaryColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <ThemedText style={styles.settingItemText}>{t('settings.capitalPro')}</ThemedText>
+                  <ThemedText style={[styles.settingValue, { marginTop: 2 }]} numberOfLines={2}>
+                    {isPro ? t('pro.active') : t('settings.capitalPro.subtitle')}
+                  </ThemedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => router.push('/home-widgets')}
+              activeOpacity={0.75}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <Ionicons name="apps-outline" size={22} color={primaryColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <ThemedText style={styles.settingItemText}>{t('osWidgets.title')}</ThemedText>
+                  <ThemedText style={[styles.settingValue, { marginTop: 2 }]} numberOfLines={2}>
+                    {isPro ? t('osWidgets.settingsSubtitlePro') : t('pro.feature.widgets.desc')}
+                  </ThemedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => router.push('/support-capital')}
+              activeOpacity={0.75}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <Ionicons name="heart-outline" size={22} color={primaryColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <ThemedText style={styles.settingItemText}>{t('settings.supportCapital')}</ThemedText>
+                  <ThemedText style={[styles.settingValue, { marginTop: 2 }]} numberOfLines={2}>
+                    {t('settings.supportCapital.subtitle')}
+                  </ThemedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => setShowTerms(true)}
@@ -1479,6 +1618,15 @@ Capital предоставляет инструменты конвертации
         }}
         onSubmit={handleDeleteAccountPasswordSubmit}
         busy={deleteAccountBusy}
+      />
+      <AccountUpdateModal
+        visible={accountUpdateMode != null}
+        mode={accountUpdateMode ?? 'username'}
+        user={user}
+        onClose={() => setAccountUpdateMode(null)}
+        onChangePassword={handleChangePassword}
+        onChangeEmail={handleChangeEmail}
+        onChangeUsername={handleChangeUsername}
       />
     </SafeAreaView>
   );

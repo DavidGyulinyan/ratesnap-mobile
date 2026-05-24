@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -19,6 +18,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { hexToRgba, FormField, Layout } from '@/constants/theme';
+import { AppTextInput } from '@/components/AppTextInput';
 import Logo from '@/components/Logo';
 import AuthButtons from '@/components/AuthButtons';
 import { Ionicons } from '@expo/vector-icons';
@@ -428,7 +428,7 @@ export default function SignInScreen() {
           <View style={styles.authCard}>
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t('auth.email')}</Text>
-              <TextInput
+              <AppTextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
@@ -443,7 +443,7 @@ export default function SignInScreen() {
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>{t('auth.password')}</Text>
               <View style={styles.passwordInputContainer}>
-                <TextInput
+                <AppTextInput
                   style={styles.passwordInput}
                   value={password}
                   onChangeText={setPassword}

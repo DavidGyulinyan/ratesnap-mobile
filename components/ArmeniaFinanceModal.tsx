@@ -5,13 +5,13 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  TextInput,
   TouchableOpacity,
   UIManager,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AppTextInput } from "@/components/AppTextInput";
 import { AmFinanceDraftContext, useAmFinanceDraft } from "@/components/AmFinanceDraftContext";
 import { ThemedText } from "@/components/themed-text";
 import { hexToRgba } from "@/constants/theme";
@@ -487,7 +487,7 @@ function Field({
       >
         {label}
       </ThemedText>
-      <TextInput
+      <AppTextInput
         value={displayValue}
         onChangeText={handleChange}
         keyboardType={keyboardType ?? "decimal-pad"}

@@ -7,13 +7,13 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { AppTextInput } from "@/components/AppTextInput";
 import Logo from "@/components/Logo";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { hexToRgba, FormField } from "@/constants/theme";
@@ -193,7 +193,7 @@ export default function ResetPasswordScreen() {
               >
                 <Text style={styles.label}>New Password</Text>
                 <View style={styles.passwordInputContainer}>
-                  <TextInput
+                  <AppTextInput
                     style={styles.input}
                     value={password}
                     onChangeText={setPassword}
@@ -227,7 +227,7 @@ export default function ResetPasswordScreen() {
               >
                 <Text style={styles.label}>Confirm Password</Text>
                 <View style={styles.passwordInputContainer}>
-                  <TextInput
+                  <AppTextInput
                     style={styles.input}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}

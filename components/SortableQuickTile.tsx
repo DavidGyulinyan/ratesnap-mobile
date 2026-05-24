@@ -3,6 +3,7 @@ import React, { useMemo, useRef } from "react";
 import {
   PanResponder,
   Platform,
+  TouchableOpacity,
   type StyleProp,
   View,
   type ViewStyle,
@@ -26,6 +27,7 @@ type SortableQuickTileProps = {
   onDragStart: () => void;
   onDragMove: (pageX: number, pageY: number) => void;
   onDragEnd: () => void;
+  onRemove?: () => void;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   handleColor: string;
@@ -43,6 +45,7 @@ export default function SortableQuickTile({
   onDragStart,
   onDragMove,
   onDragEnd,
+  onRemove,
   children,
   style,
   handleColor,
@@ -108,6 +111,23 @@ export default function SortableQuickTile({
       style={[style, { position: "relative" }, cornerStyle, animatedCardStyle]}
     >
       {children}
+      {reorderMode && onRemove ? (
+        <TouchableOpacity
+          onPress={onRemove}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{
+            position: "absolute",
+            left: 4,
+            top: 4,
+            padding: 6,
+            zIndex: 50,
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Remove widget"
+        >
+          <Ionicons name="remove-circle" size={22} color={handleColor} />
+        </TouchableOpacity>
+      ) : null}
       {reorderMode ? (
         <View
           collapsable={false}

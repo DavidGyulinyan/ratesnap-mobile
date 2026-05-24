@@ -5,6 +5,8 @@ import QuickActionModal, {
   type QuickActionModalMenuItem,
 } from "@/components/QuickActionModal";
 import Footer from "@/components/Footer";
+import DashboardBannerSlot from "@/components/monetization/DashboardBannerSlot";
+import ProTeaserCard from "@/components/monetization/ProTeaserCard";
 import Logo from "@/components/Logo";
 import MultiCurrencyConverter from "@/components/MultiCurrencyConverter";
 import SavedRates from "@/components/SavedRates";
@@ -13,6 +15,9 @@ import MathCalculator from "@/components/MathCalculator";
 import LoanCalculator from "@/components/LoanCalculator";
 import OnboardingGuide from "@/components/OnboardingGuide";
 import DashboardSortableTileGrid from "@/components/DashboardSortableTileGrid";
+import DashboardWidgetPickerModal, {
+  type DashboardWidgetPickerItem,
+} from "@/components/DashboardWidgetPickerModal";
 import CurrencyRateCharts from "@/components/CurrencyRateCharts";
 import ArmeniaFinanceModal, {
   type FinanceScreen,
@@ -30,7 +35,20 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserData } from "@/hooks/useUserData";
-import { normalizeDashboardCardOrder } from "@/lib/dashboardCardOrder";
+import { normalizeWidgetVisibleOrder } from "@/lib/dashboardCardOrder";
+import {
+  AM_FINANCE_CATALOG,
+  AM_FINANCE_DEFAULT_VISIBLE,
+  AM_TRANSPORT_CATALOG,
+  AM_TRANSPORT_DEFAULT_VISIBLE,
+  QUICK_ACTION_CATALOG,
+  QUICK_ACTION_DEFAULT_VISIBLE,
+  catalogIdsNotInOrder,
+  type AmFinanceCardId,
+  type AmTransportCardId,
+  type DashboardQuickActionId,
+} from "@/lib/dashboardWidgets";
+import { syncOsWidgetData } from "@/lib/osWidgets/sync";
 import { getHasCompletedOnboarding } from "@/lib/onboardingStorage";
 import { getAsyncStorage } from "@/lib/storage";
 import { fiatKeysFromConversionRates } from "@/constants/fiatCurrencyCodes";
@@ -95,48 +113,11 @@ const POPULAR_CURRENCIES = [
 
 const QUICK_ACTION_STORAGE_KEY = "dashboardQuickActionOrderV1";
 
-const QUICK_ACTION_ORDER_DEFAULT = [
-  "converter",
-  "calculator",
-  "multi",
-  "saved",
-  "alerts",
-  "charts",
-  "tourist",
-] as const;
-
-type DashboardQuickActionId = (typeof QUICK_ACTION_ORDER_DEFAULT)[number];
-
-const DEFAULT_QUICK_ACTION_ORDER: DashboardQuickActionId[] = [
-  ...QUICK_ACTION_ORDER_DEFAULT,
-];
-
 const AM_FINANCE_CARDS_STORAGE_KEY = "dashboardAmFinanceCardsOrderV1";
-
-const AM_FINANCE_CARD_ORDER_DEFAULT = [
-  "paidLeave",
-  "maternity",
-  "amSalary",
-  "deposit",
-  "amFreelance",
-  "loanCalc",
-] as const;
-
-type AmFinanceCardId = (typeof AM_FINANCE_CARD_ORDER_DEFAULT)[number];
-
-const DEFAULT_AM_FINANCE_CARD_ORDER: AmFinanceCardId[] = [
-  ...AM_FINANCE_CARD_ORDER_DEFAULT,
-];
 
 const AM_TRANSPORT_CARDS_STORAGE_KEY = "dashboardAmTransportCardsOrderV1";
 
-const AM_TRANSPORT_CARD_ORDER_DEFAULT = ["tmCustoms", "tmDeal"] as const;
-
-type AmTransportCardId = (typeof AM_TRANSPORT_CARD_ORDER_DEFAULT)[number];
-
-const DEFAULT_AM_TRANSPORT_CARD_ORDER: AmTransportCardId[] = [
-  ...AM_TRANSPORT_CARD_ORDER_DEFAULT,
-];
+type WidgetPickerSection = "quick" | "amFinance" | "amTransport";
 
 export default function HomeScreen() {
   const { t } = useLanguage();
@@ -193,7 +174,9 @@ export default function HomeScreen() {
 
   const [quickActionOrder, setQuickActionOrder] = useState<
     DashboardQuickActionId[]
-  >(() => [...DEFAULT_QUICK_ACTION_ORDER]);
+  >(() => [...QUICK_ACTION_DEFAULT_VISIBLE]);
+  const [widgetPickerSection, setWidgetPickerSection] =
+    useState<WidgetPickerSection | null>(null);
   const [dashboardReorderMode, setDashboardReorderMode] = useState(false);
   const [quickActionDraggingId, setQuickActionDraggingId] =
     useState<DashboardQuickActionId | null>(null);
@@ -211,7 +194,7 @@ export default function HomeScreen() {
 
   const [amFinanceCardOrder, setAmFinanceCardOrder] = useState<
     AmFinanceCardId[]
-  >(() => [...DEFAULT_AM_FINANCE_CARD_ORDER]);
+  >(() => [...AM_FINANCE_DEFAULT_VISIBLE]);
   const [amFinanceDraggingId, setAmFinanceDraggingId] =
     useState<AmFinanceCardId | null>(null);
   const amFinanceGridRef = useRef<View | null>(null);
@@ -226,7 +209,7 @@ export default function HomeScreen() {
 
   const [amTransportCardOrder, setAmTransportCardOrder] = useState<
     AmTransportCardId[]
-  >(() => [...DEFAULT_AM_TRANSPORT_CARD_ORDER]);
+  >(() => [...AM_TRANSPORT_DEFAULT_VISIBLE]);
   const [amTransportDraggingId, setAmTransportDraggingId] =
     useState<AmTransportCardId | null>(null);
   const amTransportGridRef = useRef<View | null>(null);
@@ -530,6 +513,54 @@ export default function HomeScreen() {
         active: showTouristCalc,
         onPress: () => setShowTouristCalc(!showTouristCalc),
       },
+      loan: {
+        labelKey: "quick.action.loanCalculator",
+        icon: "wallet-outline",
+        active: showLoanCalculator,
+        onPress: () => setShowLoanCalculator(!showLoanCalculator),
+      },
+      amFinance: {
+        labelKey: "quick.action.armeniaFinance",
+        icon: "flag-outline",
+        active: showArmeniaFinance,
+        onPress: () => {
+          if (showArmeniaFinance) {
+            setShowArmeniaFinance(false);
+            setArmeniaFinanceScreen("menu");
+          } else {
+            openArmeniaFinance("menu");
+          }
+        },
+      },
+      amFreelance: {
+        labelKey: "amFreelance.sectionTitle",
+        icon: "briefcase-outline",
+        active: showArmeniaFreelance,
+        onPress: () => {
+          if (showArmeniaFreelance) {
+            setShowArmeniaFreelance(false);
+            setArmeniaFreelanceScreen("menu");
+          } else {
+            closeAllQuickModals();
+            setCurrentView("dashboard");
+            setArmeniaFreelanceScreen("menu");
+            setShowArmeniaFreelance(true);
+          }
+        },
+      },
+      amTransport: {
+        labelKey: "quick.action.amTransport",
+        icon: "car-sport-outline",
+        active: showArmeniaTransport,
+        onPress: () => {
+          if (showArmeniaTransport) {
+            setShowArmeniaTransport(false);
+            setArmeniaTransportScreen("menu");
+          } else {
+            openArmeniaTransport("menu");
+          }
+        },
+      },
     };
     return defs;
   }, [
@@ -540,7 +571,13 @@ export default function HomeScreen() {
     showRateAlerts,
     showCharts,
     showTouristCalc,
+    showLoanCalculator,
+    showArmeniaFinance,
+    showArmeniaFreelance,
+    showArmeniaTransport,
+    closeAllQuickModals,
     openArmeniaFinance,
+    openArmeniaTransport,
   ]);
 
   const dashboardAmFinanceCardDefs = useMemo(() => {
@@ -613,6 +650,69 @@ export default function HomeScreen() {
     };
     return defs;
   }, [openArmeniaTransport]);
+
+  const quickActionPickerItems = useMemo((): DashboardWidgetPickerItem<DashboardQuickActionId>[] => {
+    const available = catalogIdsNotInOrder(QUICK_ACTION_CATALOG, quickActionOrder);
+    return available.map((id) => ({
+      id,
+      labelKey: dashboardQuickActionDefs[id].labelKey,
+      icon: dashboardQuickActionDefs[id].icon,
+    }));
+  }, [quickActionOrder, dashboardQuickActionDefs]);
+
+  const amFinancePickerItems = useMemo((): DashboardWidgetPickerItem<AmFinanceCardId>[] => {
+    const available = catalogIdsNotInOrder(AM_FINANCE_CATALOG, amFinanceCardOrder);
+    return available.map((id) => ({
+      id,
+      labelKey: dashboardAmFinanceCardDefs[id].labelKey,
+      icon: dashboardAmFinanceCardDefs[id].icon,
+    }));
+  }, [amFinanceCardOrder, dashboardAmFinanceCardDefs]);
+
+  const amTransportPickerItems = useMemo((): DashboardWidgetPickerItem<AmTransportCardId>[] => {
+    const available = catalogIdsNotInOrder(AM_TRANSPORT_CATALOG, amTransportCardOrder);
+    return available.map((id) => ({
+      id,
+      labelKey: dashboardAmTransportCardDefs[id].labelKey,
+      icon: dashboardAmTransportCardDefs[id].icon,
+    }));
+  }, [amTransportCardOrder, dashboardAmTransportCardDefs]);
+
+  const removeQuickActionWidget = useCallback((id: DashboardQuickActionId) => {
+    runDashboardReorderLayoutAnimation();
+    setQuickActionOrder((prev) => prev.filter((x) => x !== id));
+  }, []);
+
+  const removeAmFinanceWidget = useCallback((id: AmFinanceCardId) => {
+    runDashboardReorderLayoutAnimation();
+    setAmFinanceCardOrder((prev) => prev.filter((x) => x !== id));
+  }, []);
+
+  const removeAmTransportWidget = useCallback((id: AmTransportCardId) => {
+    runDashboardReorderLayoutAnimation();
+    setAmTransportCardOrder((prev) => prev.filter((x) => x !== id));
+  }, []);
+
+  const addQuickActionWidget = useCallback((id: DashboardQuickActionId) => {
+    runDashboardReorderLayoutAnimation();
+    setQuickActionOrder((prev) =>
+      prev.includes(id) ? prev : [...prev, id]
+    );
+  }, []);
+
+  const addAmFinanceWidget = useCallback((id: AmFinanceCardId) => {
+    runDashboardReorderLayoutAnimation();
+    setAmFinanceCardOrder((prev) =>
+      prev.includes(id) ? prev : [...prev, id]
+    );
+  }, []);
+
+  const addAmTransportWidget = useCallback((id: AmTransportCardId) => {
+    runDashboardReorderLayoutAnimation();
+    setAmTransportCardOrder((prev) =>
+      prev.includes(id) ? prev : [...prev, id]
+    );
+  }, []);
 
   const dashboardTileGridStyles = useMemo(
     () => ({
@@ -829,7 +929,11 @@ export default function HomeScreen() {
             ? qaParsed.filter((id) => id !== "vacation" && id !== "disabilityBenefit")
             : qaParsed;
           setQuickActionOrder(
-            normalizeDashboardCardOrder(qaMigrated, DEFAULT_QUICK_ACTION_ORDER)
+            normalizeWidgetVisibleOrder(
+              qaMigrated,
+              QUICK_ACTION_CATALOG,
+              QUICK_ACTION_DEFAULT_VISIBLE
+            )
           );
         }
         if (finRaw) {
@@ -838,14 +942,19 @@ export default function HomeScreen() {
             ? parsed.map((id) => (id === "disabilityBenefit" ? "paidLeave" : id))
             : parsed;
           setAmFinanceCardOrder(
-            normalizeDashboardCardOrder(migrated, DEFAULT_AM_FINANCE_CARD_ORDER)
+            normalizeWidgetVisibleOrder(
+              migrated,
+              AM_FINANCE_CATALOG,
+              AM_FINANCE_DEFAULT_VISIBLE
+            )
           );
         }
         if (trRaw) {
           setAmTransportCardOrder(
-            normalizeDashboardCardOrder(
+            normalizeWidgetVisibleOrder(
               JSON.parse(trRaw) as unknown,
-              DEFAULT_AM_TRANSPORT_CARD_ORDER
+              AM_TRANSPORT_CATALOG,
+              AM_TRANSPORT_DEFAULT_VISIBLE
             )
           );
         }
@@ -907,6 +1016,7 @@ export default function HomeScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([loadExchangeRates(), refreshRates()]);
+    void syncOsWidgetData().catch(() => {});
     setRefreshing(false);
   };
 
@@ -1011,7 +1121,6 @@ export default function HomeScreen() {
               style={{
                 color: textSecondaryColor,
                 marginTop: 8,
-                lineHeight: 18,
               }}
             >
               {t("dashboard.reorderCardsHint")}
@@ -1061,6 +1170,13 @@ export default function HomeScreen() {
               onDragMove={handleQuickActionDragMove}
               onDragSessionStart={resetDashboardDragReorderOrigin}
               onDragSessionEnd={resetDashboardDragReorderOrigin}
+              onRemove={removeQuickActionWidget}
+              addTileLabel={t("dashboard.widgets.add")}
+              onAddPress={
+                dashboardReorderMode && quickActionPickerItems.length > 0
+                  ? () => setWidgetPickerSection("quick")
+                  : undefined
+              }
               t={t}
               gridStyles={dashboardTileGridStyles}
               primaryColor={primaryColor}
@@ -1104,6 +1220,13 @@ export default function HomeScreen() {
               onDragMove={handleAmFinanceDragMove}
               onDragSessionStart={resetDashboardDragReorderOrigin}
               onDragSessionEnd={resetDashboardDragReorderOrigin}
+              onRemove={removeAmFinanceWidget}
+              addTileLabel={t("dashboard.widgets.add")}
+              onAddPress={
+                dashboardReorderMode && amFinancePickerItems.length > 0
+                  ? () => setWidgetPickerSection("amFinance")
+                  : undefined
+              }
               t={t}
               gridStyles={dashboardTileGridStyles}
               primaryColor={primaryColor}
@@ -1152,6 +1275,13 @@ export default function HomeScreen() {
               onDragMove={handleAmTransportDragMove}
               onDragSessionStart={resetDashboardDragReorderOrigin}
               onDragSessionEnd={resetDashboardDragReorderOrigin}
+              onRemove={removeAmTransportWidget}
+              addTileLabel={t("dashboard.widgets.add")}
+              onAddPress={
+                dashboardReorderMode && amTransportPickerItems.length > 0
+                  ? () => setWidgetPickerSection("amTransport")
+                  : undefined
+              }
               t={t}
               gridStyles={dashboardTileGridStyles}
               primaryColor={primaryColor}
@@ -1163,6 +1293,7 @@ export default function HomeScreen() {
             />
           </View>
 
+          <ProTeaserCard />
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
@@ -1411,6 +1542,28 @@ export default function HomeScreen() {
           />
         </QuickActionModal>
 
+        <DashboardWidgetPickerModal
+          visible={widgetPickerSection === "quick"}
+          title={t("dashboard.widgets.pickQuick")}
+          items={quickActionPickerItems}
+          onClose={() => setWidgetPickerSection(null)}
+          onAdd={addQuickActionWidget}
+        />
+        <DashboardWidgetPickerModal
+          visible={widgetPickerSection === "amFinance"}
+          title={t("dashboard.widgets.pickFinance")}
+          items={amFinancePickerItems}
+          onClose={() => setWidgetPickerSection(null)}
+          onAdd={addAmFinanceWidget}
+        />
+        <DashboardWidgetPickerModal
+          visible={widgetPickerSection === "amTransport"}
+          title={t("dashboard.widgets.pickTransport")}
+          items={amTransportPickerItems}
+          onClose={() => setWidgetPickerSection(null)}
+          onAdd={addAmTransportWidget}
+        />
+
       </ThemedView>
     );
   };
@@ -1440,6 +1593,9 @@ export default function HomeScreen() {
         message="Sign up to save your data"
         feature="general"
       />
+      {currentView === "dashboard" ? (
+        <DashboardBannerSlot reorderMode={dashboardReorderMode} />
+      ) : null}
       <Footer />
     </SafeAreaView>
   );
@@ -1528,7 +1684,6 @@ const styles = StyleSheet.create({
   },
   quickTileLabel: {
     fontSize: 13,
-    lineHeight: 18,
     fontWeight: "600",
     width: "100%",
     flexShrink: 1,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -9,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppTextInput } from "./AppTextInput";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
@@ -724,7 +724,7 @@ export default function MultiCurrencyConverter({
             <ThemedText style={[{ color: textColor }, styles.label]}>
               {t("multi.amount")}
             </ThemedText>
-            <TextInput
+            <AppTextInput
               style={[
                 {
                   backgroundColor: surfaceColor,
@@ -877,6 +877,7 @@ export default function MultiCurrencyConverter({
 
                           <View style={styles.conversionResult}>
                             <ThemedText
+                              copyable
                               style={[
                                 { color: primaryColor },
                                 styles.conversionAmount,

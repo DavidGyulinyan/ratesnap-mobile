@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  TextInput,
   TouchableOpacity,
   UIManager,
   View,
@@ -13,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { AmFinanceDraftContext, useAmFinanceDraft } from "@/components/AmFinanceDraftContext";
+import { AppTextInput } from "@/components/AppTextInput";
 import { ThemedText } from "@/components/themed-text";
 import { hexToRgba } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -147,7 +147,7 @@ function Field({
           {hint}
         </ThemedText>
       ) : null}
-      <TextInput
+      <AppTextInput
         value={displayValue}
         onChangeText={handleChange}
         keyboardType={keyboardType ?? "decimal-pad"}

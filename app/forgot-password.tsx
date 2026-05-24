@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -16,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { hexToRgba, FormField } from '@/constants/theme';
+import { AppTextInput } from '@/components/AppTextInput';
 import Logo from '@/components/Logo';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -323,7 +323,7 @@ export default function ForgotPasswordScreen() {
               ]}
             >
               <Text style={styles.label}>Email</Text>
-              <TextInput
+              <AppTextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}

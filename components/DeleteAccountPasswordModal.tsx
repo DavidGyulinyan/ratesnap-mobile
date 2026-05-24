@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   Pressable,
-  TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { AppTextInput } from "@/components/AppTextInput";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -199,7 +199,7 @@ export default function DeleteAccountPasswordModal({
               </ThemedText>
             ) : null}
 
-            <TextInput
+            <AppTextInput
               style={styles.input}
               value={password}
               onChangeText={setPassword}
