@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   Alert,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppTextInput } from "./AppTextInput";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import CurrencyPicker from "./CurrencyPicker";
@@ -23,7 +23,9 @@ import notificationService from "@/lib/expoGoSafeNotificationService";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePro } from "@/contexts/ProContext";
 import { useUserData } from "@/hooks/useUserData";
+import { useRouter } from "expo-router";
 import { usePreferredLocalCurrency } from "./LocationDetection";
 import { hexToRgba } from "@/constants/theme";
 import {
@@ -67,6 +69,8 @@ export default function CurrencyConverter({
   onShareableMessageChange,
 }: CurrencyConverterProps) {
   const { t, tWithParams } = useLanguage();
+  const router = useRouter();
+  const { canSaveRate } = usePro();
   const [amount, setAmount] = useState<string>("");
   const [convertedAmount, setConvertedAmount] = useState<string>("");
   const [currenciesData, setCurrenciesData] = useState<Data | null>(null);
@@ -338,6 +342,14 @@ export default function CurrencyConverter({
 
     const rate = crossRateForPair(fromCurrency, toCurrency, currenciesData);
     if (rate == null) return;
+
+    if (!canSaveRate(savedRates.length)) {
+      router.push({
+        pathname: "/capital-pro",
+        params: { source: "save_rate_limit" },
+      });
+      return;
+    }
 
     const success = await saveRate(fromCurrency, toCurrency, rate);
     if (success) {
@@ -778,7 +790,7 @@ export default function CurrencyConverter({
               {t("converter.amountLabel")}
             </ThemedText>
           </View>
-          <TextInput
+          <AppTextInput
             style={[
               {
                 backgroundColor: surfaceColor,
@@ -903,6 +915,7 @@ export default function CurrencyConverter({
                   ]}
                 >
                   <ThemedText
+                    copyable
                     type="caption"
                     style={[
                       styles.resultPairCaption,
@@ -913,6 +926,7 @@ export default function CurrencyConverter({
                     {toCurrency}
                   </ThemedText>
                   <ThemedText
+                    copyable
                     style={[{ color: primaryColor }, styles.outputAmount]}
                   >
                     {formatGroupedNumber(parseFloat(convertedAmount), 6)} {toCurrency}
@@ -934,6 +948,7 @@ export default function CurrencyConverter({
                       color={primaryColor}
                     />
                     <ThemedText
+                      copyable
                       style={[{ color: textSecondaryColor }, styles.ratePillText]}
                     >
                       {tWithParams("converter.exchangeRateResult", {

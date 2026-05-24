@@ -18,12 +18,8 @@ export default function TabLayout() {
             contentStyle: { backgroundColor: "transparent" },
           }}
         >
-          <Stack.Screen
-            name="index"
-            options={{
-              title: "Capital",
-            }}
-          />
+          <Stack.Screen name="index" options={{ title: "Capital" }} />
+          <Stack.Screen name="settings" options={{ title: "Settings" }} />
         </Stack>
       </View>
     </View>

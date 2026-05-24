@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UserDataService } from '@/lib/userDataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePro } from '@/contexts/ProContext';
 import { getAsyncStorage } from '@/lib/storage';
 
 export interface UseSavedRatesReturn {
@@ -54,6 +55,7 @@ export interface UsePickedRatesReturn {
 // Hook for managing saved rates
 export function useSavedRates(): UseSavedRatesReturn {
   const { user } = useAuth();
+  const { canSaveRate, entitlements } = usePro();
   const [savedRates, setSavedRates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +131,9 @@ export function useSavedRates(): UseSavedRatesReturn {
 
   const saveRate = useCallback(async (fromCurrency: string, toCurrency: string, rate: number): Promise<boolean> => {
     try {
+      if (!canSaveRate(savedRates.length)) {
+        return false;
+      }
       if (user) {
         // Authenticated user - save to database
         const newRate = await UserDataService.saveRate(fromCurrency, toCurrency, rate);
@@ -151,7 +156,8 @@ export function useSavedRates(): UseSavedRatesReturn {
           timestamp: Date.now()
         };
 
-        const updatedRates = [newLocalRate, ...ratesArray].slice(0, 10); // Keep only 10 most recent
+        const max = entitlements.savedRatesMax;
+        const updatedRates = [newLocalRate, ...ratesArray].slice(0, max);
         await storage.setItem('savedRates', JSON.stringify(updatedRates));
         try {
           await storage.setItem(SAVED_RATES_CACHE_KEY, JSON.stringify(updatedRates ?? []));
@@ -170,14 +176,17 @@ export function useSavedRates(): UseSavedRatesReturn {
           updated_at: new Date(newLocalRate.timestamp).toISOString()
         };
 
-        setSavedRates(prev => [formattedRate, ...prev.slice(0, 9)]); // Keep only 10
+        setSavedRates((prev) => [
+          formattedRate,
+          ...prev.slice(0, Math.max(0, entitlements.savedRatesMax - 1)),
+        ]);
         return true;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save rate');
       return false;
     }
-  }, [user]);
+  }, [user, savedRates.length, canSaveRate, entitlements.savedRatesMax]);
 
   const deleteRate = useCallback(async (id: string): Promise<boolean> => {
     try {
