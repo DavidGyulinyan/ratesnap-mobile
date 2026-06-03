@@ -1,11 +1,13 @@
 import "@/lib/webCryptoPolyfill";
 import "@/lib/accessibilityFontScaling";
 import * as React from "react";
+import { useEffect } from "react";
 import * as WebBrowser from "expo-web-browser";
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View } from 'react-native';
+import { InteractionManager, View } from 'react-native';
+import { registerAndroidWidgetsOnce } from "@/lib/osWidgets/registerAndroidWidgets";
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -59,6 +61,13 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      registerAndroidWidgetsOnce();
+    });
+    return () => task.cancel();
+  }, []);
+
   return (
     <LanguageProvider>
       <ThemeProvider>
