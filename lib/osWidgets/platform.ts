@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { NativeModules, Platform } from "react-native";
+import { isOsWidgetsEnabled } from "@/lib/osWidgets/config";
 
 /** OS home-screen widgets require a native dev/production build. */
 export function isOsWidgetNativeSupported(): boolean {
@@ -16,6 +17,7 @@ export function isExpoGo(): boolean {
  * OTA updates (eas update) cannot add this — only a new eas build / expo run can.
  */
 export function hasOsWidgetNativeModule(): boolean {
+  if (!isOsWidgetsEnabled()) return false;
   if (Platform.OS === "android") {
     return NativeModules.AndroidWidget != null;
   }
@@ -35,7 +37,11 @@ export function isHomeScreenWidgetsBuild(): boolean {
 }
 
 export function osWidgetsReadyOnDevice(): boolean {
-  return isHomeScreenWidgetsBuild() && hasOsWidgetNativeModule();
+  return (
+    isOsWidgetsEnabled() &&
+    isHomeScreenWidgetsBuild() &&
+    hasOsWidgetNativeModule()
+  );
 }
 
 export function osWidgetBuildRequiredMessageKey():

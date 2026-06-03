@@ -20,7 +20,8 @@
       },
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://v6.exchangerate-api.com/v6/"
+        "EXPO_PUBLIC_API_URL": "https://v6.exchangerate-api.com/v6/",
+        "EXPO_PUBLIC_ENABLE_OS_WIDGETS": "0"
       }
     },
     "production": {
@@ -31,7 +32,8 @@
       },
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://v6.exchangerate-api.com/v6/"
+        "EXPO_PUBLIC_API_URL": "https://v6.exchangerate-api.com/v6/",
+        "EXPO_PUBLIC_ENABLE_OS_WIDGETS": "0"
       }
     }
   },
