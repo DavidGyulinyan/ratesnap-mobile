@@ -80,7 +80,6 @@ Route: `/support-capital`. Explains why support exists, what stays free, links t
 - Already cache rates in AsyncStorage (`cachedExchangeRates`).
 - Pro: extend TTL via `offlineCacheMaxAgeHours` in entitlements (enforce in `liveExchangeRates.ts` when reading cache).
 - Optional: background refresh on app foreground (expo-background-fetch).
-- Widgets (Pro): Settings → Home screen widgets; `expo-widgets` (iOS) + `react-native-android-widget` (Android). See [WIDGETS.md](./WIDGETS.md). Requires dev/store build (`npx expo prebuild`).
 
 ## Analytics events (retention & conversion)
 

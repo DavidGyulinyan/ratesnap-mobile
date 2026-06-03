@@ -10,7 +10,6 @@ export type ProFeatureId =
   | "advanced_charts"
   | "export_pdf_csv"
   | "extended_offline_cache"
-  | "home_widgets"
   | "premium_themes"
   | "early_access";
 
@@ -60,13 +59,6 @@ export const PRO_FEATURES: readonly ProFeatureMeta[] = [
     descriptionKey: "pro.feature.offlineCache.desc",
     highlight: true,
     shipped: true,
-  },
-  {
-    id: "home_widgets",
-    labelKey: "pro.feature.widgets",
-    descriptionKey: "pro.feature.widgets.desc",
-    highlight: false,
-    shipped: false,
   },
   {
     id: "premium_themes",
