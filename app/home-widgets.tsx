@@ -5,6 +5,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePro } from "@/contexts/ProContext";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useUserData } from "@/hooks/useUserData";
+import { isOsWidgetsEnabled } from "@/lib/osWidgets/config";
+import { registerAndroidWidgetsOnce } from "@/lib/osWidgets/registerAndroidWidgets";
 import {
   isOsWidgetNativeSupported,
   osWidgetBuildRequiredMessageKey,
@@ -67,6 +69,9 @@ export default function HomeWidgetsScreen() {
   }, [fromCurrency, toCurrency, savedRates.savedRates]);
 
   useEffect(() => {
+    if (isOsWidgetsEnabled()) {
+      registerAndroidWidgetsOnce();
+    }
     void loadOsWidgetPresets().then(setPresets);
     void refreshPreview();
   }, [refreshPreview]);

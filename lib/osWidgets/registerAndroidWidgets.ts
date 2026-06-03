@@ -1,4 +1,5 @@
 import { NativeModules, Platform } from "react-native";
+import { isOsWidgetsEnabled } from "@/lib/osWidgets/config";
 import { hasOsWidgetNativeModule } from "@/lib/osWidgets/platform";
 
 let registered = false;
@@ -8,7 +9,12 @@ let registered = false;
  * Calling this from index.js can crash some installs at cold start.
  */
 export function registerAndroidWidgetsOnce(): void {
-  if (registered || Platform.OS !== "android" || !hasOsWidgetNativeModule()) {
+  if (
+    !isOsWidgetsEnabled() ||
+    registered ||
+    Platform.OS !== "android" ||
+    !hasOsWidgetNativeModule()
+  ) {
     return;
   }
   registered = true;

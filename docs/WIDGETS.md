@@ -1,5 +1,16 @@
 # Home screen widgets (iOS + Android)
 
+## Stability flag (important)
+
+OS widgets are **off by default** so the app can start reliably:
+
+```bash
+# Only for widget native builds / local testing:
+EXPO_PUBLIC_ENABLE_OS_WIDGETS=1
+```
+
+`eas build` preview/production profiles set this to `0`. Widget plugins in `app.config.js` are included only when the flag is `1`. **OTA cannot remove widget native code** — if the app still crashes instantly after an update, install a **new APK** built with widgets disabled.
+
 Capital uses the official **[expo-widgets](https://docs.expo.dev/versions/latest/sdk/widgets/)** library on iOS and **[react-native-android-widget](https://saleksovski.github.io/react-native-android-widget/)** on Android. Both require a **development build** (not Expo Go).
 
 > **SDK note:** `expo-widgets` ships with Expo SDK **56+**. This repo currently runs Expo **54** with `expo-widgets` installed; for production iOS widgets, upgrade to SDK 56 (`npx expo install expo@^56`). Android widgets work on SDK 54 today.

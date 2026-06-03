@@ -5,6 +5,7 @@ import {
   IOS_WIDGET_NAME,
 } from "@/lib/osWidgets/constants";
 import { snapshotToWidgetProps } from "@/lib/osWidgets/bridge";
+import { isOsWidgetsEnabled } from "@/lib/osWidgets/config";
 import { isExpoGo } from "@/lib/osWidgets/platform";
 import { buildOsWidgetSnapshot } from "@/lib/osWidgets/snapshot";
 import { saveOsWidgetSnapshot } from "@/lib/osWidgets/storage";
@@ -58,6 +59,8 @@ async function refreshAndroidWidgets(): Promise<void> {
  * Shared bridge: persist snapshot for Android headless reads, push props to iOS via expo-widgets.
  */
 export async function syncOsWidgetData(input: SyncInput = {}): Promise<void> {
+  if (!isOsWidgetsEnabled()) return;
+
   let cached = input.cached ?? null;
   if (!cached) {
     try {
