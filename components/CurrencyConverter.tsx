@@ -351,7 +351,22 @@ export default function CurrencyConverter({
       return;
     }
 
-    const success = await saveRate(fromCurrency, toCurrency, rate);
+    const fromAmount = parseCanonicalDecimalAmount(amount);
+    if (fromAmount == null || fromAmount <= 0) {
+      Alert.alert(
+        t("saved.amountRequiredTitle"),
+        t("saved.amountRequiredMessage")
+      );
+      return;
+    }
+    let toAmount = parseCanonicalDecimalAmount(convertedAmount);
+    if (toAmount == null || !Number.isFinite(toAmount)) {
+      toAmount = fromAmount * rate;
+    }
+    const success = await saveRate(fromCurrency, toCurrency, rate, {
+      fromAmount,
+      toAmount,
+    });
     if (success) {
       // Track picked rate when rate is saved
       if (user) {

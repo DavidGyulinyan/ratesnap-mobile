@@ -30,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CurrencyFlag from '@/components/CurrencyFlag';
 import { formatDateTimeDDMMYY } from "@/lib/dateFormat";
 import { formatGroupedNumber } from "@/lib/numberFormat";
+import { formatSavedConversionAmount } from "@/lib/savedRateFormat";
 import {
   getPrivacyPolicyText,
   type PrivacyPolicyLanguage,
@@ -1132,13 +1133,24 @@ Capital предоставляет инструменты конвертации
           {savedRates.savedRates && savedRates.savedRates.length > 0 ? (
             <>
               <ScrollView style={{ maxHeight: 300 }}>
-                {savedRates.savedRates.map((rate) => (
+                {savedRates.savedRates.map((rate) => {
+                  const conversionLine = formatSavedConversionAmount(rate);
+                  return (
                   <View key={rate.id} style={[styles.settingItem, { marginVertical: 4 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                       <CurrencyFlag currency={rate.from_currency} size={20} />
                       <ThemedText style={[{ color: textSecondaryColor, marginHorizontal: 8 }]}>→</ThemedText>
                       <CurrencyFlag currency={rate.to_currency} size={20} />
                       <View style={{ marginLeft: 8, flex: 1 }}>
+                        {conversionLine ? (
+                          <ThemedText style={{ color: textColor, fontSize: 15, fontWeight: '700' }}>
+                            {conversionLine}
+                          </ThemedText>
+                        ) : (
+                          <ThemedText style={{ color: textSecondaryColor, fontSize: 13 }}>
+                            {t('saved.noConversionAmount')}
+                          </ThemedText>
+                        )}
                         <ThemedText style={[styles.settingValue, { fontWeight: '600' }]}>
                           {rate.from_currency} → {rate.to_currency}
                         </ThemedText>
@@ -1166,7 +1178,8 @@ Capital предоставляет инструменты конвертации
                       <ThemedText style={{ fontSize: 14, fontWeight: 'bold', color: errorColor }}>×</ThemedText>
                     </TouchableOpacity>
                   </View>
-                ))}
+                );
+                })}
               </ScrollView>
               {savedRates.savedRates.length > 1 && (
                 <TouchableOpacity

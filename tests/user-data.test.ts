@@ -63,7 +63,10 @@ describe('UserDataService', () => {
       const { getSupabaseClient } = require('../lib/supabase-safe');
       getSupabaseClient.mockReturnValue(mockSupabase);
 
-      const result = await UserDataService.saveRate('USD', 'EUR', 0.85);
+      const result = await UserDataService.saveRate('USD', 'EUR', 0.85, {
+        fromAmount: 100,
+        toAmount: 85,
+      });
       
       expect(result).toEqual(mockSavedRate);
       expect(mockSupabase.from).toHaveBeenCalledWith('saved_rates');
@@ -72,6 +75,8 @@ describe('UserDataService', () => {
         from_currency: 'USD',
         to_currency: 'EUR',
         rate: 0.85,
+        from_amount: 100,
+        to_amount: 85,
       });
     });
 

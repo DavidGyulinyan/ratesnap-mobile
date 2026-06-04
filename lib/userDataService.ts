@@ -1,5 +1,9 @@
 import { getSupabaseClient } from './supabase-safe';
 import { User } from '@supabase/supabase-js';
+import {
+  isSavedRatesAmountColumnMissing,
+  setSavedRateAmountOverlay,
+} from '@/lib/savedRateAmountOverlay';
 
 // Types for user data
 export interface SavedRate {
@@ -8,9 +12,16 @@ export interface SavedRate {
   from_currency: string;
   to_currency: string;
   rate: number;
+  from_amount?: number | null;
+  to_amount?: number | null;
   created_at: string;
   updated_at: string;
 }
+
+export type SaveRateOptions = {
+  fromAmount?: number | null;
+  toAmount?: number | null;
+};
 
 export interface RateAlert {
   id: string;
@@ -74,7 +85,12 @@ export class UserDataService {
   }
 
   // Saved Rates CRUD operations
-  static async saveRate(fromCurrency: string, toCurrency: string, rate: number): Promise<SavedRate | null> {
+  static async saveRate(
+    fromCurrency: string,
+    toCurrency: string,
+    rate: number,
+    options?: SaveRateOptions
+  ): Promise<SavedRate | null> {
     try {
       const supabase = getSupabaseClient();
       if (!supabase) throw new Error('Supabase client not available');
@@ -82,16 +98,56 @@ export class UserDataService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const row: Record<string, unknown> = {
+        user_id: user.id,
+        from_currency: fromCurrency,
+        to_currency: toCurrency,
+        rate: rate,
+      };
+      if (options?.fromAmount != null && Number.isFinite(options.fromAmount)) {
+        row.from_amount = options.fromAmount;
+      }
+      if (options?.toAmount != null && Number.isFinite(options.toAmount)) {
+        row.to_amount = options.toAmount;
+      }
+
+      let { data, error } = await supabase
         .from('saved_rates')
-        .insert({
+        .insert(row)
+        .select()
+        .single();
+
+      if (
+        error &&
+        isSavedRatesAmountColumnMissing(error) &&
+        (row.from_amount != null || row.to_amount != null)
+      ) {
+        const baseRow = {
           user_id: user.id,
           from_currency: fromCurrency,
           to_currency: toCurrency,
-          rate: rate
-        })
-        .select()
-        .single();
+          rate,
+        };
+        const retry = await supabase
+          .from('saved_rates')
+          .insert(baseRow)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+        if (!error && data) {
+          await setSavedRateAmountOverlay(
+            data.id,
+            options?.fromAmount,
+            options?.toAmount
+          );
+          return {
+            ...data,
+            from_amount: options?.fromAmount ?? null,
+            to_amount: options?.toAmount ?? null,
+          };
+        }
+      }
 
       if (error) {
         if (!handleTableNotFound('saved_rates', error)) {
