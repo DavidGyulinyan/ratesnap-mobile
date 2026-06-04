@@ -16,7 +16,10 @@ import DeleteAccountPasswordModal from '@/components/DeleteAccountPasswordModal'
 import AccountUpdateModal, {
   type AccountUpdateMode,
 } from '@/components/AccountUpdateModal';
-import { getAccountDeletionAuthKind } from '@/lib/accountDeletionAuth';
+import {
+  getAccountDeletionAuthKind,
+  userHasPasswordAuth,
+} from '@/lib/accountDeletionAuth';
 import type { AuthError } from '@supabase/supabase-js';
 import {
   useUserData,
@@ -59,9 +62,7 @@ export default function SettingsScreen() {
   const [showDeletePasswordModal, setShowDeletePasswordModal] = useState(false);
   const [accountUpdateMode, setAccountUpdateMode] = useState<AccountUpdateMode | null>(null);
 
-  const hasPasswordAuth = user
-    ? getAccountDeletionAuthKind(user) === 'password'
-    : false;
+  const hasPasswordAuth = userHasPasswordAuth(user);
 
   const [notificationSettings, setNotificationSettings] = useState({
     enabled: true,
@@ -148,10 +149,12 @@ export default function SettingsScreen() {
     if (code === 'USERNAME_INVALID' || code === 'USERNAME_LENGTH') {
       return t('settings.accountUpdateUsernameInvalid');
     }
-    if (code === 'PASSWORD_AUTH_REQUIRED' || code === 'PASSWORD_POLICY_FAILED') {
-      return code === 'PASSWORD_POLICY_FAILED'
-        ? t('signup.passwordRequirements')
-        : t('settings.passwordOAuthUnavailable');
+    if (code === 'SAME_PASSWORD') return t('settings.passwordSameAsCurrent');
+    if (code === 'PASSWORD_AUTH_REQUIRED') {
+      return t('settings.passwordOAuthUnavailable');
+    }
+    if (code === 'PASSWORD_POLICY_FAILED') {
+      return t('signup.passwordRequirements');
     }
     if (code === 'PROFILE_SYNC_FAILED' || error.name === 'ProfileSyncError') {
       return t('settings.accountProfileSyncFailed');

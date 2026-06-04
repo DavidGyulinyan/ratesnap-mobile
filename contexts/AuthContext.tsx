@@ -614,18 +614,57 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       };
     }
 
+    const current = currentPassword.trim();
+    if (current === newPassword) {
+      return {
+        error: {
+          message: "SAME_PASSWORD",
+          name: "ValidationError",
+        } as AuthError,
+      };
+    }
+
     try {
       const { error: reauthErr } = await reauthenticateWithPassword(
         supabase,
         currentUser.email,
-        currentPassword.trim()
+        current
       );
       if (reauthErr) return { error: reauthErr };
 
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
-      if (error) return { error };
+      if (error) {
+        const m = (error.message ?? "").toLowerCase();
+        if (
+          m.includes("same") ||
+          m.includes("different from the old") ||
+          m.includes("should be different")
+        ) {
+          return {
+            error: {
+              message: "SAME_PASSWORD",
+              name: "ValidationError",
+            } as AuthError,
+          };
+        }
+        if (
+          m.includes("password") &&
+          (m.includes("weak") ||
+            m.includes("strength") ||
+            m.includes("at least") ||
+            m.includes("characters"))
+        ) {
+          return {
+            error: {
+              message: "PASSWORD_POLICY_FAILED",
+              name: "PasswordPolicyError",
+            } as AuthError,
+          };
+        }
+        return { error };
+      }
       return {};
     } catch (error) {
       return { error: error as AuthError };

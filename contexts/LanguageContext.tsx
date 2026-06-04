@@ -249,6 +249,8 @@ const translations = {
       'Choose a display name (2–32 characters: letters, numbers, underscore, hyphen).',
     'settings.currentPasswordEmpty': 'Please enter your current password.',
     'settings.passwordMismatch': 'New passwords do not match.',
+    'settings.passwordSameAsCurrent':
+      'Choose a new password that is different from your current password.',
     'settings.usernameEmpty': 'Please enter a username.',
     'settings.passwordChangedSuccess': 'Your password has been updated.',
     'settings.emailChangePending':
@@ -500,6 +502,8 @@ const translations = {
     'auth.signUp': 'Sign Up',
     'auth.email': 'Email',
     'auth.password': 'Password',
+    'auth.showPassword': 'Show password',
+    'auth.hidePassword': 'Hide password',
     'auth.confirmPassword': 'Confirm Password',
     'auth.username': 'Username',
     'auth.createAccount': 'Create Account',
@@ -713,6 +717,8 @@ const translations = {
       'Ընտրեք ցուցադրվող անուն (2–32 նիշ՝ տառեր, թվեր, ներքևի գիծ, գծիկ)։',
     'settings.currentPasswordEmpty': 'Մուտքագրեք ընթացիկ գաղտնաբառը։',
     'settings.passwordMismatch': 'Նոր գաղտնաբառերը չեն համընկնում։',
+    'settings.passwordSameAsCurrent':
+      'Ընտրեք նոր գաղտնաբառ, որը տարբեր է ընթացիկ գաղտնաբառից։',
     'settings.usernameEmpty': 'Մուտքագրեք օգտանուն։',
     'settings.passwordChangedSuccess': 'Գաղտնաբառը թարմացվեց։',
     'settings.emailChangePending':
@@ -848,6 +854,8 @@ const translations = {
     'auth.signUp': 'Գրանցվել',
     'auth.email': 'Էլ-Հասցե',
     'auth.password': 'Գաղտնաբառ',
+    'auth.showPassword': 'Ցուցադրել գաղտնաբառը',
+    'auth.hidePassword': 'Թաքցնել գաղտնաբառը',
     'auth.confirmPassword': 'Հաստատել գաղտնաբառը',
     'auth.username': 'Օգտանուն',
     'auth.createAccount': 'Ստեղծել հաշիվ',
@@ -1285,6 +1293,8 @@ const translations = {
       'Отображаемое имя: 2–32 символа (буквы, цифры, подчёркивание, дефис).',
     'settings.currentPasswordEmpty': 'Введите текущий пароль.',
     'settings.passwordMismatch': 'Новые пароли не совпадают.',
+    'settings.passwordSameAsCurrent':
+      'Новый пароль должен отличаться от текущего.',
     'settings.usernameEmpty': 'Введите имя пользователя.',
     'settings.passwordChangedSuccess': 'Пароль обновлён.',
     'settings.emailChangePending':
@@ -1596,6 +1606,8 @@ const translations = {
     'auth.signUp': 'Зарегистрироваться',
     'auth.email': 'Email',
     'auth.password': 'Пароль',
+    'auth.showPassword': 'Показать пароль',
+    'auth.hidePassword': 'Скрыть пароль',
     'auth.confirmPassword': 'Подтвердить пароль',
     'auth.username': 'Имя пользователя',
     'auth.createAccount': 'Создать аккаунт',
