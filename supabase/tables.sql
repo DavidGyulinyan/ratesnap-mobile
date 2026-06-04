@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS public.saved_rates (
     from_currency VARCHAR(10) NOT NULL,
     to_currency VARCHAR(10) NOT NULL,
     rate DECIMAL(10, 6) NOT NULL,
+    from_amount NUMERIC(18, 8),
+    to_amount NUMERIC(18, 8),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     UNIQUE(user_id, from_currency, to_currency)

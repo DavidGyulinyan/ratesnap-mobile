@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,70 @@ import { getAccountDeletionAuthKind } from "@/lib/accountDeletionAuth";
 import type { User } from "@supabase/supabase-js";
 
 export type AccountUpdateMode = "password" | "email" | "username";
+
+type ModalPasswordFieldProps = {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder: string;
+  visible: boolean;
+  onToggleVisible: () => void;
+  placeholderTextColor: string;
+  iconColor: string;
+  showPasswordLabel: string;
+  hidePasswordLabel: string;
+  wrapStyle: object;
+  inputStyle: object;
+  eyeButtonStyle: object;
+  editable: boolean;
+  onSubmitEditing?: () => void;
+};
+
+function ModalPasswordField({
+  value,
+  onChangeText,
+  placeholder,
+  visible,
+  onToggleVisible,
+  placeholderTextColor,
+  iconColor,
+  showPasswordLabel,
+  hidePasswordLabel,
+  wrapStyle,
+  inputStyle,
+  eyeButtonStyle,
+  editable,
+  onSubmitEditing,
+}: ModalPasswordFieldProps) {
+  return (
+    <View style={wrapStyle}>
+      <AppTextInput
+        style={inputStyle}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={placeholderTextColor}
+        secureTextEntry={!visible}
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={editable}
+        onSubmitEditing={onSubmitEditing}
+      />
+      <TouchableOpacity
+        style={eyeButtonStyle}
+        onPress={onToggleVisible}
+        disabled={!editable}
+        accessibilityRole="button"
+        accessibilityLabel={visible ? hidePasswordLabel : showPasswordLabel}
+      >
+        <Ionicons
+          name={visible ? "eye-off" : "eye"}
+          size={20}
+          color={iconColor}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 type AccountUpdateModalProps = {
   visible: boolean;
@@ -63,6 +128,10 @@ export default function AccountUpdateModal({
   const [newEmail, setNewEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [emailPasswordVisible, setEmailPasswordVisible] = useState(false);
 
   const surfaceColor = useThemeColor({}, "surface");
   const surfaceSecondaryColor = useThemeColor({}, "surfaceSecondary");
@@ -86,6 +155,10 @@ export default function AccountUpdateModal({
       setNewEmail("");
       setEmailPassword("");
       setUsername("");
+      setCurrentPasswordVisible(false);
+      setNewPasswordVisible(false);
+      setConfirmPasswordVisible(false);
+      setEmailPasswordVisible(false);
     } else if (mode === "username" && user) {
       const current =
         (user.user_metadata?.username as string | undefined)?.trim() ||
@@ -112,21 +185,32 @@ export default function AccountUpdateModal({
   const styles = useMemo(
     () =>
       StyleSheet.create({
+        keyboardRoot: {
+          flex: 1,
+        },
         overlay: {
           flex: 1,
           backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "center",
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+          justifyContent: "flex-start",
+          paddingTop: insets.top + Layout.spaceSm,
+          paddingBottom: insets.bottom + Layout.spaceSm,
           paddingHorizontal: Layout.spaceMd,
         },
         card: {
+          alignSelf: "stretch",
           backgroundColor: surfaceColor,
           borderRadius: Layout.radiusLg,
           borderWidth: 1,
           borderColor: borderColor,
+          maxHeight: "92%",
+          flexShrink: 1,
+          overflow: "hidden",
+        },
+        cardScroll: {
+          flexGrow: 0,
+        },
+        cardScrollContent: {
           padding: Layout.spaceMd,
-          maxHeight: "90%",
         },
         header: {
           flexDirection: "row",
@@ -170,6 +254,29 @@ export default function AccountUpdateModal({
           color: textColor,
           backgroundColor: surfaceSecondaryColor,
           marginBottom: 12,
+        },
+        passwordInputWrap: {
+          position: "relative",
+          marginBottom: 12,
+        },
+        passwordInput: {
+          borderWidth: 1,
+          borderColor: borderColor,
+          borderRadius: FormField.radiusInput,
+          paddingVertical: 12,
+          paddingHorizontal: 14,
+          paddingRight: 48,
+          fontSize: 16,
+          color: textColor,
+          backgroundColor: surfaceSecondaryColor,
+        },
+        eyeButton: {
+          position: "absolute",
+          right: 10,
+          top: 0,
+          bottom: 0,
+          justifyContent: "center",
+          paddingHorizontal: 6,
         },
         errorText: {
           fontSize: 13,
@@ -241,10 +348,18 @@ export default function AccountUpdateModal({
         setLocalError(t("settings.passwordMismatch"));
         return;
       }
+      if (cur === next) {
+        setLocalError(t("settings.passwordSameAsCurrent"));
+        return;
+      }
       setBusy(true);
       const { errorMessage } = await onChangePassword(cur, next);
       setBusy(false);
-      if (errorMessage) setLocalError(errorMessage);
+      if (errorMessage) {
+        setLocalError(errorMessage);
+        return;
+      }
+      onClose();
       return;
     }
 
@@ -279,6 +394,9 @@ export default function AccountUpdateModal({
     if (errorMessage) setLocalError(errorMessage);
   };
 
+  const keyboardVerticalOffset =
+    Platform.OS === "ios" ? insets.top + Layout.spaceSm : 0;
+
   return (
     <Modal
       visible={visible}
@@ -287,11 +405,24 @@ export default function AccountUpdateModal({
       onRequestClose={busy ? undefined : onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardRoot}
+        keyboardVerticalOffset={keyboardVerticalOffset}
       >
         <Pressable style={styles.overlay} onPress={busy ? undefined : onClose}>
-          <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
+          <View
+            style={styles.card}
+            onStartShouldSetResponder={() => true}
+          >
+            <ScrollView
+              style={styles.cardScroll}
+              contentContainerStyle={styles.cardScrollContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              nestedScrollEnabled
+            >
             <View style={styles.header}>
               <ThemedText style={styles.title}>{t(titleKey)}</ThemedText>
               <TouchableOpacity
@@ -312,43 +443,59 @@ export default function AccountUpdateModal({
                 <ThemedText style={styles.label}>
                   {t("settings.currentPassword")}
                 </ThemedText>
-                <AppTextInput
-                  style={styles.input}
+                <ModalPasswordField
                   value={currentPassword}
                   onChangeText={setCurrentPassword}
                   placeholder={t("settings.deleteAccountPasswordPlaceholder")}
+                  visible={currentPasswordVisible}
+                  onToggleVisible={() =>
+                    setCurrentPasswordVisible((v) => !v)
+                  }
                   placeholderTextColor={textSecondaryColor}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  iconColor={textSecondaryColor}
+                  showPasswordLabel={t("auth.showPassword")}
+                  hidePasswordLabel={t("auth.hidePassword")}
+                  wrapStyle={styles.passwordInputWrap}
+                  inputStyle={styles.passwordInput}
+                  eyeButtonStyle={styles.eyeButton}
                   editable={!busy}
                 />
                 <ThemedText style={styles.label}>
                   {t("settings.newPassword")}
                 </ThemedText>
-                <AppTextInput
-                  style={styles.input}
+                <ModalPasswordField
                   value={newPassword}
                   onChangeText={setNewPassword}
                   placeholder={t("settings.newPassword")}
+                  visible={newPasswordVisible}
+                  onToggleVisible={() => setNewPasswordVisible((v) => !v)}
                   placeholderTextColor={textSecondaryColor}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  iconColor={textSecondaryColor}
+                  showPasswordLabel={t("auth.showPassword")}
+                  hidePasswordLabel={t("auth.hidePassword")}
+                  wrapStyle={styles.passwordInputWrap}
+                  inputStyle={styles.passwordInput}
+                  eyeButtonStyle={styles.eyeButton}
                   editable={!busy}
                 />
                 <ThemedText style={styles.label}>
                   {t("settings.confirmNewPassword")}
                 </ThemedText>
-                <AppTextInput
-                  style={styles.input}
+                <ModalPasswordField
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder={t("settings.confirmNewPassword")}
+                  visible={confirmPasswordVisible}
+                  onToggleVisible={() =>
+                    setConfirmPasswordVisible((v) => !v)
+                  }
                   placeholderTextColor={textSecondaryColor}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  iconColor={textSecondaryColor}
+                  showPasswordLabel={t("auth.showPassword")}
+                  hidePasswordLabel={t("auth.hidePassword")}
+                  wrapStyle={styles.passwordInputWrap}
+                  inputStyle={styles.passwordInput}
+                  eyeButtonStyle={styles.eyeButton}
                   editable={!busy}
                   onSubmitEditing={handleSave}
                 />
@@ -374,15 +521,23 @@ export default function AccountUpdateModal({
                     <ThemedText style={styles.label}>
                       {t("settings.currentPassword")}
                     </ThemedText>
-                    <AppTextInput
-                      style={styles.input}
+                    <ModalPasswordField
                       value={emailPassword}
                       onChangeText={setEmailPassword}
-                      placeholder={t("settings.deleteAccountPasswordPlaceholder")}
+                      placeholder={t(
+                        "settings.deleteAccountPasswordPlaceholder"
+                      )}
+                      visible={emailPasswordVisible}
+                      onToggleVisible={() =>
+                        setEmailPasswordVisible((v) => !v)
+                      }
                       placeholderTextColor={textSecondaryColor}
-                      secureTextEntry
-                      autoCapitalize="none"
-                      autoCorrect={false}
+                      iconColor={textSecondaryColor}
+                      showPasswordLabel={t("auth.showPassword")}
+                      hidePasswordLabel={t("auth.hidePassword")}
+                      wrapStyle={styles.passwordInputWrap}
+                      inputStyle={styles.passwordInput}
+                      eyeButtonStyle={styles.eyeButton}
                       editable={!busy}
                       onSubmitEditing={handleSave}
                     />
@@ -436,7 +591,8 @@ export default function AccountUpdateModal({
                 )}
               </TouchableOpacity>
             </View>
-          </Pressable>
+            </ScrollView>
+          </View>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>

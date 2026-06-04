@@ -7,15 +7,35 @@ export type AccountDeletionAuthKind = "password" | "google" | "apple";
  * How the user should re-authenticate before destructive account deletion.
  * Priority: email/password identity first, then Google, then Apple.
  */
+function collectAuthProviders(user: User): Set<string> {
+  const providers = new Set<string>();
+  for (const identity of user.identities ?? []) {
+    if (identity.provider) providers.add(identity.provider);
+  }
+  const metaProviders = user.app_metadata?.providers;
+  if (Array.isArray(metaProviders)) {
+    for (const p of metaProviders) {
+      if (typeof p === "string") providers.add(p);
+    }
+  }
+  return providers;
+}
+
 export function getAccountDeletionAuthKind(
   user: User | null
 ): AccountDeletionAuthKind | null {
-  if (!user?.identities?.length) return null;
-  const providers = new Set(user.identities.map((i) => i.provider));
+  if (!user) return null;
+  const providers = collectAuthProviders(user);
+  if (providers.size === 0) return null;
   if (providers.has("email")) return "password";
   if (providers.has("google")) return "google";
   if (providers.has("apple")) return "apple";
   return null;
+}
+
+/** True when the user signed in with email + password (can change password in settings). */
+export function userHasPasswordAuth(user: User | null): boolean {
+  return getAccountDeletionAuthKind(user) === "password";
 }
 
 const WRONG_OAUTH_ACCOUNT: AuthError = {

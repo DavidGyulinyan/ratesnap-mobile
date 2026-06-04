@@ -70,6 +70,8 @@ export interface SavedRate {
   from_currency: string;
   to_currency: string;
   rate: number;
+  from_amount?: number | null;
+  to_amount?: number | null;
   created_at: string;
   updated_at: string;
 }

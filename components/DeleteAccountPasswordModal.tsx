@@ -35,6 +35,7 @@ export default function DeleteAccountPasswordModal({
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const surfaceColor = useThemeColor({}, "surface");
@@ -49,6 +50,7 @@ export default function DeleteAccountPasswordModal({
   useEffect(() => {
     if (!visible) {
       setPassword("");
+      setPasswordVisible(false);
       setLocalError(null);
     }
   }, [visible]);
@@ -100,16 +102,28 @@ export default function DeleteAccountPasswordModal({
       color: textSecondaryColor,
       marginBottom: Layout.spaceSm,
     },
+    passwordInputWrap: {
+      position: "relative",
+      marginBottom: 8,
+    },
     input: {
       borderWidth: 1,
       borderColor: borderColor,
       borderRadius: FormField.radiusInput,
       paddingVertical: 12,
       paddingHorizontal: 14,
+      paddingRight: 48,
       fontSize: 16,
       color: textColor,
       backgroundColor: surfaceSecondaryColor,
-      marginBottom: 8,
+    },
+    eyeButton: {
+      position: "absolute",
+      right: 10,
+      top: 0,
+      bottom: 0,
+      justifyContent: "center",
+      paddingHorizontal: 6,
     },
     errorText: {
       fontSize: 13,
@@ -199,18 +213,37 @@ export default function DeleteAccountPasswordModal({
               </ThemedText>
             ) : null}
 
-            <AppTextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder={t("settings.deleteAccountPasswordPlaceholder")}
-              placeholderTextColor={textSecondaryColor}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!busy}
-              onSubmitEditing={handleConfirm}
-            />
+            <View style={styles.passwordInputWrap}>
+              <AppTextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder={t("settings.deleteAccountPasswordPlaceholder")}
+                placeholderTextColor={textSecondaryColor}
+                secureTextEntry={!passwordVisible}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!busy}
+                onSubmitEditing={handleConfirm}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setPasswordVisible((v) => !v)}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  passwordVisible
+                    ? t("auth.hidePassword")
+                    : t("auth.showPassword")
+                }
+              >
+                <Ionicons
+                  name={passwordVisible ? "eye-off" : "eye"}
+                  size={20}
+                  color={textSecondaryColor}
+                />
+              </TouchableOpacity>
+            </View>
 
             {localError ? (
               <ThemedText style={styles.errorText}>{localError}</ThemedText>

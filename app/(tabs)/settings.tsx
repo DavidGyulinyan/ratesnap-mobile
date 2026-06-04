@@ -16,7 +16,10 @@ import DeleteAccountPasswordModal from '@/components/DeleteAccountPasswordModal'
 import AccountUpdateModal, {
   type AccountUpdateMode,
 } from '@/components/AccountUpdateModal';
-import { getAccountDeletionAuthKind } from '@/lib/accountDeletionAuth';
+import {
+  getAccountDeletionAuthKind,
+  userHasPasswordAuth,
+} from '@/lib/accountDeletionAuth';
 import type { AuthError } from '@supabase/supabase-js';
 import {
   useUserData,
@@ -27,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CurrencyFlag from '@/components/CurrencyFlag';
 import { formatDateTimeDDMMYY } from "@/lib/dateFormat";
 import { formatGroupedNumber } from "@/lib/numberFormat";
+import { formatSavedConversionAmount } from "@/lib/savedRateFormat";
 import {
   getPrivacyPolicyText,
   type PrivacyPolicyLanguage,
@@ -59,9 +63,7 @@ export default function SettingsScreen() {
   const [showDeletePasswordModal, setShowDeletePasswordModal] = useState(false);
   const [accountUpdateMode, setAccountUpdateMode] = useState<AccountUpdateMode | null>(null);
 
-  const hasPasswordAuth = user
-    ? getAccountDeletionAuthKind(user) === 'password'
-    : false;
+  const hasPasswordAuth = userHasPasswordAuth(user);
 
   const [notificationSettings, setNotificationSettings] = useState({
     enabled: true,
@@ -148,10 +150,12 @@ export default function SettingsScreen() {
     if (code === 'USERNAME_INVALID' || code === 'USERNAME_LENGTH') {
       return t('settings.accountUpdateUsernameInvalid');
     }
-    if (code === 'PASSWORD_AUTH_REQUIRED' || code === 'PASSWORD_POLICY_FAILED') {
-      return code === 'PASSWORD_POLICY_FAILED'
-        ? t('signup.passwordRequirements')
-        : t('settings.passwordOAuthUnavailable');
+    if (code === 'SAME_PASSWORD') return t('settings.passwordSameAsCurrent');
+    if (code === 'PASSWORD_AUTH_REQUIRED') {
+      return t('settings.passwordOAuthUnavailable');
+    }
+    if (code === 'PASSWORD_POLICY_FAILED') {
+      return t('signup.passwordRequirements');
     }
     if (code === 'PROFILE_SYNC_FAILED' || error.name === 'ProfileSyncError') {
       return t('settings.accountProfileSyncFailed');
@@ -1129,13 +1133,24 @@ Capital предоставляет инструменты конвертации
           {savedRates.savedRates && savedRates.savedRates.length > 0 ? (
             <>
               <ScrollView style={{ maxHeight: 300 }}>
-                {savedRates.savedRates.map((rate) => (
+                {savedRates.savedRates.map((rate) => {
+                  const conversionLine = formatSavedConversionAmount(rate);
+                  return (
                   <View key={rate.id} style={[styles.settingItem, { marginVertical: 4 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                       <CurrencyFlag currency={rate.from_currency} size={20} />
                       <ThemedText style={[{ color: textSecondaryColor, marginHorizontal: 8 }]}>→</ThemedText>
                       <CurrencyFlag currency={rate.to_currency} size={20} />
                       <View style={{ marginLeft: 8, flex: 1 }}>
+                        {conversionLine ? (
+                          <ThemedText style={{ color: textColor, fontSize: 15, fontWeight: '700' }}>
+                            {conversionLine}
+                          </ThemedText>
+                        ) : (
+                          <ThemedText style={{ color: textSecondaryColor, fontSize: 13 }}>
+                            {t('saved.noConversionAmount')}
+                          </ThemedText>
+                        )}
                         <ThemedText style={[styles.settingValue, { fontWeight: '600' }]}>
                           {rate.from_currency} → {rate.to_currency}
                         </ThemedText>
@@ -1163,7 +1178,8 @@ Capital предоставляет инструменты конвертации
                       <ThemedText style={{ fontSize: 14, fontWeight: 'bold', color: errorColor }}>×</ThemedText>
                     </TouchableOpacity>
                   </View>
-                ))}
+                );
+                })}
               </ScrollView>
               {savedRates.savedRates.length > 1 && (
                 <TouchableOpacity

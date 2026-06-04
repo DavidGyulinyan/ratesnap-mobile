@@ -3,12 +3,23 @@ import { UserDataService } from '@/lib/userDataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePro } from '@/contexts/ProContext';
 import { getAsyncStorage } from '@/lib/storage';
+import {
+  clearSavedRateAmountOverlay,
+  loadSavedRateAmountOverlay,
+  mergeSavedRatesWithAmountOverlay,
+  removeSavedRateAmountOverlay,
+} from '@/lib/savedRateAmountOverlay';
 
 export interface UseSavedRatesReturn {
   savedRates: any[];
   loading: boolean;
   error: string | null;
-  saveRate: (fromCurrency: string, toCurrency: string, rate: number) => Promise<boolean>;
+  saveRate: (
+    fromCurrency: string,
+    toCurrency: string,
+    rate: number,
+    options?: { fromAmount?: number | null; toAmount?: number | null }
+  ) => Promise<boolean>;
   deleteRate: (id: string) => Promise<boolean>;
   deleteAllRates: () => Promise<boolean>;
   refreshRates: () => Promise<void>;
@@ -86,6 +97,8 @@ export function useSavedRates(): UseSavedRatesReturn {
             from_currency: rate.fromCurrency || rate.from_currency,
             to_currency: rate.toCurrency || rate.to_currency,
             rate: rate.rate,
+            from_amount: rate.from_amount ?? rate.fromAmount ?? null,
+            to_amount: rate.to_amount ?? rate.toAmount ?? null,
             created_at: rate.timestamp ? new Date(rate.timestamp).toISOString() : new Date().toISOString(),
             updated_at: rate.timestamp ? new Date(rate.timestamp).toISOString() : new Date().toISOString()
           }));
@@ -99,7 +112,8 @@ export function useSavedRates(): UseSavedRatesReturn {
         // Authenticated user - use only database data
         try {
           const dbRates = await UserDataService.getSavedRates();
-          setSavedRates(dbRates);
+          const overlay = await loadSavedRateAmountOverlay();
+          setSavedRates(mergeSavedRatesWithAmountOverlay(dbRates, overlay));
           try {
             await storage.setItem(SAVED_RATES_CACHE_KEY, JSON.stringify(dbRates ?? []));
             await storage.setItem(SAVED_RATES_CACHE_TS_KEY, String(Date.now()));
@@ -129,14 +143,27 @@ export function useSavedRates(): UseSavedRatesReturn {
     }
   }, [user]);
 
-  const saveRate = useCallback(async (fromCurrency: string, toCurrency: string, rate: number): Promise<boolean> => {
+  const saveRate = useCallback(async (
+    fromCurrency: string,
+    toCurrency: string,
+    rate: number,
+    options?: { fromAmount?: number | null; toAmount?: number | null }
+  ): Promise<boolean> => {
     try {
       if (!canSaveRate(savedRates.length)) {
         return false;
       }
       if (user) {
         // Authenticated user - save to database
-        const newRate = await UserDataService.saveRate(fromCurrency, toCurrency, rate);
+        const newRate = await UserDataService.saveRate(
+          fromCurrency,
+          toCurrency,
+          rate,
+          {
+            fromAmount: options?.fromAmount,
+            toAmount: options?.toAmount,
+          }
+        );
         if (newRate) {
           setSavedRates(prev => [newRate, ...prev]);
           return true;
@@ -148,13 +175,19 @@ export function useSavedRates(): UseSavedRatesReturn {
         const currentRates = await storage.getItem('savedRates');
         const ratesArray = currentRates ? JSON.parse(currentRates) : [];
 
-        const newLocalRate = {
+        const newLocalRate: Record<string, unknown> = {
           id: `local-${Date.now()}`,
           fromCurrency,
           toCurrency,
           rate,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
+        if (options?.fromAmount != null && Number.isFinite(options.fromAmount)) {
+          newLocalRate.from_amount = options.fromAmount;
+        }
+        if (options?.toAmount != null && Number.isFinite(options.toAmount)) {
+          newLocalRate.to_amount = options.toAmount;
+        }
 
         const max = entitlements.savedRatesMax;
         const updatedRates = [newLocalRate, ...ratesArray].slice(0, max);
@@ -168,12 +201,14 @@ export function useSavedRates(): UseSavedRatesReturn {
 
         // Update local state with formatted data
         const formattedRate = {
-          id: newLocalRate.id,
+          id: newLocalRate.id as string,
           from_currency: fromCurrency,
           to_currency: toCurrency,
           rate: rate,
-          created_at: new Date(newLocalRate.timestamp).toISOString(),
-          updated_at: new Date(newLocalRate.timestamp).toISOString()
+          from_amount: (newLocalRate.from_amount as number | undefined) ?? null,
+          to_amount: (newLocalRate.to_amount as number | undefined) ?? null,
+          created_at: new Date(newLocalRate.timestamp as number).toISOString(),
+          updated_at: new Date(newLocalRate.timestamp as number).toISOString(),
         };
 
         setSavedRates((prev) => [
@@ -194,6 +229,7 @@ export function useSavedRates(): UseSavedRatesReturn {
         // Authenticated user - delete from database
         const success = await UserDataService.deleteSavedRate(id);
         if (success) {
+          await removeSavedRateAmountOverlay(id);
           setSavedRates(prev => prev.filter(rate => rate.id !== id));
           return true;
         }
@@ -229,6 +265,7 @@ export function useSavedRates(): UseSavedRatesReturn {
         // Authenticated user - delete all from database
         const success = await UserDataService.deleteAllSavedRates();
         if (success) {
+          await clearSavedRateAmountOverlay();
           setSavedRates([]);
           return true;
         }
