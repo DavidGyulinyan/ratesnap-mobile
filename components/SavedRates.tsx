@@ -9,7 +9,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
-import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSavedRates } from "@/hooks/useUserData";
@@ -81,8 +80,7 @@ export default function SavedRates({
   const { t, tWithParams } = useLanguage();
   const enableSelection = enableSelectionProp ?? inModal;
   const { user } = useAuth();
-  const { savedRates: hookSavedRates, deleteRate, deleteAllRates, loading } =
-    useSavedRates();
+  const { savedRates: hookSavedRates, deleteRate, loading } = useSavedRates();
 
   const surfaceColor = useThemeColor({}, "surface");
   const surfaceSecondaryColor = useThemeColor({}, "surfaceSecondary");
@@ -574,33 +572,6 @@ export default function SavedRates({
     confirmAndDeleteOne(id);
   };
 
-  const handleDeleteAllRates = async () => {
-    if (onDeleteAll) {
-      onDeleteAll();
-    } else {
-      Alert.alert(
-        t("saved.deleteAllTitle"),
-        t("saved.deleteAllMessage"),
-        [
-          { text: t("saved.deleteAllCancel"), style: "cancel" },
-          {
-            text: t("saved.deleteAllConfirmButton"),
-            style: "destructive",
-            onPress: async () => {
-              const success = await deleteAllRates();
-              if (!success) {
-                Alert.alert(
-                  t("saved.deleteAllErrorTitle"),
-                  t("saved.deleteAllErrorMessage")
-                );
-              }
-            },
-          },
-        ]
-      );
-    }
-  };
-
   const renderSavedRateItem = (rate: SavedRate, index: number) => {
     const saved = Number(rate.rate);
     const live = liveRateForPair(rate.from_currency, rate.to_currency);
@@ -977,13 +948,6 @@ export default function SavedRates({
                 </TouchableOpacity>
               )}
 
-              {showDeleteButtons && savedRates.length > 1 && (
-                <DeleteAllButton
-                  onPress={handleDeleteAllRates}
-                  count={savedRates.length}
-                  translationKey="saved.deleteAll"
-                />
-              )}
             </>
           )}
         </View>

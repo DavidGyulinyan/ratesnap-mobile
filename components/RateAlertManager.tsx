@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AppTextInput } from "./AppTextInput";
@@ -19,7 +20,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useRateAlerts } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAsyncStorage } from "@/lib/storage";
-import { FormField } from "@/constants/theme";
+import { FormField, Layout, hexToRgba } from "@/constants/theme";
 import { fiatKeysFromConversionRates } from "@/constants/fiatCurrencyCodes";
 import { formatDateDDMMYY } from "@/lib/dateFormat";
 import { formatGroupedNumber } from "@/lib/numberFormat";
@@ -43,6 +44,8 @@ interface RateAlertManagerProps {
   currenciesData?: any;
   inModal?: boolean; // Hide header when used inside DashboardModal
   onShareableMessageChange?: (message: string | null) => void;
+  /** Tap alerts to select; actions on top bar. Default: true in modal. */
+  enableSelection?: boolean;
 }
 
 interface AlertFormData {
@@ -59,7 +62,9 @@ export default function RateAlertManager({
   currenciesData,
   inModal = false,
   onShareableMessageChange,
+  enableSelection: enableSelectionProp,
 }: RateAlertManagerProps) {
+  const enableSelection = enableSelectionProp ?? inModal;
   const { t, tWithParams } = useLanguage();
   const { user } = useAuth();
   const { rateAlerts, loading, createAlert, updateAlert, deleteAlert, error } = useRateAlerts();
@@ -74,7 +79,6 @@ export default function RateAlertManager({
   const successColor = useThemeColor({}, 'success');
   const errorColor = useThemeColor({}, 'error');
   const textInverseColor = useThemeColor({}, 'textInverse');
-  const shadowColor = '#000000'; // Use black for shadows
 
   // Extract currencies list from currenciesData
   const currencies = fiatKeysFromConversionRates(
@@ -92,6 +96,19 @@ export default function RateAlertManager({
     direction: 'above',
     isActive: true,
   });
+  const [selectedAlertIds, setSelectedAlertIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    setSelectedAlertIds((prev) => {
+      const valid = new Set(
+        rateAlerts.map((a) => a.id).filter((id) => prev.has(id))
+      );
+      return valid.size === prev.size ? prev : valid;
+    });
+  }, [rateAlerts]);
 
   useEffect(() => {
     if (!inModal || !onShareableMessageChange) return;
@@ -250,10 +267,26 @@ export default function RateAlertManager({
   };
 
   const getAlertStatusColor = (alert: RateAlert): string => {
-    if (alert.notified) return primaryColor; // Use primary color for notified alerts
+    if (alert.notified) return primaryColor;
     if (!alert.is_active) return textSecondaryColor;
     return successColor;
   };
+
+  const getAlertStatusIcon = (
+    alert: RateAlert
+  ): keyof typeof Ionicons.glyphMap => {
+    if (alert.notified) return "notifications-outline";
+    if (!alert.is_active) return "pause-circle-outline";
+    return "checkmark-circle-outline";
+  };
+
+  const getDirectionIcon = (
+    condition: RateAlert["condition"]
+  ): keyof typeof Ionicons.glyphMap =>
+    condition === "above" ? "trending-up" : "trending-down";
+
+  const getDirectionColor = (condition: RateAlert["condition"]) =>
+    condition === "above" ? successColor : errorColor;
 
   const getCurrentRateForAlert = async (fromCurrency: string, toCurrency: string): Promise<number> => {
     try {
@@ -306,6 +339,779 @@ export default function RateAlertManager({
     setShowAlertModal(true);
   };
 
+  const selectedCount = selectedAlertIds.size;
+
+  const uiStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        selectionToolbar: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: Layout.spaceSm,
+        },
+        selectionHint: {
+          flex: 1,
+          minWidth: 100,
+          fontSize: 13,
+          lineHeight: 18,
+          color: textSecondaryColor,
+        },
+        selectionToolbarActions: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+        },
+        linkBtn: { paddingVertical: 6, paddingHorizontal: 4 },
+        linkBtnText: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: primaryColor,
+        },
+        topActionBar: {
+          marginBottom: Layout.spaceSm,
+          padding: Layout.spaceSm,
+          borderRadius: Layout.radiusMd,
+          backgroundColor: surfaceColor,
+          borderWidth: 1,
+          borderColor: hexToRgba(primaryColor, 0.3),
+          gap: Layout.spaceSm,
+        },
+        topActionCount: {
+          fontSize: 14,
+          fontWeight: "600",
+          color: textColor,
+          lineHeight: 20,
+        },
+        topActionButtons: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+        },
+        topActionBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          borderRadius: Layout.radiusSm,
+          minHeight: 44,
+        },
+        topActionBtnLabel: {
+          fontSize: 13,
+          fontWeight: "600",
+          flexShrink: 1,
+          maxWidth: 96,
+        },
+        topActionBtnDanger: {
+          backgroundColor: hexToRgba(errorColor, 0.12),
+        },
+        topActionBtnSecondary: {
+          backgroundColor: hexToRgba(primaryColor, 0.1),
+        },
+        topActionBtnSuccess: {
+          backgroundColor: hexToRgba(successColor, 0.12),
+        },
+        scrollContent: {
+          paddingBottom: Layout.spaceLg,
+          ...(inModal ? { paddingHorizontal: Layout.spaceMd } : {}),
+        },
+        listContent: {
+          gap: Layout.spaceSm,
+        },
+        card: {
+          backgroundColor: surfaceColor,
+          borderRadius: Layout.radiusMd,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.9),
+          padding: Layout.spaceMd,
+          overflow: "hidden",
+        },
+        alertCardRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: Layout.spaceSm,
+        },
+        alertCardBody: { flex: 1, minWidth: 0 },
+        checkbox: {
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: hexToRgba(borderColor, 0.9),
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: surfaceColor,
+          marginTop: 4,
+        },
+        checkboxSelected: {
+          borderColor: primaryColor,
+          backgroundColor: primaryColor,
+        },
+        cardSelected: {
+          borderColor: primaryColor,
+          borderWidth: 2,
+          backgroundColor: hexToRgba(primaryColor, 0.06),
+        },
+        cardTop: {
+          marginBottom: Layout.spaceSm,
+        },
+        flagsRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          flexWrap: "wrap",
+          width: "100%",
+        },
+        pairBadge: {
+          flexShrink: 1,
+          backgroundColor: hexToRgba(primaryColor, 0.12),
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          borderRadius: Layout.radiusSm,
+        },
+        pairBadgeText: {
+          fontSize: 12,
+          fontWeight: "700",
+          color: primaryColor,
+          letterSpacing: 0.3,
+        },
+        directionChip: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          alignSelf: "flex-start",
+        },
+        directionChipText: {
+          fontSize: 12,
+          fontWeight: "700",
+        },
+        targetBlock: {
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.65),
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+          padding: Layout.spaceSm,
+          marginBottom: Layout.spaceSm,
+        },
+        targetRow: {
+          flexDirection: "row",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: Layout.spaceSm,
+        },
+        targetLeft: {
+          flex: 1,
+          minWidth: 0,
+          flexDirection: "column",
+          gap: 6,
+        },
+        targetLabel: {
+          fontSize: 12,
+          fontWeight: "600",
+          color: textSecondaryColor,
+        },
+        targetValue: {
+          fontSize: inModal ? 20 : 22,
+          fontWeight: "800",
+          color: textColor,
+          letterSpacing: -0.3,
+          flexShrink: 0,
+          textAlign: "right",
+          maxWidth: "52%",
+        },
+        metaRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: Layout.spaceSm,
+        },
+        metaPill: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          flexGrow: 1,
+          flexShrink: 1,
+          flexBasis: "48%",
+          minWidth: 0,
+        },
+        metaPillText: {
+          fontSize: 12,
+          fontWeight: "600",
+          flexShrink: 1,
+        },
+        footerRow: {
+          paddingTop: Layout.spaceXs,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: hexToRgba(borderColor, 0.6),
+        },
+        activePill: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          width: "100%",
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderRadius: Layout.radiusSm,
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.8),
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+        },
+        activeLabel: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: textColor,
+        },
+        actionIconRow: {
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: Layout.spaceSm,
+        },
+        actionIcon: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          alignItems: "center",
+          justifyContent: "center",
+          borderWidth: 1,
+        },
+        createBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 11,
+          borderRadius: Layout.radiusMd,
+          alignSelf: "flex-start",
+        },
+        createBtnText: {
+          fontSize: 14,
+          fontWeight: "700",
+          color: textInverseColor,
+        },
+        emptyWrap: {
+          alignItems: "center",
+          paddingVertical: Layout.spaceXl,
+          paddingHorizontal: Layout.spaceMd,
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.5),
+          borderRadius: Layout.radiusMd,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+          borderStyle: "dashed",
+        },
+        emptyIcon: {
+          marginBottom: Layout.spaceSm,
+          opacity: 0.45,
+        },
+        emptyText: {
+          fontSize: 14,
+          textAlign: "center",
+          lineHeight: 21,
+          color: textSecondaryColor,
+        },
+        modalCreateBar: {
+          marginBottom: Layout.spaceSm,
+        },
+      }),
+    [
+      textSecondaryColor,
+      primaryColor,
+      textColor,
+      textInverseColor,
+      surfaceColor,
+      surfaceSecondaryColor,
+      borderColor,
+      errorColor,
+      successColor,
+      inModal,
+    ]
+  );
+
+  const toggleAlertSelection = (id: string) => {
+    setSelectedAlertIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedAlertIds(new Set());
+
+  const selectAllAlerts = () => {
+    setSelectedAlertIds(new Set(rateAlerts.map((a) => a.id)));
+  };
+
+  const handleDeleteSelected = () => {
+    const ids = Array.from(selectedAlertIds);
+    if (ids.length === 0) return;
+    Alert.alert(
+      t("rateAlerts.deleteSelectedTitle"),
+      tWithParams("rateAlerts.deleteSelectedMessage", { count: ids.length }),
+      [
+        { text: t("rateAlerts.cancelButton"), style: "cancel" },
+        {
+          text: t("saved.delete"),
+          style: "destructive",
+          onPress: async () => {
+            setBulkBusy(true);
+            try {
+              for (const id of ids) {
+                await deleteAlert(id);
+              }
+              clearSelection();
+              onRatesUpdate();
+            } finally {
+              setBulkBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleResetSelected = () => {
+    const ids = Array.from(selectedAlertIds);
+    const notified = rateAlerts.filter(
+      (a) => ids.includes(a.id) && a.notified
+    );
+    if (notified.length === 0) return;
+    Alert.alert(
+      t("rateAlerts.resetTitle"),
+      tWithParams("rateAlerts.resetSelectedMessage", {
+        count: notified.length,
+      }),
+      [
+        { text: t("rateAlerts.cancelButton"), style: "cancel" },
+        {
+          text: t("rateAlerts.resetButton"),
+          onPress: async () => {
+            setBulkBusy(true);
+            try {
+              for (const a of notified) {
+                await updateAlert(a.id, { notified: false, is_active: true });
+              }
+              clearSelection();
+              onRatesUpdate();
+            } finally {
+              setBulkBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const selectedAlerts = () =>
+    rateAlerts.filter((a) => selectedAlertIds.has(a.id));
+
+  const renderSelectionHeader = () => {
+    if (!enableSelection || !user || rateAlerts.length === 0) return null;
+
+    if (selectedCount > 0) {
+      const selected = selectedAlerts();
+      const canReset = selected.some((a) => a.notified);
+      return (
+        <View style={uiStyles.topActionBar}>
+          <ThemedText style={uiStyles.topActionCount} numberOfLines={2}>
+            {tWithParams("saved.selectedCount", { count: selectedCount })}
+          </ThemedText>
+          <View style={uiStyles.topActionButtons}>
+            <TouchableOpacity
+              style={[uiStyles.topActionBtn, uiStyles.topActionBtnDanger]}
+              onPress={handleDeleteSelected}
+              disabled={bulkBusy}
+              accessibilityLabel={t("saved.delete")}
+            >
+              {bulkBusy ? (
+                <ActivityIndicator size="small" color={errorColor} />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color={errorColor} />
+              )}
+              <ThemedText
+                style={[uiStyles.topActionBtnLabel, { color: errorColor }]}
+                numberOfLines={1}
+              >
+                {t("saved.delete")}
+              </ThemedText>
+            </TouchableOpacity>
+            {selectedCount === 1 ? (
+              <>
+                <TouchableOpacity
+                  style={[uiStyles.topActionBtn, uiStyles.topActionBtnSecondary]}
+                  onPress={() => handleEditAlert(selected[0])}
+                  disabled={bulkBusy}
+                  accessibilityLabel={t("rateAlerts.edit")}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={20}
+                    color={primaryColor}
+                  />
+                  <ThemedText
+                    style={[uiStyles.topActionBtnLabel, { color: primaryColor }]}
+                    numberOfLines={1}
+                  >
+                    {t("rateAlerts.editShort")}
+                  </ThemedText>
+                </TouchableOpacity>
+                {selected[0].notified ? (
+                  <TouchableOpacity
+                    style={[uiStyles.topActionBtn, uiStyles.topActionBtnSuccess]}
+                    onPress={() => handleResetAlert(selected[0].id)}
+                    disabled={bulkBusy}
+                    accessibilityLabel={t("rateAlerts.reset")}
+                  >
+                    <Ionicons
+                      name="refresh-outline"
+                      size={20}
+                      color={successColor}
+                    />
+                    <ThemedText
+                      style={[uiStyles.topActionBtnLabel, { color: successColor }]}
+                      numberOfLines={1}
+                    >
+                      {t("rateAlerts.resetShort")}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            ) : canReset ? (
+              <TouchableOpacity
+                style={[uiStyles.topActionBtn, uiStyles.topActionBtnSuccess]}
+                onPress={handleResetSelected}
+                disabled={bulkBusy}
+                accessibilityLabel={t("rateAlerts.reset")}
+              >
+                <Ionicons name="refresh-outline" size={20} color={successColor} />
+                <ThemedText
+                  style={[uiStyles.topActionBtnLabel, { color: successColor }]}
+                  numberOfLines={1}
+                >
+                  {t("rateAlerts.resetShort")}
+                </ThemedText>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={uiStyles.linkBtn}
+              onPress={clearSelection}
+              disabled={bulkBusy}
+            >
+              <ThemedText
+                style={[uiStyles.linkBtnText, { color: textSecondaryColor }]}
+                numberOfLines={1}
+              >
+                {t("common.cancel")}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={uiStyles.selectionToolbar}>
+        <ThemedText style={uiStyles.selectionHint} numberOfLines={2}>
+          {t("rateAlerts.tapToSelect")}
+        </ThemedText>
+        <View style={uiStyles.selectionToolbarActions}>
+          <TouchableOpacity style={uiStyles.linkBtn} onPress={selectAllAlerts}>
+            <ThemedText style={uiStyles.linkBtnText} numberOfLines={1}>
+              {t("saved.selectAll")}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderCreateButton = (shortLabel: boolean) => (
+    <TouchableOpacity
+      style={[
+        uiStyles.createBtn,
+        { backgroundColor: successColor, shadowColor: successColor },
+      ]}
+      onPress={handleCreateAlert}
+      accessibilityRole="button"
+      accessibilityLabel={
+        shortLabel ? t("rateAlerts.createButtonShort") : t("rateAlerts.createButton")
+      }
+    >
+      <Ionicons name="add-circle-outline" size={20} color={textInverseColor} />
+      <ThemedText style={uiStyles.createBtnText} numberOfLines={1}>
+        {shortLabel ? t("rateAlerts.createButtonShort") : t("rateAlerts.createButton")}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+
+  const renderEmptyState = (message: string, icon: keyof typeof Ionicons.glyphMap) => (
+    <View style={uiStyles.emptyWrap}>
+      <Ionicons
+        name={icon}
+        size={40}
+        color={textSecondaryColor}
+        style={uiStyles.emptyIcon}
+      />
+      <ThemedText style={uiStyles.emptyText}>{message}</ThemedText>
+    </View>
+  );
+
+  const renderAlertCard = (alert: RateAlert) => {
+    const isSelected = selectedAlertIds.has(alert.id);
+    const statusColor = getAlertStatusColor(alert);
+    const directionColor = getDirectionColor(alert.condition);
+    const flagSize = inModal ? 24 : 28;
+    const onCardPress = () => {
+      if (enableSelection) {
+        toggleAlertSelection(alert.id);
+      } else {
+        handleEditAlert(alert);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        key={alert.id}
+        activeOpacity={0.82}
+        onPress={onCardPress}
+        style={[uiStyles.card, isSelected && uiStyles.cardSelected]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+        accessibilityLabel={`${alert.from_currency} ${alert.to_currency} ${getAlertStatusText(alert)}`}
+      >
+        <View style={enableSelection ? uiStyles.alertCardRow : undefined}>
+          {enableSelection ? (
+            <View
+              style={[
+                uiStyles.checkbox,
+                isSelected && uiStyles.checkboxSelected,
+              ]}
+            >
+              {isSelected ? (
+                <Ionicons name="checkmark" size={14} color="#fff" />
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={uiStyles.alertCardBody}>
+            <View style={uiStyles.cardTop}>
+              <View style={uiStyles.flagsRow}>
+                <CurrencyFlag currency={alert.from_currency} size={flagSize} />
+                <Ionicons
+                  name="arrow-forward"
+                  size={14}
+                  color={textSecondaryColor}
+                />
+                <CurrencyFlag currency={alert.to_currency} size={flagSize} />
+                <View style={uiStyles.pairBadge}>
+                  <ThemedText style={uiStyles.pairBadgeText} numberOfLines={1}>
+                    {alert.from_currency}/{alert.to_currency}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+
+            <View style={uiStyles.targetBlock}>
+              <View style={uiStyles.targetRow}>
+                <View style={uiStyles.targetLeft}>
+                  <View
+                    style={[
+                      uiStyles.directionChip,
+                      {
+                        backgroundColor: hexToRgba(directionColor, 0.1),
+                        borderColor: hexToRgba(directionColor, 0.28),
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={getDirectionIcon(alert.condition)}
+                      size={14}
+                      color={directionColor}
+                    />
+                    <ThemedText
+                      style={[
+                        uiStyles.directionChipText,
+                        { color: directionColor },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {t(`rateAlerts.direction.${alert.condition}`)}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={uiStyles.targetLabel} numberOfLines={1}>
+                    {t("rateAlerts.target")}
+                  </ThemedText>
+                </View>
+                <ThemedText
+                  style={uiStyles.targetValue}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
+                  {formatGroupedNumber(alert.target_rate, 6)}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={uiStyles.metaRow}>
+              <View
+                style={[
+                  uiStyles.metaPill,
+                  {
+                    backgroundColor: hexToRgba(statusColor, 0.1),
+                    borderColor: hexToRgba(statusColor, 0.25),
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={getAlertStatusIcon(alert)}
+                  size={14}
+                  color={statusColor}
+                />
+                <ThemedText
+                  style={[uiStyles.metaPillText, { color: statusColor }]}
+                  numberOfLines={1}
+                >
+                  {getAlertStatusText(alert)}
+                </ThemedText>
+              </View>
+              <View
+                style={[
+                  uiStyles.metaPill,
+                  {
+                    backgroundColor: hexToRgba(surfaceSecondaryColor, 0.9),
+                    borderColor: hexToRgba(borderColor, 0.5),
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={textSecondaryColor}
+                />
+                <ThemedText
+                  style={[uiStyles.metaPillText, { color: textSecondaryColor }]}
+                  numberOfLines={1}
+                >
+                  {formatDateDDMMYY(alert.created_at)}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={uiStyles.footerRow}>
+              <View
+                style={uiStyles.activePill}
+                onStartShouldSetResponder={() => true}
+              >
+                <ThemedText style={uiStyles.activeLabel} numberOfLines={1}>
+                  {t("rateAlerts.active")}
+                </ThemedText>
+                <Switch
+                  value={alert.is_active}
+                  onValueChange={(value) =>
+                    toggleAlertActive(alert.id, value)
+                  }
+                  disabled={alert.notified}
+                  trackColor={{ false: borderColor, true: primaryColor }}
+                  thumbColor={textInverseColor}
+                />
+              </View>
+            </View>
+
+            {!enableSelection ? (
+              <View style={uiStyles.actionIconRow}>
+                <TouchableOpacity
+                  style={[
+                    uiStyles.actionIcon,
+                    {
+                      backgroundColor: hexToRgba(primaryColor, 0.1),
+                      borderColor: hexToRgba(primaryColor, 0.25),
+                    },
+                  ]}
+                  onPress={() => handleEditAlert(alert)}
+                  accessibilityLabel={t("rateAlerts.edit")}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={18}
+                    color={primaryColor}
+                  />
+                </TouchableOpacity>
+                {alert.notified ? (
+                  <TouchableOpacity
+                    style={[
+                      uiStyles.actionIcon,
+                      {
+                        backgroundColor: hexToRgba(successColor, 0.1),
+                        borderColor: hexToRgba(successColor, 0.25),
+                      },
+                    ]}
+                    onPress={() => handleResetAlert(alert.id)}
+                    accessibilityLabel={t("rateAlerts.reset")}
+                  >
+                    <Ionicons
+                      name="refresh-outline"
+                      size={18}
+                      color={successColor}
+                    />
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity
+                  style={[
+                    uiStyles.actionIcon,
+                    {
+                      backgroundColor: hexToRgba(errorColor, 0.1),
+                      borderColor: hexToRgba(errorColor, 0.25),
+                    },
+                  ]}
+                  onPress={() => handleDeleteAlert(alert.id)}
+                  accessibilityLabel={t("rateAlerts.delete")}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={errorColor}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderAlertsScrollBody = () => (
+    <>
+      {inModal ? (
+        <View style={uiStyles.modalCreateBar}>{renderCreateButton(true)}</View>
+      ) : null}
+      {renderSelectionHeader()}
+      {!user ? (
+        renderEmptyState(t("rateAlerts.signInPrompt"), "person-outline")
+      ) : rateAlerts.length === 0 ? (
+        renderEmptyState(t("rateAlerts.emptyState"), "notifications-outline")
+      ) : (
+        rateAlerts.map((alert) => renderAlertCard(alert))
+      )}
+    </>
+  );
+
   // Show loading state
   if (loading) {
     return (
@@ -316,12 +1122,7 @@ export default function RateAlertManager({
               {t('alerts.title')}
             </ThemedText>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-                onPress={handleCreateAlert}
-              >
-                <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-              </TouchableOpacity>
+              {renderCreateButton(false)}
             </View>
             <ThemedText style={styles.subtitle}>
               {t('rateAlerts.loading')}
@@ -329,25 +1130,23 @@ export default function RateAlertManager({
           </View>
         )}
 
-        {/* Show Create button inside modal content when inModal is true */}
-        {inModal && (
-          <View style={styles.modalCreateButtonContainer}>
-            <TouchableOpacity
-              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-              onPress={handleCreateAlert}
-            >
-              <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              Loading rate alerts...
+        <View
+          style={[
+            styles.alertsList,
+            inModal && styles.alertsListInModal,
+            uiStyles.scrollContent,
+          ]}
+        >
+          {inModal ? (
+            <View style={uiStyles.modalCreateBar}>{renderCreateButton(true)}</View>
+          ) : null}
+          <View style={uiStyles.emptyWrap}>
+            <ActivityIndicator size="small" color={primaryColor} />
+            <ThemedText style={[uiStyles.emptyText, { marginTop: Layout.spaceSm }]}>
+              {t("rateAlerts.loading")}
             </ThemedText>
           </View>
-        </ScrollView>
+        </View>
       </View>
     );
   }
@@ -378,12 +1177,7 @@ export default function RateAlertManager({
             {t('alerts.title')}
           </ThemedText>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-              onPress={handleCreateAlert}
-            >
-              <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-            </TouchableOpacity>
+            {renderCreateButton(false)}
           </View>
           {user && (
             <ThemedText style={styles.subtitle}>
@@ -393,111 +1187,16 @@ export default function RateAlertManager({
         </View>
       )}
 
-      {/* Show Create button inside modal content when inModal is true */}
-      {inModal && (
-        <View style={styles.modalCreateButtonContainer}>
-          <TouchableOpacity
-            style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-            onPress={handleCreateAlert}
-          >
-            <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
-        {!user ? (
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              Sign in to create and manage rate alerts that notify you when currency rates reach your targets.
-            </ThemedText>
-          </View>
-        ) : rateAlerts.length === 0 ? (
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              {t('rateAlerts.emptyState')}
-            </ThemedText>
-          </View>
-        ) : (
-          rateAlerts.map((alert) => (
-            <View key={alert.id} style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.alertCard]}>
-              <View style={styles.alertHeader}>
-                <View style={styles.currencyPair}>
-                  <View style={styles.currencyItem}>
-                    <CurrencyFlag currency={alert.from_currency} size={20} />
-                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
-                      {alert.from_currency}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
-                  <View style={styles.currencyItem}>
-                    <CurrencyFlag currency={alert.to_currency} size={20} />
-                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
-                      {alert.to_currency}
-                    </ThemedText>
-                  </View>
-                </View>
-              </View>
-                <View style={styles.alertControls}>
-                  <ThemedText style={[{ color: textColor }, styles.switchLabel]}>{t('rateAlerts.active')}</ThemedText>
-                  <Switch
-                    value={alert.is_active}
-                    onValueChange={(value) => toggleAlertActive(alert.id, value)}
-                    disabled={alert.notified}
-                    trackColor={{ false: borderColor, true: primaryColor }}
-                    thumbColor={textInverseColor}
-                  />
-                </View>
-
-              <View style={styles.alertInfo}>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.target')}</ThemedText>
-                  <ThemedText style={[{ color: textColor }, styles.alertValue]}>
-                    {t(`rateAlerts.direction.${alert.condition}`)} {formatGroupedNumber(alert.target_rate, 6)}
-                  </ThemedText>
-                </View>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.status')}</ThemedText>
-                  <ThemedText style={[styles.statusText, { color: getAlertStatusColor(alert) }]}>
-                    {getAlertStatusText(alert)}
-                  </ThemedText>
-                </View>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.created')}</ThemedText>
-                  <ThemedText style={[{ color: textColor }, styles.alertValue]}>
-                    {formatDateDDMMYY(alert.created_at)}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.alertActions}>
-                <TouchableOpacity
-                  style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.editButton]}
-                  onPress={() => handleEditAlert(alert)}
-                >
-                  <ThemedText style={[{ color: textColor }, styles.editButtonText]}>{t('rateAlerts.edit')}</ThemedText>
-                </TouchableOpacity>
-
-                {alert.notified ? (
-                  <TouchableOpacity
-                    style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.resetButton]}
-                    onPress={() => handleResetAlert(alert.id)}
-                  >
-                    <ThemedText style={[{ color: textColor }, styles.resetButtonText]}>{t('rateAlerts.reset')}</ThemedText>
-                  </TouchableOpacity>
-                ) : null}
-
-                <TouchableOpacity
-                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
-                  onPress={() => handleDeleteAlert(alert.id)}
-                >
-                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      <View
+        style={[
+          styles.alertsList,
+          inModal && styles.alertsListInModal,
+          uiStyles.scrollContent,
+          rateAlerts.length > 0 ? uiStyles.listContent : null,
+        ]}
+      >
+        {renderAlertsScrollBody()}
+      </View>
 
       {/* Alert Configuration Modal */}
       <Modal
@@ -711,34 +1410,28 @@ const styles = StyleSheet.create({
   },
   alertsList: {
     flex: 1,
-    padding: 16,
+    padding: Layout.spaceMd,
   },
   alertsListInModal: {
     flex: 1,
-    paddingHorizontal: 0,
-    paddingVertical: 16,
+    padding: 0,
     backgroundColor: "transparent",
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyStateText: {
     fontSize: 16,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
   },
   alertCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: Layout.radiusMd,
+    padding: Layout.spaceMd,
+    marginBottom: Layout.spaceSm,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   alertHeader: {
     flexDirection: 'row',

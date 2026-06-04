@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,13 +13,12 @@ import { AppTextInput } from "./AppTextInput";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
-import DeleteAllButton from "./DeleteAllButton";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useConverterHistory } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserDataService } from "@/lib/userDataService";
-import { FormField } from "@/constants/theme";
+import { FormField, Layout, hexToRgba } from "@/constants/theme";
 import { fiatKeysFromConversionRates } from "@/constants/fiatCurrencyCodes";
 import {
   canonicalDecimalToDisplay,
@@ -44,6 +44,8 @@ interface MultiCurrencyConverterProps {
   maxVisibleItems?: number;
   showAllTargets?: boolean;
   onShareableMessageChange?: (message: string | null) => void;
+  /** Tap targets to select; delete/edit from top bar. Default: true in modal. */
+  enableSelection?: boolean;
 }
 
 interface ConversionTarget {
@@ -63,7 +65,9 @@ export default function MultiCurrencyConverter({
   maxVisibleItems = 5,
   showAllTargets = false,
   onShareableMessageChange,
+  enableSelection: enableSelectionProp,
 }: MultiCurrencyConverterProps) {
+  const enableSelection = enableSelectionProp ?? inModal;
   const [amount, setAmount] = useState<string>("");
   const [fromCurrency, setFromCurrency] = useState<string>(
     fromCurrencyProp || ""
@@ -79,8 +83,12 @@ export default function MultiCurrencyConverter({
   const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
   const [closeButtonPressed, setCloseButtonPressed] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [selectedTargetIds, setSelectedTargetIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  const { t } = useLanguage();
+  const { t, tWithParams } = useLanguage();
   const { user, formDraftResetEpoch } = useAuth();
   const { saveConversion } = useConverterHistory();
 
@@ -625,17 +633,177 @@ export default function MultiCurrencyConverter({
     );
   };
 
-  // Remove all target currencies
-  const removeAllTargetCurrencies = () => {
-    Alert.alert(t("common.delete"), t("saved.deleteAllConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: () => setConversionTargets([]),
-      },
-    ]);
+  useEffect(() => {
+    setSelectedTargetIds((prev) => {
+      const valid = new Set(
+        conversionTargets.map((t) => t.id).filter((id) => prev.has(id))
+      );
+      return valid.size === prev.size ? prev : valid;
+    });
+  }, [conversionTargets]);
+
+  const toggleTargetSelection = (id: string) => {
+    setSelectedTargetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
+
+  const clearTargetSelection = () => setSelectedTargetIds(new Set());
+
+  const selectAllVisibleTargets = (targets: ConversionTarget[]) => {
+    setSelectedTargetIds(new Set(targets.map((t) => t.id)));
+  };
+
+  const removeSelectedTargets = () => {
+    const ids = Array.from(selectedTargetIds);
+    if (ids.length === 0) return;
+    Alert.alert(
+      t("multi.deleteSelectedTitle"),
+      tWithParams("multi.deleteSelectedMessage", { count: ids.length }),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("saved.delete"),
+          style: "destructive",
+          onPress: () => {
+            setBulkDeleting(true);
+            setConversionTargets((prev) =>
+              prev.filter((t) => !selectedTargetIds.has(t.id))
+            );
+            clearTargetSelection();
+            setBulkDeleting(false);
+          },
+        },
+      ]
+    );
+  };
+
+  const selectedCount = selectedTargetIds.size;
+
+  const uiStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        selectionToolbar: {
+          marginBottom: Layout.spaceSm,
+          gap: Layout.spaceSm,
+        },
+        selectionHint: {
+          fontSize: 13,
+          lineHeight: 18,
+          color: textSecondaryColor,
+        },
+        selectionToolbarActions: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+        },
+        linkBtn: { paddingVertical: 6, paddingHorizontal: 4 },
+        linkBtnText: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: primaryColor,
+        },
+        topActionBar: {
+          marginBottom: Layout.spaceSm,
+          padding: Layout.spaceSm,
+          borderRadius: Layout.radiusMd,
+          backgroundColor: surfaceColor,
+          borderWidth: 1,
+          borderColor: hexToRgba(primaryColor, 0.3),
+          gap: Layout.spaceSm,
+        },
+        topActionCount: {
+          fontSize: 14,
+          fontWeight: "600",
+          color: textColor,
+          lineHeight: 20,
+        },
+        topActionButtons: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+        },
+        topActionBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          borderRadius: Layout.radiusSm,
+          minHeight: 44,
+        },
+        topActionBtnLabel: {
+          fontSize: 13,
+          fontWeight: "600",
+          flexShrink: 1,
+        },
+        topActionBtnDanger: {
+          backgroundColor: hexToRgba(errorColor, 0.12),
+        },
+        topActionBtnSecondary: {
+          backgroundColor: hexToRgba(primaryColor, 0.1),
+        },
+        targetCard: {
+          width: "100%",
+          flexDirection: "row",
+          alignItems: "center",
+          borderRadius: Layout.radiusMd,
+          paddingVertical: 12,
+          paddingHorizontal: Layout.spaceSm,
+          marginVertical: 4,
+          borderWidth: 1,
+          gap: Layout.spaceSm,
+        },
+        targetCardSelected: {
+          borderColor: primaryColor,
+          borderWidth: 2,
+          backgroundColor: hexToRgba(primaryColor, 0.06),
+        },
+        checkbox: {
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: hexToRgba(borderColor, 0.9),
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: surfaceColor,
+        },
+        checkboxSelected: {
+          borderColor: primaryColor,
+          backgroundColor: primaryColor,
+        },
+        targetMain: {
+          flex: 1,
+          minWidth: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+        },
+        editBtn: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: hexToRgba(primaryColor, 0.1),
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      }),
+    [
+      textSecondaryColor,
+      primaryColor,
+      textColor,
+      surfaceColor,
+      borderColor,
+      errorColor,
+    ]
+  );
 
   // Handle "From" currency selection
   const handleFromCurrencySelect = (currency: string) => {
@@ -664,6 +832,98 @@ export default function MultiCurrencyConverter({
   const editTargetCurrency = (id: string) => {
     setEditingTargetId(id);
     setShowTargetCurrencyPicker(true);
+  };
+
+  const visibleTargets = showAllTargets
+    ? conversionTargets.slice(0, 20)
+    : conversionTargets.slice(0, Math.min(maxVisibleItems, 20));
+
+  const renderTargetRow = (target: ConversionTarget) => {
+    const isSelected = selectedTargetIds.has(target.id);
+    const onRowPress = () => {
+      if (enableSelection) {
+        toggleTargetSelection(target.id);
+      } else {
+        editTargetCurrency(target.id);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        key={target.id}
+        style={[
+          {
+            backgroundColor: surfaceSecondaryColor,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+          },
+          uiStyles.targetCard,
+          isSelected && uiStyles.targetCardSelected,
+        ]}
+        onPress={onRowPress}
+        activeOpacity={0.82}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+      >
+        {enableSelection ? (
+          <View
+            style={[
+              uiStyles.checkbox,
+              isSelected && uiStyles.checkboxSelected,
+            ]}
+          >
+            {isSelected ? (
+              <Ionicons name="checkmark" size={14} color="#fff" />
+            ) : null}
+          </View>
+        ) : null}
+
+        <View style={uiStyles.targetMain}>
+          <CurrencyFlag currency={target.currency} size={22} />
+          <ThemedText
+            style={[{ color: textColor }, styles.targetCurrencyText]}
+            numberOfLines={1}
+          >
+            {target.currency}
+          </ThemedText>
+          <ThemedText
+            copyable
+            style={[{ color: primaryColor }, styles.conversionAmount]}
+            numberOfLines={1}
+          >
+            {conversions[target.currency] !== undefined
+              ? formatGroupedNumber(conversions[target.currency]!, 4)
+              : "—"}
+          </ThemedText>
+        </View>
+
+        {enableSelection ? (
+          <TouchableOpacity
+            style={uiStyles.editBtn}
+            onPress={() => editTargetCurrency(target.id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t("multi.editCurrency")}
+          >
+            <Ionicons name="create-outline" size={18} color={primaryColor} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[
+              { backgroundColor: errorColor, shadowColor: errorColor },
+              styles.removeButton,
+            ]}
+            onPress={() => removeTargetCurrency(target.id)}
+            accessibilityRole="button"
+            accessibilityLabel={t("saved.delete")}
+          >
+            <ThemedText style={[{ color: textColor }, styles.removeButtonText]}>
+              ×
+            </ThemedText>
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -782,7 +1042,10 @@ export default function MultiCurrencyConverter({
           {/* Target Currencies Section */}
           <View style={styles.targetsSection}>
           <View style={styles.targetsHeader}>
-            <ThemedText style={[{ color: textColor }, styles.label]}>
+            <ThemedText
+              style={[{ color: textColor }, styles.label, styles.targetsLabel]}
+              numberOfLines={2}
+            >
               {t("multi.convertTo")}
             </ThemedText>
             <TouchableOpacity
@@ -801,8 +1064,9 @@ export default function MultiCurrencyConverter({
             >
               <ThemedText
                 style={[{ color: primaryColor }, styles.addButtonText]}
+                numberOfLines={1}
               >
-                {t("multi.addCurrency")}
+                {t("multi.addCurrencyShort")}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -825,94 +1089,124 @@ export default function MultiCurrencyConverter({
             </View>
           ) : (
             <>
-              <View style={styles.targetsList}>
-                {(() => {
-                  const visibleTargets = showAllTargets
-                    ? conversionTargets.slice(0, 20)
-                    : conversionTargets.slice(
-                        0,
-                        Math.min(maxVisibleItems, 20)
-                      );
-
-                  return (
-                    <View
-                      key={`targets-${showAllTargets ? "all" : "limited"}`}
+              {enableSelection ? (
+                selectedCount > 0 ? (
+                  <View style={uiStyles.topActionBar}>
+                    <ThemedText
+                      style={uiStyles.topActionCount}
+                      numberOfLines={2}
                     >
-                      {visibleTargets.map((target) => (
-                        <View
-                          key={target.id}
+                      {tWithParams("saved.selectedCount", {
+                        count: selectedCount,
+                      })}
+                    </ThemedText>
+                    <View style={uiStyles.topActionButtons}>
+                      <TouchableOpacity
+                        style={[
+                          uiStyles.topActionBtn,
+                          uiStyles.topActionBtnDanger,
+                        ]}
+                        onPress={removeSelectedTargets}
+                        disabled={bulkDeleting}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("saved.delete")}
+                      >
+                        {bulkDeleting ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={errorColor}
+                          />
+                        ) : (
+                          <Ionicons
+                            name="trash-outline"
+                            size={20}
+                            color={errorColor}
+                          />
+                        )}
+                        <ThemedText
                           style={[
-                            {
-                              backgroundColor: surfaceSecondaryColor,
-                              borderColor: borderColor,
-                              shadowColor: shadowColor,
-                            },
-                            styles.targetItem,
+                            uiStyles.topActionBtnLabel,
+                            { color: errorColor },
                           ]}
+                          numberOfLines={1}
                         >
-                          <TouchableOpacity
+                          {t("saved.delete")}
+                        </ThemedText>
+                      </TouchableOpacity>
+                      {selectedCount === 1 ? (
+                        <TouchableOpacity
+                          style={[
+                            uiStyles.topActionBtn,
+                            uiStyles.topActionBtnSecondary,
+                          ]}
+                          onPress={() => {
+                            const id = Array.from(selectedTargetIds)[0];
+                            if (id) editTargetCurrency(id);
+                          }}
+                          disabled={bulkDeleting}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("multi.editCurrency")}
+                        >
+                          <Ionicons
+                            name="create-outline"
+                            size={20}
+                            color={primaryColor}
+                          />
+                          <ThemedText
                             style={[
-                              {
-                                backgroundColor: surfaceColor,
-                                borderColor: borderColor,
-                                shadowColor: shadowColor,
-                              },
-                              styles.targetCurrencyButton,
+                              uiStyles.topActionBtnLabel,
+                              { color: primaryColor },
                             ]}
-                            onPress={() => editTargetCurrency(target.id)}
+                            numberOfLines={1}
                           >
-                            <CurrencyFlag
-                              currency={target.currency}
-                              size={18}
-                            />
-                            <ThemedText
-                              style={[
-                                { color: textColor },
-                                styles.targetCurrencyText,
-                              ]}
-                            >
-                              {target.currency}
-                            </ThemedText>
-                          </TouchableOpacity>
-
-                          <View style={styles.conversionResult}>
-                            <ThemedText
-                              copyable
-                              style={[
-                                { color: primaryColor },
-                                styles.conversionAmount,
-                              ]}
-                            >
-                              {conversions[target.currency] !== undefined
-                                ? formatGroupedNumber(conversions[target.currency]!, 4)
-                                : "---"}
-                            </ThemedText>
-                          </View>
-
-                          <TouchableOpacity
-                            style={[
-                              {
-                                backgroundColor: errorColor,
-                                shadowColor: errorColor,
-                              },
-                              styles.removeButton,
-                            ]}
-                            onPress={() => removeTargetCurrency(target.id)}
-                          >
-                            <ThemedText
-                              style={[
-                                { color: textColor },
-                                styles.removeButtonText,
-                              ]}
-                            >
-                              ×
-                            </ThemedText>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
+                            {t("multi.editShort")}
+                          </ThemedText>
+                        </TouchableOpacity>
+                      ) : null}
+                      <TouchableOpacity
+                        style={uiStyles.linkBtn}
+                        onPress={clearTargetSelection}
+                        disabled={bulkDeleting}
+                      >
+                        <ThemedText
+                          style={[
+                            uiStyles.linkBtnText,
+                            { color: textSecondaryColor },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {t("common.cancel")}
+                        </ThemedText>
+                      </TouchableOpacity>
                     </View>
-                  );
-                })()}
+                  </View>
+                ) : (
+                  <View style={uiStyles.selectionToolbar}>
+                    <ThemedText
+                      style={uiStyles.selectionHint}
+                      numberOfLines={2}
+                    >
+                      {t("multi.tapToSelect")}
+                    </ThemedText>
+                    <View style={uiStyles.selectionToolbarActions}>
+                      <TouchableOpacity
+                        style={uiStyles.linkBtn}
+                        onPress={() => selectAllVisibleTargets(visibleTargets)}
+                      >
+                        <ThemedText
+                          style={uiStyles.linkBtnText}
+                          numberOfLines={1}
+                        >
+                          {t("saved.selectAll")}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )
+              ) : null}
+
+              <View style={styles.targetsList}>
+                {visibleTargets.map((target) => renderTargetRow(target))}
               </View>
 
               {showMoreEnabled &&
@@ -935,23 +1229,14 @@ export default function MultiCurrencyConverter({
                     >
                       <ThemedText
                         style={[{ color: primaryColor }, styles.showMoreText]}
+                        numberOfLines={2}
                       >
-                        {t("common.showMore").replace(
-                          "more",
-                          `up to 20 target currencies`
-                        ) + " →"}
+                        {t("multi.showMoreTargets")}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
                 )}
 
-              {conversionTargets.length > 1 && (
-                <DeleteAllButton
-                  onPress={removeAllTargetCurrencies}
-                  count={conversionTargets.length}
-                  translationKey="multi.deleteAll"
-                />
-              )}
             </>
           )}
         </View>
@@ -1063,18 +1348,26 @@ const styles = StyleSheet.create({
   },
   targetsHeader: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
     marginBottom: 12,
+  },
+  targetsLabel: {
+    flex: 1,
+    minWidth: 100,
+    marginBottom: 0,
   },
   addButton: {
     paddingHorizontal: FormField.padH,
     paddingVertical: 10,
     borderRadius: FormField.radiusInput,
     borderWidth: 1,
+    flexShrink: 0,
   },
   addButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   emptyState: {
@@ -1133,8 +1426,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   conversionAmount: {
-    fontSize: 12,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
+    flexShrink: 1,
+    textAlign: "right",
   },
   removeButton: {
     width: 24,
