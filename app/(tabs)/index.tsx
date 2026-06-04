@@ -1415,23 +1415,31 @@ export default function HomeScreen() {
           onOpenConverter={openConverterShortcut}
           menuItems={quickToolsMenu("alerts")}
         >
-          <RateAlertManager
-            savedRates={savedRates.map((rate) => ({
-              id: rate.id,
-              fromCurrency: rate.from_currency,
-              toCurrency: rate.to_currency,
-              rate: rate.rate,
-              timestamp: new Date(rate.created_at).getTime(),
-              hasAlert: false,
-              alertSettings: undefined,
-            }))}
-            onRatesUpdate={() => {
-              refreshAlerts();
-            }}
-            currenciesData={currenciesData}
-            inModal={true}
-            onShareableMessageChange={setShareAlerts}
-          />
+          <ScrollView
+            style={{ flex: 1, backgroundColor: "transparent" }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
+          >
+            <RateAlertManager
+              savedRates={savedRates.map((rate) => ({
+                id: rate.id,
+                fromCurrency: rate.from_currency,
+                toCurrency: rate.to_currency,
+                rate: rate.rate,
+                timestamp: new Date(rate.created_at).getTime(),
+                hasAlert: false,
+                alertSettings: undefined,
+              }))}
+              onRatesUpdate={() => {
+                refreshAlerts();
+              }}
+              currenciesData={currenciesData}
+              inModal={true}
+              onShareableMessageChange={setShareAlerts}
+            />
+          </ScrollView>
         </QuickActionModal>
 
         <QuickActionModal

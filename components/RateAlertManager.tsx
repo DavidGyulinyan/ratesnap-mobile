@@ -79,7 +79,6 @@ export default function RateAlertManager({
   const successColor = useThemeColor({}, 'success');
   const errorColor = useThemeColor({}, 'error');
   const textInverseColor = useThemeColor({}, 'textInverse');
-  const shadowColor = '#000000'; // Use black for shadows
 
   // Extract currencies list from currenciesData
   const currencies = fiatKeysFromConversionRates(
@@ -268,10 +267,26 @@ export default function RateAlertManager({
   };
 
   const getAlertStatusColor = (alert: RateAlert): string => {
-    if (alert.notified) return primaryColor; // Use primary color for notified alerts
+    if (alert.notified) return primaryColor;
     if (!alert.is_active) return textSecondaryColor;
     return successColor;
   };
+
+  const getAlertStatusIcon = (
+    alert: RateAlert
+  ): keyof typeof Ionicons.glyphMap => {
+    if (alert.notified) return "notifications-outline";
+    if (!alert.is_active) return "pause-circle-outline";
+    return "checkmark-circle-outline";
+  };
+
+  const getDirectionIcon = (
+    condition: RateAlert["condition"]
+  ): keyof typeof Ionicons.glyphMap =>
+    condition === "above" ? "trending-up" : "trending-down";
+
+  const getDirectionColor = (condition: RateAlert["condition"]) =>
+    condition === "above" ? successColor : errorColor;
 
   const getCurrentRateForAlert = async (fromCurrency: string, toCurrency: string): Promise<number> => {
     try {
@@ -329,8 +344,17 @@ export default function RateAlertManager({
   const uiStyles = useMemo(
     () =>
       StyleSheet.create({
-        selectionToolbar: { marginBottom: Layout.spaceSm, gap: Layout.spaceSm },
+        selectionToolbar: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: Layout.spaceSm,
+        },
         selectionHint: {
+          flex: 1,
+          minWidth: 100,
           fontSize: 13,
           lineHeight: 18,
           color: textSecondaryColor,
@@ -382,6 +406,7 @@ export default function RateAlertManager({
           fontSize: 13,
           fontWeight: "600",
           flexShrink: 1,
+          maxWidth: 96,
         },
         topActionBtnDanger: {
           backgroundColor: hexToRgba(errorColor, 0.12),
@@ -391,6 +416,21 @@ export default function RateAlertManager({
         },
         topActionBtnSuccess: {
           backgroundColor: hexToRgba(successColor, 0.12),
+        },
+        scrollContent: {
+          paddingBottom: Layout.spaceLg,
+          ...(inModal ? { paddingHorizontal: Layout.spaceMd } : {}),
+        },
+        listContent: {
+          gap: Layout.spaceSm,
+        },
+        card: {
+          backgroundColor: surfaceColor,
+          borderRadius: Layout.radiusMd,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.9),
+          padding: Layout.spaceMd,
+          overflow: "hidden",
         },
         alertCardRow: {
           flexDirection: "row",
@@ -407,7 +447,7 @@ export default function RateAlertManager({
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: surfaceColor,
-          marginTop: 2,
+          marginTop: 4,
         },
         checkboxSelected: {
           borderColor: primaryColor,
@@ -418,52 +458,187 @@ export default function RateAlertManager({
           borderWidth: 2,
           backgroundColor: hexToRgba(primaryColor, 0.06),
         },
+        cardTop: {
+          marginBottom: Layout.spaceSm,
+        },
+        flagsRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 6,
+          flexWrap: "wrap",
+          width: "100%",
+        },
         pairBadge: {
+          flexShrink: 1,
           backgroundColor: hexToRgba(primaryColor, 0.12),
           paddingHorizontal: 10,
           paddingVertical: 4,
           borderRadius: Layout.radiusSm,
-          alignSelf: "flex-start",
-          marginBottom: 8,
         },
         pairBadgeText: {
           fontSize: 12,
           fontWeight: "700",
           color: primaryColor,
+          letterSpacing: 0.3,
         },
-        targetLine: {
-          fontSize: 17,
+        directionChip: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          alignSelf: "flex-start",
+        },
+        directionChipText: {
+          fontSize: 12,
           fontWeight: "700",
-          color: textColor,
-          marginBottom: 8,
         },
-        iconBtn: {
-          width: 36,
-          height: 36,
-          borderRadius: 18,
+        targetBlock: {
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.65),
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+          padding: Layout.spaceSm,
+          marginBottom: Layout.spaceSm,
+        },
+        targetRow: {
+          flexDirection: "row",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: Layout.spaceSm,
+        },
+        targetLeft: {
+          flex: 1,
+          minWidth: 0,
+          flexDirection: "column",
+          gap: 6,
+        },
+        targetLabel: {
+          fontSize: 12,
+          fontWeight: "600",
+          color: textSecondaryColor,
+        },
+        targetValue: {
+          fontSize: inModal ? 20 : 22,
+          fontWeight: "800",
+          color: textColor,
+          letterSpacing: -0.3,
+          flexShrink: 0,
+          textAlign: "right",
+          maxWidth: "52%",
+        },
+        metaRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: Layout.spaceSm,
+        },
+        metaPill: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: Layout.radiusSm,
+          borderWidth: 1,
+          flexGrow: 1,
+          flexShrink: 1,
+          flexBasis: "48%",
+          minWidth: 0,
+        },
+        metaPillText: {
+          fontSize: 12,
+          fontWeight: "600",
+          flexShrink: 1,
+        },
+        footerRow: {
+          paddingTop: Layout.spaceXs,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: hexToRgba(borderColor, 0.6),
+        },
+        activePill: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          width: "100%",
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          borderRadius: Layout.radiusSm,
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.8),
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+        },
+        activeLabel: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: textColor,
+        },
+        actionIconRow: {
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          gap: 8,
+          marginTop: Layout.spaceSm,
+        },
+        actionIcon: {
+          width: 40,
+          height: 40,
+          borderRadius: 20,
           alignItems: "center",
           justifyContent: "center",
+          borderWidth: 1,
         },
-        iconBtnRow: {
+        createBtn: {
           flexDirection: "row",
+          alignItems: "center",
           gap: 8,
-          marginTop: 8,
-        },
-        createBtnShort: {
-          paddingHorizontal: 14,
-          paddingVertical: 10,
+          paddingHorizontal: 16,
+          paddingVertical: 11,
           borderRadius: Layout.radiusMd,
           alignSelf: "flex-start",
+        },
+        createBtnText: {
+          fontSize: 14,
+          fontWeight: "700",
+          color: textInverseColor,
+        },
+        emptyWrap: {
+          alignItems: "center",
+          paddingVertical: Layout.spaceXl,
+          paddingHorizontal: Layout.spaceMd,
+          backgroundColor: hexToRgba(surfaceSecondaryColor, 0.5),
+          borderRadius: Layout.radiusMd,
+          borderWidth: 1,
+          borderColor: hexToRgba(borderColor, 0.5),
+          borderStyle: "dashed",
+        },
+        emptyIcon: {
+          marginBottom: Layout.spaceSm,
+          opacity: 0.45,
+        },
+        emptyText: {
+          fontSize: 14,
+          textAlign: "center",
+          lineHeight: 21,
+          color: textSecondaryColor,
+        },
+        modalCreateBar: {
+          marginBottom: Layout.spaceSm,
         },
       }),
     [
       textSecondaryColor,
       primaryColor,
       textColor,
+      textInverseColor,
       surfaceColor,
+      surfaceSecondaryColor,
       borderColor,
       errorColor,
       successColor,
+      inModal,
     ]
   );
 
@@ -665,8 +840,42 @@ export default function RateAlertManager({
     );
   };
 
+  const renderCreateButton = (shortLabel: boolean) => (
+    <TouchableOpacity
+      style={[
+        uiStyles.createBtn,
+        { backgroundColor: successColor, shadowColor: successColor },
+      ]}
+      onPress={handleCreateAlert}
+      accessibilityRole="button"
+      accessibilityLabel={
+        shortLabel ? t("rateAlerts.createButtonShort") : t("rateAlerts.createButton")
+      }
+    >
+      <Ionicons name="add-circle-outline" size={20} color={textInverseColor} />
+      <ThemedText style={uiStyles.createBtnText} numberOfLines={1}>
+        {shortLabel ? t("rateAlerts.createButtonShort") : t("rateAlerts.createButton")}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+
+  const renderEmptyState = (message: string, icon: keyof typeof Ionicons.glyphMap) => (
+    <View style={uiStyles.emptyWrap}>
+      <Ionicons
+        name={icon}
+        size={40}
+        color={textSecondaryColor}
+        style={uiStyles.emptyIcon}
+      />
+      <ThemedText style={uiStyles.emptyText}>{message}</ThemedText>
+    </View>
+  );
+
   const renderAlertCard = (alert: RateAlert) => {
     const isSelected = selectedAlertIds.has(alert.id);
+    const statusColor = getAlertStatusColor(alert);
+    const directionColor = getDirectionColor(alert.condition);
+    const flagSize = inModal ? 24 : 28;
     const onCardPress = () => {
       if (enableSelection) {
         toggleAlertSelection(alert.id);
@@ -680,17 +889,10 @@ export default function RateAlertManager({
         key={alert.id}
         activeOpacity={0.82}
         onPress={onCardPress}
-        style={[
-          {
-            backgroundColor: surfaceColor,
-            borderColor: borderColor,
-            shadowColor: shadowColor,
-          },
-          styles.alertCard,
-          isSelected && uiStyles.cardSelected,
-        ]}
+        style={[uiStyles.card, isSelected && uiStyles.cardSelected]}
         accessibilityRole="button"
         accessibilityState={{ selected: isSelected }}
+        accessibilityLabel={`${alert.from_currency} ${alert.to_currency} ${getAlertStatusText(alert)}`}
       >
         <View style={enableSelection ? uiStyles.alertCardRow : undefined}>
           {enableSelection ? (
@@ -706,107 +908,185 @@ export default function RateAlertManager({
             </View>
           ) : null}
 
-          <View style={enableSelection ? uiStyles.alertCardBody : undefined}>
-            <View style={styles.alertHeader}>
-              <View style={styles.currencyPair}>
-                <CurrencyFlag currency={alert.from_currency} size={22} />
-                <ThemedText
-                  style={[{ color: textSecondaryColor }, styles.arrow]}
-                >
-                  →
-                </ThemedText>
-                <CurrencyFlag currency={alert.to_currency} size={22} />
+          <View style={uiStyles.alertCardBody}>
+            <View style={uiStyles.cardTop}>
+              <View style={uiStyles.flagsRow}>
+                <CurrencyFlag currency={alert.from_currency} size={flagSize} />
+                <Ionicons
+                  name="arrow-forward"
+                  size={14}
+                  color={textSecondaryColor}
+                />
+                <CurrencyFlag currency={alert.to_currency} size={flagSize} />
+                <View style={uiStyles.pairBadge}>
+                  <ThemedText style={uiStyles.pairBadgeText} numberOfLines={1}>
+                    {alert.from_currency}/{alert.to_currency}
+                  </ThemedText>
+                </View>
               </View>
             </View>
 
-            <View style={uiStyles.pairBadge}>
-              <ThemedText style={uiStyles.pairBadgeText}>
-                {alert.from_currency}/{alert.to_currency}
-              </ThemedText>
+            <View style={uiStyles.targetBlock}>
+              <View style={uiStyles.targetRow}>
+                <View style={uiStyles.targetLeft}>
+                  <View
+                    style={[
+                      uiStyles.directionChip,
+                      {
+                        backgroundColor: hexToRgba(directionColor, 0.1),
+                        borderColor: hexToRgba(directionColor, 0.28),
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={getDirectionIcon(alert.condition)}
+                      size={14}
+                      color={directionColor}
+                    />
+                    <ThemedText
+                      style={[
+                        uiStyles.directionChipText,
+                        { color: directionColor },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {t(`rateAlerts.direction.${alert.condition}`)}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={uiStyles.targetLabel} numberOfLines={1}>
+                    {t("rateAlerts.target")}
+                  </ThemedText>
+                </View>
+                <ThemedText
+                  style={uiStyles.targetValue}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
+                  {formatGroupedNumber(alert.target_rate, 6)}
+                </ThemedText>
+              </View>
             </View>
 
-            <ThemedText style={uiStyles.targetLine} numberOfLines={2}>
-              {t(`rateAlerts.direction.${alert.condition}`)}{" "}
-              {formatGroupedNumber(alert.target_rate, 6)}
-            </ThemedText>
-
-            <View style={styles.alertRow}>
-              <ThemedText
-                style={[{ color: textSecondaryColor }, styles.alertLabel]}
-              >
-                {t("rateAlerts.status")}
-              </ThemedText>
-              <ThemedText
+            <View style={uiStyles.metaRow}>
+              <View
                 style={[
-                  styles.statusText,
-                  { color: getAlertStatusColor(alert) },
+                  uiStyles.metaPill,
+                  {
+                    backgroundColor: hexToRgba(statusColor, 0.1),
+                    borderColor: hexToRgba(statusColor, 0.25),
+                  },
                 ]}
-                numberOfLines={2}
               >
-                {getAlertStatusText(alert)}
-              </ThemedText>
+                <Ionicons
+                  name={getAlertStatusIcon(alert)}
+                  size={14}
+                  color={statusColor}
+                />
+                <ThemedText
+                  style={[uiStyles.metaPillText, { color: statusColor }]}
+                  numberOfLines={1}
+                >
+                  {getAlertStatusText(alert)}
+                </ThemedText>
+              </View>
+              <View
+                style={[
+                  uiStyles.metaPill,
+                  {
+                    backgroundColor: hexToRgba(surfaceSecondaryColor, 0.9),
+                    borderColor: hexToRgba(borderColor, 0.5),
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={textSecondaryColor}
+                />
+                <ThemedText
+                  style={[uiStyles.metaPillText, { color: textSecondaryColor }]}
+                  numberOfLines={1}
+                >
+                  {formatDateDDMMYY(alert.created_at)}
+                </ThemedText>
+              </View>
             </View>
 
-            <View
-              style={styles.alertControls}
-              onStartShouldSetResponder={() => true}
-            >
-              <ThemedText
-                style={[{ color: textColor }, styles.switchLabel]}
+            <View style={uiStyles.footerRow}>
+              <View
+                style={uiStyles.activePill}
+                onStartShouldSetResponder={() => true}
               >
-                {t("rateAlerts.active")}
-              </ThemedText>
-              <Switch
-                value={alert.is_active}
-                onValueChange={(value) => toggleAlertActive(alert.id, value)}
-                disabled={alert.notified}
-                trackColor={{ false: borderColor, true: primaryColor }}
-                thumbColor={textInverseColor}
-              />
+                <ThemedText style={uiStyles.activeLabel} numberOfLines={1}>
+                  {t("rateAlerts.active")}
+                </ThemedText>
+                <Switch
+                  value={alert.is_active}
+                  onValueChange={(value) =>
+                    toggleAlertActive(alert.id, value)
+                  }
+                  disabled={alert.notified}
+                  trackColor={{ false: borderColor, true: primaryColor }}
+                  thumbColor={textInverseColor}
+                />
+              </View>
             </View>
 
             {!enableSelection ? (
-              <View style={styles.alertActions}>
+              <View style={uiStyles.actionIconRow}>
                 <TouchableOpacity
                   style={[
-                    { backgroundColor: primaryColor, shadowColor: primaryColor },
-                    styles.editButton,
+                    uiStyles.actionIcon,
+                    {
+                      backgroundColor: hexToRgba(primaryColor, 0.1),
+                      borderColor: hexToRgba(primaryColor, 0.25),
+                    },
                   ]}
                   onPress={() => handleEditAlert(alert)}
+                  accessibilityLabel={t("rateAlerts.edit")}
                 >
-                  <ThemedText
-                    style={[{ color: textColor }, styles.editButtonText]}
-                  >
-                    {t("rateAlerts.edit")}
-                  </ThemedText>
+                  <Ionicons
+                    name="create-outline"
+                    size={18}
+                    color={primaryColor}
+                  />
                 </TouchableOpacity>
                 {alert.notified ? (
                   <TouchableOpacity
                     style={[
-                      { backgroundColor: successColor, shadowColor: successColor },
-                      styles.resetButton,
+                      uiStyles.actionIcon,
+                      {
+                        backgroundColor: hexToRgba(successColor, 0.1),
+                        borderColor: hexToRgba(successColor, 0.25),
+                      },
                     ]}
                     onPress={() => handleResetAlert(alert.id)}
+                    accessibilityLabel={t("rateAlerts.reset")}
                   >
-                    <ThemedText
-                      style={[{ color: textColor }, styles.resetButtonText]}
-                    >
-                      {t("rateAlerts.reset")}
-                    </ThemedText>
+                    <Ionicons
+                      name="refresh-outline"
+                      size={18}
+                      color={successColor}
+                    />
                   </TouchableOpacity>
                 ) : null}
                 <TouchableOpacity
                   style={[
-                    { backgroundColor: errorColor, shadowColor: errorColor },
-                    styles.deleteButton,
+                    uiStyles.actionIcon,
+                    {
+                      backgroundColor: hexToRgba(errorColor, 0.1),
+                      borderColor: hexToRgba(errorColor, 0.25),
+                    },
                   ]}
                   onPress={() => handleDeleteAlert(alert.id)}
+                  accessibilityLabel={t("rateAlerts.delete")}
                 >
-                  <ThemedText
-                    style={[{ color: textColor }, styles.deleteButtonText]}
-                  >
-                    {t("rateAlerts.delete")}
-                  </ThemedText>
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={errorColor}
+                  />
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -815,6 +1095,22 @@ export default function RateAlertManager({
       </TouchableOpacity>
     );
   };
+
+  const renderAlertsScrollBody = () => (
+    <>
+      {inModal ? (
+        <View style={uiStyles.modalCreateBar}>{renderCreateButton(true)}</View>
+      ) : null}
+      {renderSelectionHeader()}
+      {!user ? (
+        renderEmptyState(t("rateAlerts.signInPrompt"), "person-outline")
+      ) : rateAlerts.length === 0 ? (
+        renderEmptyState(t("rateAlerts.emptyState"), "notifications-outline")
+      ) : (
+        rateAlerts.map((alert) => renderAlertCard(alert))
+      )}
+    </>
+  );
 
   // Show loading state
   if (loading) {
@@ -826,12 +1122,7 @@ export default function RateAlertManager({
               {t('alerts.title')}
             </ThemedText>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-                onPress={handleCreateAlert}
-              >
-                <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-              </TouchableOpacity>
+              {renderCreateButton(false)}
             </View>
             <ThemedText style={styles.subtitle}>
               {t('rateAlerts.loading')}
@@ -839,25 +1130,23 @@ export default function RateAlertManager({
           </View>
         )}
 
-        {/* Show Create button inside modal content when inModal is true */}
-        {inModal && (
-          <View style={styles.modalCreateButtonContainer}>
-            <TouchableOpacity
-              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-              onPress={handleCreateAlert}
-            >
-              <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              Loading rate alerts...
+        <View
+          style={[
+            styles.alertsList,
+            inModal && styles.alertsListInModal,
+            uiStyles.scrollContent,
+          ]}
+        >
+          {inModal ? (
+            <View style={uiStyles.modalCreateBar}>{renderCreateButton(true)}</View>
+          ) : null}
+          <View style={uiStyles.emptyWrap}>
+            <ActivityIndicator size="small" color={primaryColor} />
+            <ThemedText style={[uiStyles.emptyText, { marginTop: Layout.spaceSm }]}>
+              {t("rateAlerts.loading")}
             </ThemedText>
           </View>
-        </ScrollView>
+        </View>
       </View>
     );
   }
@@ -888,12 +1177,7 @@ export default function RateAlertManager({
             {t('alerts.title')}
           </ThemedText>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
-              onPress={handleCreateAlert}
-            >
-              <ThemedText style={[{ color: textInverseColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
-            </TouchableOpacity>
+            {renderCreateButton(false)}
           </View>
           {user && (
             <ThemedText style={styles.subtitle}>
@@ -903,49 +1187,16 @@ export default function RateAlertManager({
         </View>
       )}
 
-      {/* Show Create button inside modal content when inModal is true */}
-      {inModal && (
-        <View style={styles.modalCreateButtonContainer}>
-          <TouchableOpacity
-            style={[
-              { backgroundColor: successColor, shadowColor: successColor },
-              styles.createButton,
-              uiStyles.createBtnShort,
-            ]}
-            onPress={handleCreateAlert}
-          >
-            <ThemedText
-              style={[{ color: textInverseColor }, styles.createButtonText]}
-              numberOfLines={1}
-            >
-              {t("rateAlerts.createButtonShort")}
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {renderSelectionHeader()}
-
-      <ScrollView
-        style={[styles.alertsList, inModal && styles.alertsListInModal]}
-        keyboardShouldPersistTaps="handled"
+      <View
+        style={[
+          styles.alertsList,
+          inModal && styles.alertsListInModal,
+          uiStyles.scrollContent,
+          rateAlerts.length > 0 ? uiStyles.listContent : null,
+        ]}
       >
-        {!user ? (
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              {t("rateAlerts.signInPrompt")}
-            </ThemedText>
-          </View>
-        ) : rateAlerts.length === 0 ? (
-          <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>
-              {t("rateAlerts.emptyState")}
-            </ThemedText>
-          </View>
-        ) : (
-          rateAlerts.map((alert) => renderAlertCard(alert))
-        )}
-      </ScrollView>
+        {renderAlertsScrollBody()}
+      </View>
 
       {/* Alert Configuration Modal */}
       <Modal
@@ -1159,34 +1410,28 @@ const styles = StyleSheet.create({
   },
   alertsList: {
     flex: 1,
-    padding: 16,
+    padding: Layout.spaceMd,
   },
   alertsListInModal: {
     flex: 1,
-    paddingHorizontal: 0,
-    paddingVertical: 16,
+    padding: 0,
     backgroundColor: "transparent",
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 60,
   },
   emptyStateText: {
     fontSize: 16,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
   },
   alertCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: Layout.radiusMd,
+    padding: Layout.spaceMd,
+    marginBottom: Layout.spaceSm,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   alertHeader: {
     flexDirection: 'row',
