@@ -11,13 +11,13 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   UIManager,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AppTextInput } from "@/components/AppTextInput";
 import { ThemedText } from "@/components/themed-text";
 import { hexToRgba } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -468,7 +468,7 @@ function Field({
       <ThemedText type="caption" style={[styles.fieldLabel, { color: textSecondaryColor, marginBottom: 6 }]}>
         {label}
       </ThemedText>
-      <TextInput
+      <AppTextInput
         value={displayValue}
         onChangeText={handleChange}
         keyboardType={keyboardType ?? "decimal-pad"}
@@ -496,7 +496,7 @@ function RowKV({
       <ThemedText style={[styles.rowKVLabel, { color: textSecondaryColor }]} numberOfLines={3}>
         {label}
       </ThemedText>
-      <ThemedText type="defaultSemiBold" style={[styles.rowKVValue, { color: textColor }]} numberOfLines={2}>
+      <ThemedText copyable type="defaultSemiBold" style={[styles.rowKVValue, { color: textColor }]} numberOfLines={2}>
         {value}
       </ThemedText>
     </View>
@@ -835,7 +835,7 @@ function TurnoverTaxView(props: {
           </TouchableOpacity>
         ))}
       </View>
-      <TextInput
+      <AppTextInput
         value={canonicalDecimalToDisplay(rateStr)}
         onChangeText={(text) =>
           setDraft((d) => ({

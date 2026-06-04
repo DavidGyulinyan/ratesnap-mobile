@@ -6,7 +6,6 @@ import {
   Modal,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -320,10 +319,9 @@ export default function BurgerMenu({ style, quickActions }: BurgerMenuProps) {
                 <ThemedText
                   style={{
                     fontSize: 20,
-                    lineHeight: 26,
                     fontWeight: '700',
                     color: textColor,
-                    ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
+                    flexShrink: 1,
                   }}
                 >
                   {t('app.title')}
@@ -331,10 +329,9 @@ export default function BurgerMenu({ style, quickActions }: BurgerMenuProps) {
                 <ThemedText
                   style={{
                     fontSize: 13,
-                    lineHeight: 18,
                     color: textSecondaryColor,
                     marginTop: 4,
-                    ...(Platform.OS === 'android' ? { includeFontPadding: false } : null),
+                    flexShrink: 1,
                   }}
                 >
                   {t('app.subtitle')}

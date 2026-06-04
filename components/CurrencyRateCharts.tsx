@@ -14,6 +14,10 @@ import { usePreferredLocalCurrency } from "@/components/LocationDetection";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePro } from "@/contexts/ProContext";
+import ProUpgradePrompt from "@/components/monetization/ProUpgradePrompt";
+import type { ChartPeriodKey } from "@/lib/monetization/features";
+import { trackMonetizationEvent } from "@/lib/monetization/analytics";
 import exchangeRateService, {
   HistoricalRateData,
 } from "@/lib/exchangeRateService";
@@ -29,7 +33,7 @@ type Props = {
   onShareableMessageChange?: (message: string | null) => void;
 };
 
-type PeriodKey = "7D" | "30D" | "90D" | "1Y";
+type PeriodKey = ChartPeriodKey;
 
 function compactLabels(dates: string[], maxLabels: number): string[] {
   if (dates.length <= maxLabels) return dates.map((d) => d.slice(5)); // MM-DD
@@ -53,6 +57,8 @@ export default function CurrencyRateCharts({
   onShareableMessageChange,
 }: Props) {
   const { t } = useLanguage();
+  const { isChartPeriodAllowed } = usePro();
+  const [showChartProPrompt, setShowChartProPrompt] = useState(false);
   const { currency: locationCurrency, loading: locationLoading } =
     usePreferredLocalCurrency();
 
@@ -84,8 +90,11 @@ export default function CurrencyRateCharts({
   const [showTargetPicker, setShowTargetPicker] = useState(false);
   const [didInitFromLocation, setDidInitFromLocation] = useState(false);
 
-  const initialPeriod: PeriodKey =
+  const rawInitialPeriod: PeriodKey =
     days >= 365 ? "1Y" : days >= 90 ? "90D" : days >= 30 ? "30D" : "7D";
+  const initialPeriod: PeriodKey = isChartPeriodAllowed(rawInitialPeriod)
+    ? rawInitialPeriod
+    : "30D";
   const [period, setPeriod] = useState<PeriodKey>(initialPeriod);
 
   const [rates, setRates] = useState<HistoricalRateData[]>([]);
@@ -303,10 +312,26 @@ export default function CurrencyRateCharts({
           <View style={styles.periodRow}>
             {(["7D", "30D", "90D", "1Y"] as const).map((key) => {
               const active = period === key;
+              const locked = !isChartPeriodAllowed(key);
               return (
                 <TouchableOpacity
                   key={key}
                   onPress={() => {
+                    if (locked) {
+                      trackMonetizationEvent({
+                        name: "chart_period_selected",
+                        period: key,
+                        locked: true,
+                      });
+                      setShowChartProPrompt(true);
+                      return;
+                    }
+                    trackMonetizationEvent({
+                      name: "chart_period_selected",
+                      period: key,
+                      locked: false,
+                    });
+                    setShowChartProPrompt(false);
                     setSelectedPoint(null);
                     setPeriod(key);
                   }}
@@ -316,6 +341,7 @@ export default function CurrencyRateCharts({
                     {
                       backgroundColor: active ? primaryColor : surfaceSecondaryColor,
                       borderColor: active ? primaryColor : borderColor,
+                      opacity: locked && !active ? 0.65 : 1,
                     },
                   ]}
                   accessibilityRole="button"
@@ -328,13 +354,22 @@ export default function CurrencyRateCharts({
                       fontWeight: active ? "700" : "600",
                     }}
                   >
-                    {key}
+                    {locked && !active ? `${key} · Pro` : key}
                   </ThemedText>
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
+
+        {showChartProPrompt ? (
+          <ProUpgradePrompt
+            feature="advanced_charts"
+            source="charts_modal"
+            messageKey="pro.prompt.charts"
+            onDismiss={() => setShowChartProPrompt(false)}
+          />
+        ) : null}
 
         <View style={[styles.statsRow, { borderTopColor: borderColor }]}>
           <View style={styles.stat}>

@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -18,6 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { hexToRgba, FormField, Layout } from '@/constants/theme';
+import { AppTextInput } from '@/components/AppTextInput';
 import Logo from '@/components/Logo';
 import AuthButtons from '@/components/AuthButtons';
 import * as WebBrowser from 'expo-web-browser';
@@ -372,7 +372,7 @@ function SignUpScreen() {
                   </Text>
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>{t('signup.codeLabel')}</Text>
-                    <TextInput
+                    <AppTextInput
                       style={styles.input}
                       value={emailOtp}
                       onChangeText={setEmailOtp}
@@ -426,7 +426,7 @@ function SignUpScreen() {
                 <>
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>{t('signup.usernameOptional')}</Text>
-                    <TextInput
+                    <AppTextInput
                       style={styles.input}
                       value={username}
                       onChangeText={setUsername}
@@ -438,7 +438,7 @@ function SignUpScreen() {
 
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>{t('auth.email')}</Text>
-                    <TextInput
+                    <AppTextInput
                       style={styles.input}
                       value={email}
                       onChangeText={setEmail}
@@ -453,7 +453,7 @@ function SignUpScreen() {
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>{t('auth.password')}</Text>
                     <View style={styles.passwordInputContainer}>
-                      <TextInput
+                      <AppTextInput
                         style={styles.passwordInput}
                         value={password}
                         onChangeText={setPassword}
@@ -507,7 +507,7 @@ function SignUpScreen() {
                   <View style={styles.fieldGroup}>
                     <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
                     <View style={styles.passwordInputContainer}>
-                      <TextInput
+                      <AppTextInput
                         style={styles.passwordInput}
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}

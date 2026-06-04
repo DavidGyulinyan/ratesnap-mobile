@@ -4,10 +4,10 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppTextInput } from "./AppTextInput";
 import { ThemedView } from "./themed-view";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
@@ -306,7 +306,7 @@ export default function CurrencyPicker({
         </View>
         
         {/* Search Input */}
-        <TextInput
+        <AppTextInput
           style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.searchInput]}
           placeholder={t('picker.searchCurrencies')}
           value={search}

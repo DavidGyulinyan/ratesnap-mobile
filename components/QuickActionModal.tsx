@@ -306,9 +306,9 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 17,
-    lineHeight: 22,
     textAlign: "center",
     marginHorizontal: 8,
+    flexShrink: 1,
   },
   headerSpacer: {
     width: 36,

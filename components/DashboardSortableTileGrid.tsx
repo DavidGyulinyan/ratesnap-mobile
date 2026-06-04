@@ -48,6 +48,9 @@ type DashboardSortableTileGridProps<T extends string> = {
   /** Reset drag-activation tracking when a tile grab starts / ends. */
   onDragSessionStart?: () => void;
   onDragSessionEnd?: () => void;
+  onRemove?: (id: T) => void;
+  addTileLabel?: string;
+  onAddPress?: () => void;
 };
 
 export default function DashboardSortableTileGrid<T extends string>({
@@ -71,6 +74,9 @@ export default function DashboardSortableTileGrid<T extends string>({
   variant,
   onDragSessionStart,
   onDragSessionEnd,
+  onRemove,
+  addTileLabel,
+  onAddPress,
 }: DashboardSortableTileGridProps<T>) {
   return (
     <View
@@ -147,12 +153,16 @@ export default function DashboardSortableTileGrid<T extends string>({
               },
         ];
 
+        const canRemove =
+          reorderMode && onRemove != null && order.length > 1;
+
         return (
           <SortableQuickTile
             key={id}
             reorderMode={reorderMode}
             isDragging={draggingId === id}
             handleColor={textSecondaryColor}
+            onRemove={canRemove ? () => onRemove(id) : undefined}
             onDragStart={() => {
               onDragSessionStart?.();
               dragIndexRef.current = index;
@@ -186,6 +196,37 @@ export default function DashboardSortableTileGrid<T extends string>({
           </SortableQuickTile>
         );
       })}
+      {reorderMode && onAddPress && addTileLabel ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onAddPress}
+          accessibilityRole="button"
+          accessibilityLabel={addTileLabel}
+          style={[
+            gridStyles.quickTile,
+            {
+              backgroundColor: hexToRgba(primaryColor, 0.08),
+              borderColor: hexToRgba(primaryColor, 0.45),
+              borderWidth: 1.5,
+              borderStyle: "dashed",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 88,
+            },
+          ]}
+        >
+          <Ionicons name="add" size={32} color={primaryColor} />
+          <ThemedText
+            type="caption"
+            style={[
+              gridStyles.quickTileLabel,
+              { color: primaryColor, marginTop: 6, textAlign: "center" },
+            ]}
+          >
+            {addTileLabel}
+          </ThemedText>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }

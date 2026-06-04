@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  TextInput,
   TouchableOpacity,
   Alert,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { AppTextInput } from "./AppTextInput";
 import { ThemedText } from "./themed-text";
 import CurrencyFlag from "./CurrencyFlag";
 import CurrencyPicker from "./CurrencyPicker";
@@ -574,7 +574,7 @@ export default function RateAlertManager({
               <ThemedText style={[{ color: textColor }, styles.label]}>
                 {tWithParams('rateAlerts.targetRate', { fromCurrency: formData.fromCurrency, toCurrency: formData.toCurrency })}
               </ThemedText>
-              <TextInput
+              <AppTextInput
                 style={[{ backgroundColor: surfaceColor, borderColor: borderColor, color: textColor }, styles.input]}
                 value={formData.targetRate}
                 onChangeText={(text) => setFormData({ ...formData, targetRate: text })}

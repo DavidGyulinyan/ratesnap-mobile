@@ -16,6 +16,11 @@ import {
   AM_TRANSPORT_HY,
   AM_TRANSPORT_RU,
 } from "./amTransport.i18n";
+import {
+  MONETIZATION_EN,
+  MONETIZATION_HY,
+  MONETIZATION_RU,
+} from "./monetization.i18n";
 
 export type Language = 'en' | 'hy' | 'ru';
 
@@ -37,8 +42,15 @@ const translations = {
     'dashboard.quickActions': 'Quick Actions',
     'dashboard.reorderCards': 'Sort cards',
     'dashboard.reorderCardsHint':
-      'Drag the grip (⋮) on a tile to move it. Order is saved automatically.',
+      'Drag the grip to reorder. Tap − to remove a widget, or + to add tools you use most.',
     'dashboard.finishReorder': 'Done',
+    'dashboard.widgets.add': 'Add widget',
+    'dashboard.widgets.addItem': 'Add {name}',
+    'dashboard.widgets.allAdded': 'All available widgets are on your dashboard.',
+    'dashboard.widgets.pickQuick': 'Add quick action',
+    'dashboard.widgets.pickFinance': 'Add finance tool',
+    'dashboard.widgets.pickTransport': 'Add vehicle tool',
+
     'dashboard.converter': 'Converter',
     'dashboard.multiCurrency': 'Multi Currency',
     'dashboard.rateAlerts': 'Rate Alerts',
@@ -185,6 +197,8 @@ const translations = {
     'saved.deleteAll': 'Delete All',
     'saved.noRates': 'No saved rates yet. Convert currencies and click "Save This Rate" to add some!',
     'saved.savedOn': 'Saved on',
+    'saved.pairAt': 'Saved @',
+    'saved.now': 'Now',
     'saved.at': 'at',
     'saved.rate': 'saved rate',
     'saved.rates': 'saved rates',
@@ -223,9 +237,34 @@ const translations = {
     'settings.loginRequired': 'Please sign in to view your account information',
     'settings.password': 'Password',
     'settings.changePassword': 'Change Password',
+    'settings.changeEmail': 'Change Email',
+    'settings.changeUsername': 'Change Username',
     'settings.newPassword': 'New Password',
+    'settings.currentPassword': 'Current password',
     'settings.confirmNewPassword': 'Confirm New Password',
     'settings.passwordUpdateDescription': 'Update your password to keep your account secure',
+    'settings.emailUpdateDescription':
+      'We will send confirmation links to your old and new email addresses before the change takes effect.',
+    'settings.usernameUpdateDescription':
+      'Choose a display name (2–32 characters: letters, numbers, underscore, hyphen).',
+    'settings.currentPasswordEmpty': 'Please enter your current password.',
+    'settings.passwordMismatch': 'New passwords do not match.',
+    'settings.usernameEmpty': 'Please enter a username.',
+    'settings.passwordChangedSuccess': 'Your password has been updated.',
+    'settings.emailChangePending':
+      'Check your inbox to confirm the email change on both your current and new addresses.',
+    'settings.usernameChangedSuccess': 'Your username has been updated.',
+    'settings.passwordOAuthUnavailable':
+      'You signed in with Google or Apple. Manage your password in that account’s settings.',
+    'settings.accountUpdateFailed': 'Could not update your account. Please try again.',
+    'settings.accountProfileSyncFailed':
+      'Your sign-in was updated but saving to the database failed. Try again or contact support.',
+    'settings.accountUpdateInvalidPassword': 'Incorrect password. Try again.',
+    'settings.accountUpdateInvalidEmail': 'Please enter a valid email address.',
+    'settings.accountUpdateEmailUnchanged': 'That is already your email address.',
+    'settings.accountUpdateUsernameUnchanged': 'That is already your username.',
+    'settings.accountUpdateUsernameInvalid':
+      'Use 2–32 characters: letters, numbers, underscore, or hyphen only.',
     'settings.termsOfUse': 'Terms of Use',
     'settings.privacyPolicy': 'Privacy Policy',
     'settings.preferences': 'Preferences',
@@ -317,6 +356,7 @@ const translations = {
     'common.settings': 'Settings',
     'common.loading': 'Loading...',
     'common.error': 'Error',
+    'common.success': 'Success',
     'common.retry': 'Retry',
     'common.close': 'Close',
     'common.share': 'Share',
@@ -568,6 +608,7 @@ const translations = {
     ...AM_FINANCE_EN,
     ...AM_FREELANCE_EN,
     ...AM_TRANSPORT_EN,
+    ...MONETIZATION_EN,
   },
   hy: {
     'app.title': 'Capital',
@@ -577,8 +618,14 @@ const translations = {
     'dashboard.quickActions': 'Արագ գործողություններ',
     'dashboard.reorderCards': 'Դասավորել քարտերը',
     'dashboard.reorderCardsHint':
-      'Աջ մասի պատկերակից բռնեք և քաշեք քարտը։ Դասավորությունը պահվում է ավտոմատ։',
+      'Քաշեք պատկերակը դասավորելու համար։ Սեղմեք − հեռացնելու, + ավելացնելու համար։',
     'dashboard.finishReorder': 'Ավարտել',
+    'dashboard.widgets.add': 'Ավելացնել վիջեթ',
+    'dashboard.widgets.addItem': 'Ավելացնել {name}',
+    'dashboard.widgets.allAdded': 'Բոլոր հասանելի վիջեթները արդեն ավելացված են։',
+    'dashboard.widgets.pickQuick': 'Արագ գործիք',
+    'dashboard.widgets.pickFinance': 'Ֆինանսական գործիք',
+    'dashboard.widgets.pickTransport': 'Ավտո գործիք',
     'dashboard.converter': 'Փոխարկիչ',
     'dashboard.multiCurrency': 'Բազմարժույթ',
     'dashboard.rateAlerts': 'Դրույքի ծանուցումներ',
@@ -654,9 +701,34 @@ const translations = {
     'settings.loginRequired': 'Խնդրում ենք մուտք գործեք ձեր հաշվի տվյալները դիտելու համար',
     'settings.password': 'Գաղտնաբառ',
     'settings.changePassword': 'Փոխել գաղտնաբառը',
+    'settings.changeEmail': 'Փոխել էլ. փոստը',
+    'settings.changeUsername': 'Փոխել օգտանունը',
     'settings.newPassword': 'Նոր գաղտնաբառ',
+    'settings.currentPassword': 'Ընթացիկ գաղտնաբառ',
     'settings.confirmNewPassword': 'Հաստատել նոր գաղտնաբառը',
     'settings.passwordUpdateDescription': 'Թարմացրեք գաղտնաբառը՝ ձեր հաշիվը պաշտպանելու համար',
+    'settings.emailUpdateDescription':
+      'Փոփոխությունը կիրառվի միայն հաստատումից հետո՝ ձեր հին և նոր էլ. հասցեներին ուղարկված հղումներով։',
+    'settings.usernameUpdateDescription':
+      'Ընտրեք ցուցադրվող անուն (2–32 նիշ՝ տառեր, թվեր, ներքևի գիծ, գծիկ)։',
+    'settings.currentPasswordEmpty': 'Մուտքագրեք ընթացիկ գաղտնաբառը։',
+    'settings.passwordMismatch': 'Նոր գաղտնաբառերը չեն համընկնում։',
+    'settings.usernameEmpty': 'Մուտքագրեք օգտանուն։',
+    'settings.passwordChangedSuccess': 'Գաղտնաբառը թարմացվեց։',
+    'settings.emailChangePending':
+      'Ստուգեք էլ. փոստը՝ հաստատելու համար հին և նոր հասցեներում։',
+    'settings.usernameChangedSuccess': 'Օգտանունը թարմացվեց։',
+    'settings.passwordOAuthUnavailable':
+      'Մուտք եք գործել Google-ով կամ Apple-ով։ Գաղտնաբառը կառավարեք այդ հաշվի կարգավորումներում։',
+    'settings.accountUpdateFailed': 'Չհաջողվեց թարմացնել հաշիվը։ Կրկին փորձեք։',
+    'settings.accountProfileSyncFailed':
+      'Մուտքը թարմացվեց, բայց տվյալների բազայում պահպանելը չհաջողվեց։ Կրկին փորձեք կամ դիմեք աջակցությանը։',
+    'settings.accountUpdateInvalidPassword': 'Սխալ գաղտնաբառ։ Կրկին փորձեք։',
+    'settings.accountUpdateInvalidEmail': 'Մուտքագրեք վավեր էլ. հասցե։',
+    'settings.accountUpdateEmailUnchanged': 'Այս արդեն ձեր էլ. հասցեն է։',
+    'settings.accountUpdateUsernameUnchanged': 'Այս արդեն ձեր օգտանունն է։',
+    'settings.accountUpdateUsernameInvalid':
+      '2–32 նիշ՝ միայն տառեր, թվեր, ներքևի գիծ կամ գծիկ։',
     'settings.termsOfUse': 'Օգտագործման պայմաններ',
     'settings.privacyPolicy': 'Գաղտնիության քաղաքականություն',
     'settings.preferences': 'Նախընտրություններ',
@@ -749,6 +821,7 @@ const translations = {
     'common.settings': 'Կարգավորումներ',
     'common.loading': 'Բեռնում...',
     'common.error': 'Սխալ',
+    'common.success': 'Հաջողված',
     'common.retry': 'Կրկին փորձել',
     'common.close': 'Փակել',
     'common.share': 'Կիսվել',
@@ -815,6 +888,8 @@ const translations = {
     'saved.shortTitle': 'Պահպանված', // Short version for constrained layouts
     'saved.noRates': 'Դեռ չկան պահպանված զույգեր: Փոխանակեք արժույթները և սեղմեք "Պահպանել այս դրույքը" որպեսզի ավելացնեք:',
     'saved.savedOn': 'Պահպանվել է',
+    'saved.pairAt': 'Պահպանված @',
+    'saved.now': 'Այժմ',
     'saved.at': 'ժամը',
     'saved.rate': 'պահպանված դրույք',
     'saved.rates': 'պահպանված դրույքներ',
@@ -1092,6 +1167,7 @@ const translations = {
     ...AM_FINANCE_HY,
     ...AM_FREELANCE_HY,
     ...AM_TRANSPORT_HY,
+    ...MONETIZATION_HY,
   },
   ru: {
     'app.title': 'Capital',
@@ -1101,8 +1177,14 @@ const translations = {
     'dashboard.quickActions': 'Быстрые действия',
     'dashboard.reorderCards': 'Порядок карточек',
     'dashboard.reorderCardsHint':
-      'Перетащите значок справа, чтобы переместить плитку. Порядок сохраняется автоматически.',
+      'Перетащите значок для сортировки. Нажмите − чтобы убрать виджет, + чтобы добавить.',
     'dashboard.finishReorder': 'Готово',
+    'dashboard.widgets.add': 'Добавить виджет',
+    'dashboard.widgets.addItem': 'Добавить {name}',
+    'dashboard.widgets.allAdded': 'Все доступные виджеты уже на панели.',
+    'dashboard.widgets.pickQuick': 'Быстрое действие',
+    'dashboard.widgets.pickFinance': 'Финансовый инструмент',
+    'dashboard.widgets.pickTransport': 'Авто инструмент',
     'dashboard.converter': 'Конвертер',
     'dashboard.multiCurrency': 'Мультивалютный',
     'dashboard.rateAlerts': 'Уведомления о курсах',
@@ -1191,9 +1273,34 @@ const translations = {
     'settings.loginRequired': 'Пожалуйста, войдите в систему, чтобы просмотреть информацию об аккаунте',
     'settings.password': 'Пароль',
     'settings.changePassword': 'Изменить пароль',
+    'settings.changeEmail': 'Изменить email',
+    'settings.changeUsername': 'Изменить имя пользователя',
     'settings.newPassword': 'Новый пароль',
+    'settings.currentPassword': 'Текущий пароль',
     'settings.confirmNewPassword': 'Подтвердить новый пароль',
     'settings.passwordUpdateDescription': 'Обновите свой пароль, чтобы обеспечить безопасность аккаунта',
+    'settings.emailUpdateDescription':
+      'Перед сменой email мы отправим ссылки для подтверждения на старый и новый адреса.',
+    'settings.usernameUpdateDescription':
+      'Отображаемое имя: 2–32 символа (буквы, цифры, подчёркивание, дефис).',
+    'settings.currentPasswordEmpty': 'Введите текущий пароль.',
+    'settings.passwordMismatch': 'Новые пароли не совпадают.',
+    'settings.usernameEmpty': 'Введите имя пользователя.',
+    'settings.passwordChangedSuccess': 'Пароль обновлён.',
+    'settings.emailChangePending':
+      'Проверьте почту и подтвердите смену email на обоих адресах.',
+    'settings.usernameChangedSuccess': 'Имя пользователя обновлено.',
+    'settings.passwordOAuthUnavailable':
+      'Вы вошли через Google или Apple. Пароль меняется в настройках этого аккаунта.',
+    'settings.accountUpdateFailed': 'Не удалось обновить аккаунт. Попробуйте снова.',
+    'settings.accountProfileSyncFailed':
+      'Вход обновлён, но сохранить данные в базе не удалось. Повторите попытку или напишите в поддержку.',
+    'settings.accountUpdateInvalidPassword': 'Неверный пароль. Попробуйте снова.',
+    'settings.accountUpdateInvalidEmail': 'Введите корректный email.',
+    'settings.accountUpdateEmailUnchanged': 'Этот email уже указан в аккаунте.',
+    'settings.accountUpdateUsernameUnchanged': 'Это имя пользователя уже используется.',
+    'settings.accountUpdateUsernameInvalid':
+      '2–32 символа: только буквы, цифры, подчёркивание или дефис.',
     'settings.termsOfUse': 'Условия использования',
     'settings.privacyPolicy': 'Политика конфиденциальности',
     'settings.preferences': 'Предпочтения',
@@ -1285,6 +1392,7 @@ const translations = {
     'common.settings': 'Настройки',
     'common.loading': 'Загрузка...',
     'common.error': 'Ошибка',
+    'common.success': 'Готово',
     'common.retry': 'Повторить',
     'common.close': 'Закрыть',
     'common.share': 'Поделиться',
@@ -1327,6 +1435,8 @@ const translations = {
     'saved.shortTitle': 'Сохраненные', // Short version for constrained layouts
     'saved.noRates': 'Пока нет сохраненных курсов. Конвертируйте валюты и нажмите "Сохранить этот курс", чтобы добавить!',
     'saved.savedOn': 'Сохранено',
+    'saved.pairAt': 'Сохранено @',
+    'saved.now': 'Сейчас',
     'saved.at': 'в',
     'saved.rate': 'сохраненный курс',
     'saved.rates': 'сохраненные курсы',
@@ -1623,6 +1733,7 @@ const translations = {
     ...AM_FINANCE_RU,
     ...AM_FREELANCE_RU,
     ...AM_TRANSPORT_RU,
+    ...MONETIZATION_RU,
   },
 };
 

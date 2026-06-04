@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  TextInput,
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { AppTextInput } from "@/components/AppTextInput";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -182,7 +182,7 @@ export default function ContactSupportModal({
               <ThemedText style={styles.label}>
                 {t("contactSupport.yourEmail")}
               </ThemedText>
-              <TextInput
+              <AppTextInput
                 style={[styles.input, { height: 50, marginBottom: 16 }]}
                 value={userEmail}
                 onChangeText={setUserEmail}
@@ -198,7 +198,7 @@ export default function ContactSupportModal({
           <ThemedText style={styles.label}>
             {t("contactSupport.describeIssue")}
           </ThemedText>
-          <TextInput
+          <AppTextInput
             style={styles.input}
             value={message}
             onChangeText={setMessage}
