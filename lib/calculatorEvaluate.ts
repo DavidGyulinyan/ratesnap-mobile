@@ -107,6 +107,47 @@ export function appendCalculatorDigit(
   return currentSegment + digit;
 }
 
+/**
+ * Android-style %: with a trailing operator, applies percent of the left operand
+ * (e.g. 100 + 10% → entry 10). For × and ÷, folds into a single result.
+ */
+export function applyAndroidPercent(
+  expression: string,
+  entry: string
+): { expression: string; entry: string } | null {
+  const pctValue = parseFloat(entry);
+  if (entry === "" || Number.isNaN(pctValue)) return null;
+
+  const trimmed = expression.trim();
+  if (!trimmed) {
+    return { expression: "", entry: String(pctValue / 100) };
+  }
+
+  const last = trimmed.slice(-1);
+  if (!OPERATOR_CHARS.has(last)) {
+    return { expression: trimmed, entry: String(pctValue / 100) };
+  }
+
+  const op = last as "+" | "-" | "*" | "/";
+  const leftExpr = trimmed.slice(0, -1);
+  const left = evaluateCalculatorExpression(leftExpr);
+  if (left === null || !Number.isFinite(left)) return null;
+
+  const ratio = pctValue / 100;
+
+  if (op === "+" || op === "-") {
+    return { expression: trimmed, entry: String(left * ratio) };
+  }
+
+  if (op === "*") {
+    return { expression: "", entry: String(left * ratio) };
+  }
+
+  const divisor = left * ratio;
+  if (divisor === 0) return null;
+  return { expression: "", entry: String(left / divisor) };
+}
+
 /** Append or replace trailing operator. */
 export function appendCalculatorOperator(
   expression: string,
