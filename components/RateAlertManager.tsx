@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AppTextInput } from "./AppTextInput";
@@ -19,7 +20,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useRateAlerts } from "@/hooks/useUserData";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAsyncStorage } from "@/lib/storage";
-import { FormField } from "@/constants/theme";
+import { FormField, Layout, hexToRgba } from "@/constants/theme";
 import { fiatKeysFromConversionRates } from "@/constants/fiatCurrencyCodes";
 import { formatDateDDMMYY } from "@/lib/dateFormat";
 import { formatGroupedNumber } from "@/lib/numberFormat";
@@ -43,6 +44,8 @@ interface RateAlertManagerProps {
   currenciesData?: any;
   inModal?: boolean; // Hide header when used inside DashboardModal
   onShareableMessageChange?: (message: string | null) => void;
+  /** Tap alerts to select; actions on top bar. Default: true in modal. */
+  enableSelection?: boolean;
 }
 
 interface AlertFormData {
@@ -59,7 +62,9 @@ export default function RateAlertManager({
   currenciesData,
   inModal = false,
   onShareableMessageChange,
+  enableSelection: enableSelectionProp,
 }: RateAlertManagerProps) {
+  const enableSelection = enableSelectionProp ?? inModal;
   const { t, tWithParams } = useLanguage();
   const { user } = useAuth();
   const { rateAlerts, loading, createAlert, updateAlert, deleteAlert, error } = useRateAlerts();
@@ -92,6 +97,19 @@ export default function RateAlertManager({
     direction: 'above',
     isActive: true,
   });
+  const [selectedAlertIds, setSelectedAlertIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  useEffect(() => {
+    setSelectedAlertIds((prev) => {
+      const valid = new Set(
+        rateAlerts.map((a) => a.id).filter((id) => prev.has(id))
+      );
+      return valid.size === prev.size ? prev : valid;
+    });
+  }, [rateAlerts]);
 
   useEffect(() => {
     if (!inModal || !onShareableMessageChange) return;
@@ -306,6 +324,498 @@ export default function RateAlertManager({
     setShowAlertModal(true);
   };
 
+  const selectedCount = selectedAlertIds.size;
+
+  const uiStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        selectionToolbar: { marginBottom: Layout.spaceSm, gap: Layout.spaceSm },
+        selectionHint: {
+          fontSize: 13,
+          lineHeight: 18,
+          color: textSecondaryColor,
+        },
+        selectionToolbarActions: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 10,
+        },
+        linkBtn: { paddingVertical: 6, paddingHorizontal: 4 },
+        linkBtnText: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: primaryColor,
+        },
+        topActionBar: {
+          marginBottom: Layout.spaceSm,
+          padding: Layout.spaceSm,
+          borderRadius: Layout.radiusMd,
+          backgroundColor: surfaceColor,
+          borderWidth: 1,
+          borderColor: hexToRgba(primaryColor, 0.3),
+          gap: Layout.spaceSm,
+        },
+        topActionCount: {
+          fontSize: 14,
+          fontWeight: "600",
+          color: textColor,
+          lineHeight: 20,
+        },
+        topActionButtons: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+        },
+        topActionBtn: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          borderRadius: Layout.radiusSm,
+          minHeight: 44,
+        },
+        topActionBtnLabel: {
+          fontSize: 13,
+          fontWeight: "600",
+          flexShrink: 1,
+        },
+        topActionBtnDanger: {
+          backgroundColor: hexToRgba(errorColor, 0.12),
+        },
+        topActionBtnSecondary: {
+          backgroundColor: hexToRgba(primaryColor, 0.1),
+        },
+        topActionBtnSuccess: {
+          backgroundColor: hexToRgba(successColor, 0.12),
+        },
+        alertCardRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: Layout.spaceSm,
+        },
+        alertCardBody: { flex: 1, minWidth: 0 },
+        checkbox: {
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: hexToRgba(borderColor, 0.9),
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: surfaceColor,
+          marginTop: 2,
+        },
+        checkboxSelected: {
+          borderColor: primaryColor,
+          backgroundColor: primaryColor,
+        },
+        cardSelected: {
+          borderColor: primaryColor,
+          borderWidth: 2,
+          backgroundColor: hexToRgba(primaryColor, 0.06),
+        },
+        pairBadge: {
+          backgroundColor: hexToRgba(primaryColor, 0.12),
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          borderRadius: Layout.radiusSm,
+          alignSelf: "flex-start",
+          marginBottom: 8,
+        },
+        pairBadgeText: {
+          fontSize: 12,
+          fontWeight: "700",
+          color: primaryColor,
+        },
+        targetLine: {
+          fontSize: 17,
+          fontWeight: "700",
+          color: textColor,
+          marginBottom: 8,
+        },
+        iconBtn: {
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        iconBtnRow: {
+          flexDirection: "row",
+          gap: 8,
+          marginTop: 8,
+        },
+        createBtnShort: {
+          paddingHorizontal: 14,
+          paddingVertical: 10,
+          borderRadius: Layout.radiusMd,
+          alignSelf: "flex-start",
+        },
+      }),
+    [
+      textSecondaryColor,
+      primaryColor,
+      textColor,
+      surfaceColor,
+      borderColor,
+      errorColor,
+      successColor,
+    ]
+  );
+
+  const toggleAlertSelection = (id: string) => {
+    setSelectedAlertIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedAlertIds(new Set());
+
+  const selectAllAlerts = () => {
+    setSelectedAlertIds(new Set(rateAlerts.map((a) => a.id)));
+  };
+
+  const handleDeleteSelected = () => {
+    const ids = Array.from(selectedAlertIds);
+    if (ids.length === 0) return;
+    Alert.alert(
+      t("rateAlerts.deleteSelectedTitle"),
+      tWithParams("rateAlerts.deleteSelectedMessage", { count: ids.length }),
+      [
+        { text: t("rateAlerts.cancelButton"), style: "cancel" },
+        {
+          text: t("saved.delete"),
+          style: "destructive",
+          onPress: async () => {
+            setBulkBusy(true);
+            try {
+              for (const id of ids) {
+                await deleteAlert(id);
+              }
+              clearSelection();
+              onRatesUpdate();
+            } finally {
+              setBulkBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleResetSelected = () => {
+    const ids = Array.from(selectedAlertIds);
+    const notified = rateAlerts.filter(
+      (a) => ids.includes(a.id) && a.notified
+    );
+    if (notified.length === 0) return;
+    Alert.alert(
+      t("rateAlerts.resetTitle"),
+      tWithParams("rateAlerts.resetSelectedMessage", {
+        count: notified.length,
+      }),
+      [
+        { text: t("rateAlerts.cancelButton"), style: "cancel" },
+        {
+          text: t("rateAlerts.resetButton"),
+          onPress: async () => {
+            setBulkBusy(true);
+            try {
+              for (const a of notified) {
+                await updateAlert(a.id, { notified: false, is_active: true });
+              }
+              clearSelection();
+              onRatesUpdate();
+            } finally {
+              setBulkBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const selectedAlerts = () =>
+    rateAlerts.filter((a) => selectedAlertIds.has(a.id));
+
+  const renderSelectionHeader = () => {
+    if (!enableSelection || !user || rateAlerts.length === 0) return null;
+
+    if (selectedCount > 0) {
+      const selected = selectedAlerts();
+      const canReset = selected.some((a) => a.notified);
+      return (
+        <View style={uiStyles.topActionBar}>
+          <ThemedText style={uiStyles.topActionCount} numberOfLines={2}>
+            {tWithParams("saved.selectedCount", { count: selectedCount })}
+          </ThemedText>
+          <View style={uiStyles.topActionButtons}>
+            <TouchableOpacity
+              style={[uiStyles.topActionBtn, uiStyles.topActionBtnDanger]}
+              onPress={handleDeleteSelected}
+              disabled={bulkBusy}
+              accessibilityLabel={t("saved.delete")}
+            >
+              {bulkBusy ? (
+                <ActivityIndicator size="small" color={errorColor} />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color={errorColor} />
+              )}
+              <ThemedText
+                style={[uiStyles.topActionBtnLabel, { color: errorColor }]}
+                numberOfLines={1}
+              >
+                {t("saved.delete")}
+              </ThemedText>
+            </TouchableOpacity>
+            {selectedCount === 1 ? (
+              <>
+                <TouchableOpacity
+                  style={[uiStyles.topActionBtn, uiStyles.topActionBtnSecondary]}
+                  onPress={() => handleEditAlert(selected[0])}
+                  disabled={bulkBusy}
+                  accessibilityLabel={t("rateAlerts.edit")}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={20}
+                    color={primaryColor}
+                  />
+                  <ThemedText
+                    style={[uiStyles.topActionBtnLabel, { color: primaryColor }]}
+                    numberOfLines={1}
+                  >
+                    {t("rateAlerts.editShort")}
+                  </ThemedText>
+                </TouchableOpacity>
+                {selected[0].notified ? (
+                  <TouchableOpacity
+                    style={[uiStyles.topActionBtn, uiStyles.topActionBtnSuccess]}
+                    onPress={() => handleResetAlert(selected[0].id)}
+                    disabled={bulkBusy}
+                    accessibilityLabel={t("rateAlerts.reset")}
+                  >
+                    <Ionicons
+                      name="refresh-outline"
+                      size={20}
+                      color={successColor}
+                    />
+                    <ThemedText
+                      style={[uiStyles.topActionBtnLabel, { color: successColor }]}
+                      numberOfLines={1}
+                    >
+                      {t("rateAlerts.resetShort")}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            ) : canReset ? (
+              <TouchableOpacity
+                style={[uiStyles.topActionBtn, uiStyles.topActionBtnSuccess]}
+                onPress={handleResetSelected}
+                disabled={bulkBusy}
+                accessibilityLabel={t("rateAlerts.reset")}
+              >
+                <Ionicons name="refresh-outline" size={20} color={successColor} />
+                <ThemedText
+                  style={[uiStyles.topActionBtnLabel, { color: successColor }]}
+                  numberOfLines={1}
+                >
+                  {t("rateAlerts.resetShort")}
+                </ThemedText>
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity
+              style={uiStyles.linkBtn}
+              onPress={clearSelection}
+              disabled={bulkBusy}
+            >
+              <ThemedText
+                style={[uiStyles.linkBtnText, { color: textSecondaryColor }]}
+                numberOfLines={1}
+              >
+                {t("common.cancel")}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={uiStyles.selectionToolbar}>
+        <ThemedText style={uiStyles.selectionHint} numberOfLines={2}>
+          {t("rateAlerts.tapToSelect")}
+        </ThemedText>
+        <View style={uiStyles.selectionToolbarActions}>
+          <TouchableOpacity style={uiStyles.linkBtn} onPress={selectAllAlerts}>
+            <ThemedText style={uiStyles.linkBtnText} numberOfLines={1}>
+              {t("saved.selectAll")}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderAlertCard = (alert: RateAlert) => {
+    const isSelected = selectedAlertIds.has(alert.id);
+    const onCardPress = () => {
+      if (enableSelection) {
+        toggleAlertSelection(alert.id);
+      } else {
+        handleEditAlert(alert);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        key={alert.id}
+        activeOpacity={0.82}
+        onPress={onCardPress}
+        style={[
+          {
+            backgroundColor: surfaceColor,
+            borderColor: borderColor,
+            shadowColor: shadowColor,
+          },
+          styles.alertCard,
+          isSelected && uiStyles.cardSelected,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+      >
+        <View style={enableSelection ? uiStyles.alertCardRow : undefined}>
+          {enableSelection ? (
+            <View
+              style={[
+                uiStyles.checkbox,
+                isSelected && uiStyles.checkboxSelected,
+              ]}
+            >
+              {isSelected ? (
+                <Ionicons name="checkmark" size={14} color="#fff" />
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={enableSelection ? uiStyles.alertCardBody : undefined}>
+            <View style={styles.alertHeader}>
+              <View style={styles.currencyPair}>
+                <CurrencyFlag currency={alert.from_currency} size={22} />
+                <ThemedText
+                  style={[{ color: textSecondaryColor }, styles.arrow]}
+                >
+                  →
+                </ThemedText>
+                <CurrencyFlag currency={alert.to_currency} size={22} />
+              </View>
+            </View>
+
+            <View style={uiStyles.pairBadge}>
+              <ThemedText style={uiStyles.pairBadgeText}>
+                {alert.from_currency}/{alert.to_currency}
+              </ThemedText>
+            </View>
+
+            <ThemedText style={uiStyles.targetLine} numberOfLines={2}>
+              {t(`rateAlerts.direction.${alert.condition}`)}{" "}
+              {formatGroupedNumber(alert.target_rate, 6)}
+            </ThemedText>
+
+            <View style={styles.alertRow}>
+              <ThemedText
+                style={[{ color: textSecondaryColor }, styles.alertLabel]}
+              >
+                {t("rateAlerts.status")}
+              </ThemedText>
+              <ThemedText
+                style={[
+                  styles.statusText,
+                  { color: getAlertStatusColor(alert) },
+                ]}
+                numberOfLines={2}
+              >
+                {getAlertStatusText(alert)}
+              </ThemedText>
+            </View>
+
+            <View
+              style={styles.alertControls}
+              onStartShouldSetResponder={() => true}
+            >
+              <ThemedText
+                style={[{ color: textColor }, styles.switchLabel]}
+              >
+                {t("rateAlerts.active")}
+              </ThemedText>
+              <Switch
+                value={alert.is_active}
+                onValueChange={(value) => toggleAlertActive(alert.id, value)}
+                disabled={alert.notified}
+                trackColor={{ false: borderColor, true: primaryColor }}
+                thumbColor={textInverseColor}
+              />
+            </View>
+
+            {!enableSelection ? (
+              <View style={styles.alertActions}>
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: primaryColor, shadowColor: primaryColor },
+                    styles.editButton,
+                  ]}
+                  onPress={() => handleEditAlert(alert)}
+                >
+                  <ThemedText
+                    style={[{ color: textColor }, styles.editButtonText]}
+                  >
+                    {t("rateAlerts.edit")}
+                  </ThemedText>
+                </TouchableOpacity>
+                {alert.notified ? (
+                  <TouchableOpacity
+                    style={[
+                      { backgroundColor: successColor, shadowColor: successColor },
+                      styles.resetButton,
+                    ]}
+                    onPress={() => handleResetAlert(alert.id)}
+                  >
+                    <ThemedText
+                      style={[{ color: textColor }, styles.resetButtonText]}
+                    >
+                      {t("rateAlerts.reset")}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity
+                  style={[
+                    { backgroundColor: errorColor, shadowColor: errorColor },
+                    styles.deleteButton,
+                  ]}
+                  onPress={() => handleDeleteAlert(alert.id)}
+                >
+                  <ThemedText
+                    style={[{ color: textColor }, styles.deleteButtonText]}
+                  >
+                    {t("rateAlerts.delete")}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -397,105 +907,43 @@ export default function RateAlertManager({
       {inModal && (
         <View style={styles.modalCreateButtonContainer}>
           <TouchableOpacity
-            style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.createButton]}
+            style={[
+              { backgroundColor: successColor, shadowColor: successColor },
+              styles.createButton,
+              uiStyles.createBtnShort,
+            ]}
             onPress={handleCreateAlert}
           >
-            <ThemedText style={[{ color: textColor }, styles.createButtonText]}>{t('rateAlerts.createButton')}</ThemedText>
+            <ThemedText
+              style={[{ color: textInverseColor }, styles.createButtonText]}
+              numberOfLines={1}
+            >
+              {t("rateAlerts.createButtonShort")}
+            </ThemedText>
           </TouchableOpacity>
         </View>
       )}
 
-      <ScrollView style={[styles.alertsList, inModal && styles.alertsListInModal]}>
+      {renderSelectionHeader()}
+
+      <ScrollView
+        style={[styles.alertsList, inModal && styles.alertsListInModal]}
+        keyboardShouldPersistTaps="handled"
+      >
         {!user ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
-              Sign in to create and manage rate alerts that notify you when currency rates reach your targets.
+              {t("rateAlerts.signInPrompt")}
             </ThemedText>
           </View>
         ) : rateAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>
-              {t('rateAlerts.emptyState')}
+              {t("rateAlerts.emptyState")}
             </ThemedText>
           </View>
         ) : (
-          rateAlerts.map((alert) => (
-            <View key={alert.id} style={[{ backgroundColor: surfaceColor, borderColor: borderColor, shadowColor: shadowColor }, styles.alertCard]}>
-              <View style={styles.alertHeader}>
-                <View style={styles.currencyPair}>
-                  <View style={styles.currencyItem}>
-                    <CurrencyFlag currency={alert.from_currency} size={20} />
-                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
-                      {alert.from_currency}
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.arrow]}>→</ThemedText>
-                  <View style={styles.currencyItem}>
-                    <CurrencyFlag currency={alert.to_currency} size={20} />
-                    <ThemedText style={[{ color: textColor }, styles.currencyCode]}>
-                      {alert.to_currency}
-                    </ThemedText>
-                  </View>
-                </View>
-              </View>
-                <View style={styles.alertControls}>
-                  <ThemedText style={[{ color: textColor }, styles.switchLabel]}>{t('rateAlerts.active')}</ThemedText>
-                  <Switch
-                    value={alert.is_active}
-                    onValueChange={(value) => toggleAlertActive(alert.id, value)}
-                    disabled={alert.notified}
-                    trackColor={{ false: borderColor, true: primaryColor }}
-                    thumbColor={textInverseColor}
-                  />
-                </View>
-
-              <View style={styles.alertInfo}>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.target')}</ThemedText>
-                  <ThemedText style={[{ color: textColor }, styles.alertValue]}>
-                    {t(`rateAlerts.direction.${alert.condition}`)} {formatGroupedNumber(alert.target_rate, 6)}
-                  </ThemedText>
-                </View>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.status')}</ThemedText>
-                  <ThemedText style={[styles.statusText, { color: getAlertStatusColor(alert) }]}>
-                    {getAlertStatusText(alert)}
-                  </ThemedText>
-                </View>
-                <View style={styles.alertRow}>
-                  <ThemedText style={[{ color: textSecondaryColor }, styles.alertLabel]}>{t('rateAlerts.created')}</ThemedText>
-                  <ThemedText style={[{ color: textColor }, styles.alertValue]}>
-                    {formatDateDDMMYY(alert.created_at)}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.alertActions}>
-                <TouchableOpacity
-                  style={[{ backgroundColor: primaryColor, shadowColor: primaryColor }, styles.editButton]}
-                  onPress={() => handleEditAlert(alert)}
-                >
-                  <ThemedText style={[{ color: textColor }, styles.editButtonText]}>{t('rateAlerts.edit')}</ThemedText>
-                </TouchableOpacity>
-
-                {alert.notified ? (
-                  <TouchableOpacity
-                    style={[{ backgroundColor: successColor, shadowColor: successColor }, styles.resetButton]}
-                    onPress={() => handleResetAlert(alert.id)}
-                  >
-                    <ThemedText style={[{ color: textColor }, styles.resetButtonText]}>{t('rateAlerts.reset')}</ThemedText>
-                  </TouchableOpacity>
-                ) : null}
-
-                <TouchableOpacity
-                  style={[{ backgroundColor: errorColor, shadowColor: errorColor }, styles.deleteButton]}
-                  onPress={() => handleDeleteAlert(alert.id)}
-                >
-                  <ThemedText style={[{ color: textColor }, styles.deleteButtonText]}>{t('rateAlerts.delete')}</ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))
+          rateAlerts.map((alert) => renderAlertCard(alert))
         )}
       </ScrollView>
 
