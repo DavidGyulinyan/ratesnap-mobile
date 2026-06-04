@@ -16,12 +16,10 @@
     "lint": "expo lint",
     "build:android": "eas build --platform android --profile production",
     "build:android:preview": "eas build --platform android --profile preview",
-    "build:android:widgets": "eas build --platform android --profile preview --non-interactive",
     "submit:android": "eas submit --platform android --profile production --latest"
   },
   "dependencies": {
     "@expo/cli": "^54.0.16",
-    "@expo/ui": "~56.0.13",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.80.0",
@@ -51,12 +49,10 @@
     "expo-symbols": "~1.0.8",
     "expo-updates": "~29.0.17",
     "expo-web-browser": "~15.0.11",
-    "expo-widgets": "^56.0.14",
     "mathjs": "^14.9.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-android-widget": "^0.20.3",
     "react-native-chart-kit": "^6.12.0",
     "react-native-emoji": "^1.8.0",
     "react-native-reanimated": "^4.1.5",
@@ -79,13 +75,5 @@
     "supabase": "^2.58.5",
     "typescript": "~5.9.2"
   },
-  "private": true,
-  "expo": {
-    "install": {
-      "exclude": [
-        "@expo/ui",
-        "expo-widgets"
-      ]
-    }
-  }
+  "private": true
 }

@@ -46,7 +46,6 @@ export function canUseFeature(
       return false;
     case "extended_offline_cache":
       return false;
-    case "home_widgets":
     case "premium_themes":
     case "early_access":
       return false;

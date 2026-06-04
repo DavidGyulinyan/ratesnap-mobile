@@ -48,7 +48,6 @@ import {
   type AmTransportCardId,
   type DashboardQuickActionId,
 } from "@/lib/dashboardWidgets";
-import { syncOsWidgetData } from "@/lib/osWidgets/sync";
 import { getHasCompletedOnboarding } from "@/lib/onboardingStorage";
 import { getAsyncStorage } from "@/lib/storage";
 import { fiatKeysFromConversionRates } from "@/constants/fiatCurrencyCodes";
@@ -1016,7 +1015,6 @@ export default function HomeScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([loadExchangeRates(), refreshRates()]);
-    void syncOsWidgetData().catch(() => {});
     setRefreshing(false);
   };
 

@@ -47,7 +47,6 @@ function AppContent() {
               <Stack.Screen name="signin" options={{ presentation: 'modal' }} />
               <Stack.Screen name="signup" options={{ presentation: 'modal' }} />
               <Stack.Screen name="capital-pro" options={{ presentation: 'card' }} />
-              <Stack.Screen name="home-widgets" options={{ presentation: 'card' }} />
             </Stack>
           </View>
           <StatusBar style={effectiveTheme === 'dark' ? 'light' : 'dark'} />

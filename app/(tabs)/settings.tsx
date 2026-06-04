@@ -1519,23 +1519,6 @@ Capital предоставляет инструменты конвертации
 
             <TouchableOpacity
               style={styles.settingItem}
-              onPress={() => router.push('/home-widgets')}
-              activeOpacity={0.75}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-                <Ionicons name="apps-outline" size={22} color={primaryColor} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <ThemedText style={styles.settingItemText}>{t('osWidgets.title')}</ThemedText>
-                  <ThemedText style={[styles.settingValue, { marginTop: 2 }]} numberOfLines={2}>
-                    {isPro ? t('osWidgets.settingsSubtitlePro') : t('pro.feature.widgets.desc')}
-                  </ThemedText>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={textSecondaryColor} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.settingItem}
               onPress={() => router.push('/support-capital')}
               activeOpacity={0.75}
             >
